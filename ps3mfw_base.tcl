@@ -342,7 +342,7 @@ proc copy_spkg { } {
 } 
 
 proc copy_mfw_imgs { } {
-    create_mfw_dir
+    create_mfw_dir ${::CUSTOM_MFW_DIR}
     copy_file -force ${::CUSTOM_IMG_DIR} ${::CUSTOM_MFW_DIR}
 }
 

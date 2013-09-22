@@ -10,30 +10,30 @@
     
 # Priority: 0002
 # Description: Patch XMB
-     
+
+# Option --patch-act-pkg: Patch the standard  '*Install Package Files'  function back in to the XMB (4.30+) 
+# Option --patch-package-files: Add "Install Package Files" icon to the XMB Game Category    
+# Option --patch-app-home: Add "/app_home" icon to the XMB Game Category
+# Option --patch-ren-apphome: Rename /app_home/PS3_GAME/ to Discless
 # Option --add-install-pkg: Add the standard Install Package Files Segment to the HomeBrew Category in XMB
-# Option --patch-act-pkg: Patch the standard  '*Install Package Files'  function back in to the XMB (4.30+)
 # Option --add-pkg-mgr: Add MFW PKG Manager Segment to the HomeBrew Category in XMB
 # Option --add-hb-seg: Add MFW HomeBrew Segment to the HomeBrew Category in XMB
 # Option --add-emu-seg: Add MFW Emulator Segment to the HomeBrew Category in XMB
 # Option --homebrew-cat: Specify new HomeBrew category manually (Do not use with options above!!)
-# Option --patch-package-files: Add "Install Package Files" icon to the XMB Game Category
-# Option --patch-app-home: Add "/app_home" icon to the XMB Game Category
-# Option --patch-ren-apphome: Rename /app_home/PS3_GAME/ to Discless
 # Option --patch-alpha-sort: Alphabetical sort Order for Games in the XMB
 # Option --patch-rape-sfo: Rape the SFO Param's X0 (NeoGeo) and X4 (PCEngine) to use with the Homebrew category and custome segments
 # Option --fix-typo-sysconf-Italian: Fix a typo in the Italian localization of the sysconf plugin
-# Option --tv-cat: Show TV category in xmb no matter if your country support it.
+# Option --tv-cat: Show TV category in xmb no matter if your country supports it.
 
-# Type --add-install-pkg: boolean
 # Type --patch-act-pkg: boolean
+# Type --patch-package-files: boolean
+# Type --patch-app-home: boolean
+# Type --patch-ren-apphome: boolean
+# Type --add-install-pkg: boolean
 # Type --add-pkg-mgr: boolean
 # Type --add-hb-seg: boolean
 # Type --add-emu-seg: boolean
 # Type --homebrew-cat: combobox {{ } {Users} {Photo} {Music} {Video} {TV} {Game} {Network} {PlayStation® Network} {Friends}}
-# Type --patch-package-files: boolean
-# Type --patch-app-home: boolean
-# Type --patch-ren-apphome: boolean
 # Type --patch-alpha-sort: boolean
 # Type --patch-rape-sfo: boolean
 # Type --fix-typo-sysconf-Italian: boolean
@@ -60,15 +60,15 @@ namespace eval patch_xmb {
 	set ::patch_xmb::hermes_enabled false
 		
     array set ::patch_xmb::options {
-        --add-install-pkg false
 		--patch-act-pkg true
+		--patch-package-files false
+		--patch-app-home true
+        --patch-ren-apphome false
+        --add-install-pkg false		
         --add-pkg-mgr false
         --add-hb-seg false
         --add-emu-seg false
-        --homebrew-cat ""
-        --patch-package-files false
-        --patch-app-home true
-        --patch-ren-apphome false
+        --homebrew-cat ""                
         --patch-alpha-sort false
         --patch-rape-sfo false
         --fix-typo-sysconf-Italian false
@@ -94,17 +94,17 @@ namespace eval patch_xmb {
         set ::patch_xmb::EXPLORE_PLUGIN_FULL_RCO [file join  dev_flash vsh resource explore_plugin_full.rco]
 		set ::patch_xmb::XMB_INGAME_RCO [file join dev_flash vsh resource xmb_ingame.rco]
 	    set ::patch_xmb::REGISTORY_XML [file join dev_flash vsh resource explore xmb registory.xml]
-		set ::patch_xmb::NET_CAT_XML [file join dev_flash vsh resource xmb category_network.xml]
+		set ::patch_xmb::NET_CAT_XML [file join dev_flash vsh resource explore xmb category_network.xml]
 		set ::patch_xmb::CATEGORY_GAME_TOOL2_XML [file join dev_flash vsh resource explore xmb category_game_tool2.xml]
 		set ::patch_xmb::CATEGORY_GAME_XML [file join dev_flash vsh resource explore xmb category_game.xml]
-		set ::patch_xmb::PSN_CAT_XML [file join dev_flash vsh resource xmb category_psn.xml]
-		set ::patch_xmb::TEMPLAT_MFW_XML [file join ${::CUSTOM_TEMPLAT_DIR} mfw_templat.xml]
-		set ::patch_xmb::ACTIVATE_IPF {xmb_ingame.rco explore_plugin_full.rco}
+		set ::patch_xmb::PSN_CAT_XML [file join dev_flash vsh resource explore xmb category_psn.xml]
+		set ::patch_xmb::TEMPLAT_MFW_XML [file join ${::CUSTOM_TEMPLAT_DIR} mfw_templat.xml]		
+		set ::patch_xmb::ACTIVATE_IPF {nas_plugin.sprx explore_category_game.sprx explore_plugin.sprx}
 		set ::patch_xmb::rapeo "cond=An+Game:Game.category"
 		set ::patch_xmb::rapen "cond=An+Game:Game.category X4+An+Game:Game.category X0+An+Game:Game.category"
 		
 		
-		
+		# if homebrew options enabled, setup the homebrew segments
 		if {$::patch_xmb::options(--add-install-pkg) || $::patch_xmb::options(--add-pkg-mgr) || $::patch_xmb::options(--add-hb-seg) || $::patch_xmb::options(--add-emu-seg)} {
 		    ::modify_rco_file $::patch_xmb::EXPLORE_PLUGIN_FULL_RCO ::patch_xmb::callback_homebrew
 		    ::modify_rco_file $::patch_xmb::XMB_INGAME_RCO ::patch_xmb::callback_homebrew
@@ -116,31 +116,34 @@ namespace eval patch_xmb {
 		        ::modify_rco_file $::patch_xmb::XMB_INGAME_RCO ::patch_xmb::callback_discless
 		    }
 		}
-		
-		if {$::patch_xmb::options(--patch-act-pkg)} {
-		    modify_devflash_files [file join ${::CUSTOM_UPDATE_DIR} dev_flash vsh module] $::patch_xmb::ACTIVATE_IPF ::patch_xmb::patch_self
+		# if "--patch-act-pkg" option enabled, patch the files
+		if {$::patch_xmb::options(--patch-act-pkg)} {			
+			modify_devflash_files [file join dev_flash vsh module] $::patch_xmb::ACTIVATE_IPF ::patch_xmb::patch_self
 		}
-       
+        # modify the "category_game.xml"
 		if {$::patch_xmb::options(--patch-app-home)  || $::patch_xmb::options(--patch-package-files) || $::patch_xmb::options(--patch-alpha-sort) || $::patch_xmb::options(--patch-rape-sfo) || [expr {$::patch_xmb::options(--homebrew-cat) ne ""}]} {			
 		    ::modify_devflash_file $::patch_xmb::CATEGORY_GAME_XML ::patch_xmb::patch_xml	    
 		}
-        
+        # modify the "xmb_plugin.sprx"
         if { [expr {$::patch_xmb::options(--homebrew-cat) ne "TV"}] && $::patch_xmb::options(--tv-cat)} {
             ::modify_devflash_file $::patch_xmb::XMB_PLUGIN ::patch_xmb::patch_self
         }
-        
+        # modify the "sysconf_plugin.rco"
         if {$::patch_xmb::options(--fix-typo-sysconf-Italian) && $::customize_firmware::options(--customize-fw-version) == ""} {
             ::modify_rco_file $::patch_xmb::SYSCONF_PLUGIN_RCO ::patch_xmb::callback_fix_typo_sysconf_Italian
         }
     }
+	##
+	## ----------------------------------  END MAIN PROC ----------------------------------------------------------------------
+	
    
 	# proc for modify the dev_flash xml scripts
     proc patch_xml {args} {
         if {$::patch_xmb::pointer_xmb == 1} {			
-            ::patch_xmb::find_nodes "" ${::TEMPLAT_MFW_XML} 
+            ::patch_xmb::find_nodes "" ${::patch_xmb::::TEMPLAT_MFW_XML} 
             ::patch_xmb::find_nodes1 ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::CATEGORY_GAME_TOOL2_XML 
             ::patch_xmb::read_cat ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::NET_CAT_XML 
-            ::patch_xmb::inject_node ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::NET_CAT_XML 
+            ::patch_xmb::inject_nodes ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::NET_CAT_XML 
             ::patch_xmb::inject_cat ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::PSN_CAT_XML 
         }
         
@@ -152,11 +155,11 @@ namespace eval patch_xmb {
 		}
 	  
 		if {$::patch_xmb::options(--patch-alpha-sort)} {
-			::patch_xmb::alpha_sort $::patch_xmb::REGISTORY_XML 
+			::patch_xmb::alpha_sort ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::REGISTORY_XML 
         }
         
         if {$::patch_xmb::options(--patch-rape-sfo) && !$::patch_xmb::options(--patch-alpha-sort)} {
-			::patch_xmb::rape_sfo $::patch_xmb::REGISTORY_XML 
+			::patch_xmb::rape_sfo ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::REGISTORY_XML 
         }
         
         if {[expr {$::patch_xmb::options(--homebrew-cat) ne ""}]} {
@@ -200,9 +203,9 @@ namespace eval patch_xmb {
 			
 			# patch in the 'homebrew' category
             ::patch_xmb::find_nodes2 ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::CATEGORY_GAME_TOOL2_XML 
-            ::patch_xmb::inject_nodes2 ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::CATEGORY_XML 
-		    modify_rco_file $::patch_xmb::EXPLORE_PLUGIN_FULL_RCO ::patch_xmb::callback_manuell
-		    modify_rco_file $::patch_xmb::XMB_INGAME_RCO ::patch_xmb::callback_manuell
+            ::patch_xmb::inject_nodes2 ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::CATEGORY_GAME_XML 
+		    modify_rco_file $::patch_xmb::EXPLORE_PLUGIN_FULL_RCO ::patch_xmb::callback_manual
+		    modify_rco_file $::patch_xmb::XMB_INGAME_RCO ::patch_xmb::callback_manual
         }
         # unset these globals
         if { [info exist ::query_package_files] } {
@@ -219,54 +222,83 @@ namespace eval patch_xmb {
 	# end proc "patch_xml"
 	######################################################################3
     
-    proc patch_self {self} {
+    proc patch_self {self} {		
+		set args ""		
         log "Patching [file tail $self]"
-        ::modify_self_file2 $self ::patch_xmb::patch_elf
+        ::modify_self_file $self ::patch_xmb::patch_elf
     }
 
-    proc patch_elf {elf} {
-	
-        log "Patching [file tail $elf] to add tv category"       
-        set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"
-        set replace "\x64\x65\x76\x5f\x66\x6c\x61\x73\x68\x2f\x64\x61\x74\x61\x2f\x63\x65\x72\x74\x00\x00\x00\x00"
-       
-        catch_die {::patch_elf $elf $search 0 $replace} \
-        "Unable to patch self [file tail $elf]"
+	# callback proc for doing the main ELF patches for all of the xmb-related
+	# patches
+    proc patch_elf {elf} {			
+		# if "tv-cat" enabled, find the patch
+		if {$::patch_xmb::options(--tv-cat)} {
 		
+			log "Patching [file tail $elf] to add tv category"       
+			set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"
+			set replace "\x64\x65\x76\x5f\x66\x6c\x61\x73\x68\x2f\x64\x61\x74\x61\x2f\x63\x65\x72\x74\x00\x00\x00\x00"
+		   
+			catch_die {::patch_elf $elf $search 0 $replace} \
+			"Unable to patch self [file tail $elf]"
+		}
+		# if "add install pkg files" back to XMB enabled, patch it
 		if {$::patch_xmb::options(--patch-act-pkg)} {
 		
-		    log "Patching [file tail $elf] to add Install Package Files back to the XMB"         
-            set search  "\xF8\x21\xFE\xD1\x7C\x08\x02\xA6\xFB\x81\x01\x10\x3B\x81\x00\x70"
-            set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
-         
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+			# verified against "Rogero 4.46 - 09/20/2013"
+			# patches are valid for OFW 4.00 - 4.46+
+			if { [string first "nas_plugin.sprx" $elf 0] != -1 } {
+			
+				log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 1/2"     				
+				set search  "\x40\x9E\x00\x3C\x3D\x20\x00\x06\x38\x00\x00\x29"
+				set replace "\x48\x00"
+				set offset  0
+				# go apply the patches
+				catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"			
+				
+				log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 2/2"     				
+				set search  "\x2F\x89\x00\x00\x41\x9E\x00\x4C\x38\x00\x00\x00"
+				set replace "\x40"
+				set offset 4
+				# go apply the patches
+				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+				
+			} else {
+			
+				log "Patching [file tail $elf] to add Install Package Files back to the XMB"         
+				set search  "\xF8\x21\xFE\xD1\x7C\x08\x02\xA6\xFB\x81\x01\x10\x3B\x81\x00\x70"
+				set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
+				set offset  0
+				# go apply the patches
+				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"			
+			}					
 		}
     }
     
-    proc alpha_sort {path args} {
+	### proc for "alphabetical sort"
+    proc alpha_sort {path file} {
         log "Patching Alphabetical Sort for Games in file [file tail $path]"
-        sed_in_place [file join $path] -Game:Common.stat.rating-Game:Common.timeCreated+Game:Common.titleForSort-Game:Game.category -Game:Common.stat.rating-Game:Common.title+Game:Common.titleForSort-Game:Game.category
-        sed_in_place [file join $path] -Game:Common.stat.rating+Game:Common.timeCreated+Game:Common.titleForSort-Game:Game.category -Game:Common.stat.rating+Game:Common.title+Game:Common.titleForSort-Game:Game.category
-        sed_in_place [file join $path] -Game:Common.stat.rating-Game:Common.stat.timeLastUsed+Game:Common.titleForSort-Game:Common.timeCreated-Game:Game.category -Game:Common.stat.rating-Game:Common.stat.timeLastUsed+Game:Common.titleForSort-Game:Common.title-Game:Game.category
-        sed_in_place [file join $path] -Game:Common.stat.rating+Game:Common.titleForSort-Game:Common.timeCreated-Game:Game.category -Game:Common.stat.rating+Game:Common.titleForSort-Game:Common.title-Game:Game.category
-        sed_in_place [file join $path] -Game:Common.stat.rating+Game:Game.gameCategory-Game:Common.timeCreated+Game:Common.titleForSort -Game:Common.stat.rating+Game:Game.gameCategory-Game:Common.title+Game:Common.titleForSort
+        sed_in_place [file join $path $file] -Game:Common.stat.rating-Game:Common.timeCreated+Game:Common.titleForSort-Game:Game.category -Game:Common.stat.rating-Game:Common.title+Game:Common.titleForSort-Game:Game.category
+        sed_in_place [file join $path $file] -Game:Common.stat.rating+Game:Common.timeCreated+Game:Common.titleForSort-Game:Game.category -Game:Common.stat.rating+Game:Common.title+Game:Common.titleForSort-Game:Game.category
+        sed_in_place [file join $path $file] -Game:Common.stat.rating-Game:Common.stat.timeLastUsed+Game:Common.titleForSort-Game:Common.timeCreated-Game:Game.category -Game:Common.stat.rating-Game:Common.stat.timeLastUsed+Game:Common.titleForSort-Game:Common.title-Game:Game.category
+        sed_in_place [file join $path $file] -Game:Common.stat.rating+Game:Common.titleForSort-Game:Common.timeCreated-Game:Game.category -Game:Common.stat.rating+Game:Common.titleForSort-Game:Common.title-Game:Game.category
+        sed_in_place [file join $path $file] -Game:Common.stat.rating+Game:Game.gameCategory-Game:Common.timeCreated+Game:Common.titleForSort -Game:Common.stat.rating+Game:Game.gameCategory-Game:Common.title+Game:Common.titleForSort
         
         if {$::patch_xmb::options(--patch-rape-sfo)} {
-            ::patch_xmb::rape_sfo
+            ::patch_xmb::rape_sfo $path $file
         }
     }
     
-    proc rape_sfo {path args} {
+    proc rape_sfo {path file} {
         log "Patching Rape SFO in file [file tail $path]"
-        sed_in_place [file join $path] $rapeo $rapen       
+        sed_in_place [file join $path $file] $::patch_xmb::rapeo $::patch_xmb::rapen       
     }
 
-    proc callback_fix_typo_sysconf_Italian {path args} {
+    proc callback_fix_typo_sysconf_Italian {path} {
         log "Patching Italian.xml into [file tail $path]"
         sed_in_place [file join $path Italian.xml] backuip backup
     }
     
-    proc callback_homebrew {path args} {		
+    proc callback_homebrew {path} {		
         log "Patching English.xml into [file tail $path]"
         sed_in_place [file join $path English.xml] Network Homebrew
         
@@ -320,7 +352,7 @@ namespace eval patch_xmb {
         }
     }
     
-    proc callback_discless {path args} {
+    proc callback_discless {path} {
         log "Patching English.xml into [file tail $path]"
         sed_in_place [file join $path English.xml] /app_home/PS3_GAME/ Discless
         
@@ -370,7 +402,7 @@ namespace eval patch_xmb {
         sed_in_place [file join $path ChineseSimpl.xml] /app_home/PS3_GAME/ Discless
     }
     
-    proc callback_manuell { file } {
+    proc callback_manual { path } {
         log "Patching English.xml into [file tail $path]"
         sed_in_place [file join $path English.xml] $::patch_xmb::options(--homebrew-cat) Homebrew
         
@@ -420,14 +452,20 @@ namespace eval patch_xmb {
         sed_in_place [file join $path ChineseSimpl.xml] $::patch_xmb::options(--homebrew-cat) Homebrew
     }
     
-    proc change_welcome_string { path args } {
+	# proc for changing the "Welcome String"
+    proc change_welcome_string { path } {
+	
         log "Changing Welcome string to Hombrew segment"       
-        sed_in_place [file join $path category_networkt.xml] key="seg_browser"> key="seg_hbrew">
+        #sed_in_place [file join $path category_network.xml] key="seg_browser"> key="seg_hbrew">
+		sed_in_place $path key="seg_browser"> key="seg_hbrew">
     }
-    
-    proc clean_net { file } {
+    # proc for cleaning homebrew cat
+    proc clean_net { path file } {
+	
         log "Modifying XML(clean_net): file [file tail $file]"
         log "Cleaning Homebrew category"
+		set filepath [file join $path $file]
+		set xml [::xml::LoadFile $filepath]      
      
         set xml [::remove_node_from_xmb_xml $xml "seg_browser" "Internet Browser"]
         set xml [::remove_node_from_xmb_xml $xml "seg_folding_at_home" "Life with PlayStation "]
@@ -435,58 +473,63 @@ namespace eval patch_xmb {
         set xml [::remove_node_from_xmb_xml $xml "seg_manual" "Online Instruction Manuals"]
         set xml [::remove_node_from_xmb_xml $xml "seg_premo" "Remote Play"]
         set xml [::remove_node_from_xmb_xml $xml "seg_dlctrl" "Download Controle"]
-		
-		::xml::SaveToFile $xml $file
+		# save the cleaned file
+		::xml::SaveToFile $xml $filepath
     }
     
-    proc read_cat { file } {
-        log "Parsing XML(read cat): [file tail $file]"
-        set xml [::xml::LoadFile $file]
-        
+	# proc for reading out of the file
+    proc read_cat { path file } {
+	
+        log "Parsing XML(read cat): [file tail $file]"		
+		set filepath [file join $path $file]
+		# if we are fixing the "category_network" file, fix that stupid
+		# open brace problem!
+		if { [string first "category_network.xml" $file] != -1 } {
+			remove_line_from_network_cat $filepath
+		}
+        set xml [::xml::LoadFile $filepath]       				
         set ::query_manual [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_manual"]
-        set ::view_seg_manual [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_manual"]
-        
-        if {$::query_manual == "" || $::view_manual == "" } {
+        set ::view_seg_manual [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_manual"]        
+        if {$::query_manual == "" || $::view_seg_manual == ""} {
             die "Could not parse $file"
-        }
+        }		
         
         set ::query_premo [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_premo"]
-        set ::view_premo [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_premo"]
-        
-        if {$::query_premo == "" || $::view_premo == "" } {
+        set ::view_premo [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_premo"]        
+        if {$::query_premo == "" || $::view_premo == ""} {
             die "Could not parse $file"
         }
         
         set ::query_browser [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_browser"]
-        set ::view_browser [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_browser"]
-        
-        if {$::query_browser == "" || $::view_browser == "" } {
+        set ::view_browser [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_browser"]        
+        if {$::query_browser == "" || $::view_browser == ""} {
             die "Could not parse $file"
         }
         
         set ::query_kensaku [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_kensaku"]
-        set ::view_kensaku [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_kensaku"]
-        
-        if {$::query_kensaku == "" || $::view_kensaku == "" } {
+        set ::view_kensaku [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_kensaku"]        
+        if {$::query_kensaku == "" || $::view_kensaku == ""} {
             die "Could not parse $file"
         }
         
-        set ::query_dlctrl [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_dlctrl"]
-        
+        set ::query_dlctrl [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_dlctrl"]        
         if {$::query_dlctrl == "" } {
             die "Could not parse $file"
-        }
-        
-        ::patch_xmb::inject_nodes "" $file
+        }		
+        # go inject the selected nodes
+        #::patch_xmb::inject_nodes $path $file
         
     }
     
-    proc inject_cat { file } {
+	# proc for injecting the new cats
+    proc inject_cat { path file } {
+	
         log "Modifying XML(inject cat): [file tail $file]"
-        set xml [::xml::LoadFile $file]
+		set filepath [file join $path $file]	
+        set xml [::xml::LoadFile $filepath]
         
-        set xml [::xml::InsertNode $xml [::xml::GetNodeIndicesByAttribute $xml "XMBML:View:Items:Query" key ""] $::query_dlctrl]
-      
+        set xml [::xml::InsertNode $xml [::xml::GetNodeIndicesByAttribute $xml "XMBML:View:Items:Query" key ""] $::query_dlctrl]  
+		
         unset ::query_dlctrl
         
         set xml [::xml::InsertNode $xml [::xml::GetNodeIndicesByAttribute $xml "XMBML:View:Items:Query" key "" ] $::query_kensaku]
@@ -508,12 +551,12 @@ namespace eval patch_xmb {
         unset ::view_premo
         
         set xml [::xml::InsertNode $xml [::xml::GetNodeIndicesByAttribute $xml "XMBML:View:Items:Query" key "" ] $::query_manual]
-        set xml [::xml::InsertNode $xml {2 end 0} $::view_manual]
+        set xml [::xml::InsertNode $xml {2 end 0} $::view_seg_manual]
      
         unset ::query_manual
-        unset ::view_manual
+        unset ::view_seg_manual
         
-        ::xml::SaveToFile $xml $file
+        ::xml::SaveToFile $xml $filepath
     }
     
     proc find_nodes { path file } {
@@ -525,8 +568,7 @@ namespace eval patch_xmb {
         if {$::patch_xmb::options(--add-emu-seg)} {
             set ::query_emulator [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_emulator"]
             set ::view_emulator [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_emulator"]
-            set ::view_emu [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_emu"]
-         
+            set ::view_emu [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_emu"]         
             if {$::query_emulator == "" || $::view_emulator == "" || $::view_emu == "" } {
                 die "Could not parse $file"
             }
@@ -535,8 +577,7 @@ namespace eval patch_xmb {
         if {$::patch_xmb::options(--add-hb-seg)} {
             set ::query_hbrew [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_hbrew"]
             set ::view_hbrew [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_hbrew"]
-            set ::view_brew [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_brew"]
-         
+            set ::view_brew [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_brew"]         
             if {$::query_hbrew == "" || $::view_hbrew == "" || $::view_brew == "" } {
                 die "Could not parse $file"
             }
@@ -573,8 +614,7 @@ namespace eval patch_xmb {
         if {$::patch_xmb::options(--add-install-pkg) || $::patch_xmb::options(--patch-package-files)} {
             set ::query_package_files [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_package_files"]
             set ::view_package_files [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_package_files"]
-            set ::view_packages [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_packages"]
-         
+            set ::view_packages [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_packages"]         
             if {$::query_package_files == "" || $::view_package_files == "" || $::view_packages == "" } {
                 die "Could not parse $file"
             }
@@ -582,8 +622,7 @@ namespace eval patch_xmb {
         
         if {$::patch_xmb::options(--patch-app-home)} {
             set ::query_gamedebug [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_gamedebug"]
-            set ::view_gamedebug [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_gamedebug"]
-         
+            set ::view_gamedebug [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_gamedebug"]         
             if {$::query_gamedebug == "" || $::view_gamedebug== "" } {
                 die "Could not parse $file"
             }
@@ -595,14 +634,14 @@ namespace eval patch_xmb {
 		set filepath [file join $path $file]		
         set xml [::xml::LoadFile $filepath]        
      
-        set ::XMBML [::xml::GetNodeByAttribute $xml "XMBML" version "1.0"]
-     
+        set ::XMBML [::xml::GetNodeByAttribute $xml "XMBML" version "1.0"]     
         if {$::XMBML == ""} {
             die "Could not parse $file"
         }
     }
     
     proc inject_nodes { path file } {
+	
         log "Modifying XML(inject_nodes): [file tail $file]"
 		set filepath [file join $path $file]		
         set xml [::xml::LoadFile $filepath]        
@@ -656,7 +695,7 @@ namespace eval patch_xmb {
             unset ::view_pkg_install_usb
             unset ::view_pkg_install_orig
             unset ::view_pkg_delete_fixed
-            unset ::view_pkg_delet_hdd0
+            unset ::view_pkg_delete_hdd0
             unset ::view_pkg_delete_usb
             unset ::view_pkg_delete_orig
         }
@@ -666,13 +705,14 @@ namespace eval patch_xmb {
             set xml [::xml::InsertNode $xml {2 end 0} $::view_package_files]
             set xml [::xml::InsertNode $xml {2 end 0} $::view_packages]
         }
-        
-        ::patch_xmb::clean_net
+        # go clean the file
+        ::patch_xmb::clean_net $path $file
         
         log "Saving XML"
-        ::xml::SaveToFile $xml $file
+        ::xml::SaveToFile $xml $filepath
         
-        ::patch_xmb::change_welcome_string
+		# go change the welcome screen
+        ::patch_xmb::change_welcome_string $filepath
         
         log "Copy custom icon's into dev_flash"
         ::copy_mfw_imgs
@@ -733,6 +773,7 @@ namespace eval patch_xmb {
 	
 	# fix for network cat, sony left a unclosed brace which will "modify_xml" command cause a error
 	proc remove_line_from_network_cat {file} {
+		log "Fixing \"category_network.xml\" unclosed brace bug!"
 	    set src $file
 	    set tmp ${src}.work
      
@@ -745,5 +786,8 @@ namespace eval patch_xmb {
         puts -nonewline $desti [join $lines_after_deletion \n]
         close $desti
         file rename -force $tmp $file
+	}
+	proc debug_test {args} {
+		die "DEBUG BREAK"
 	}
 }
