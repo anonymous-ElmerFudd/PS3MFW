@@ -879,12 +879,7 @@ proc makeself {in out} {
 		set authID "107000003A000001"		
 		set selfType "APP"
 		set keyRev "01"
-    } elseif { ${::SELF} == "sys/external modules" } {
-		set compress FALSE
-		set authID "1070000040000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "ps1emu" } {
+    }  elseif { ${::SELF} == "ps1emu" } {
 		set compress FALSE
 		set authID "1070000041000001"		
 		set selfType "APP"
@@ -904,12 +899,7 @@ proc makeself {in out} {
 		set authID "107000004C000001"		
 		set selfType "APP"
 		set keyRev "01"
-    } elseif { ${::SELF} == "sys/internal + vsh/module modules" } {
-		set compress FALSE
-		set authID "1070000052000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "manu_info_spu_module.self" || ${::SELF} == "manu_info_spu_module.self.elf" } {
+    }  elseif { ${::SELF} == "manu_info_spu_module.self" || ${::SELF} == "manu_info_spu_module.self.elf" } {
 		set compress FALSE
 		set authID "1070000055000001"		
 		set selfType "APP"
@@ -976,34 +966,55 @@ proc makeself {in out} {
 		set compress FALSE
 	    set authID "10700005FD000001"
 		set selfType "APP"
-	} 
+	} elseif { ${::SELF} == "vsh.self" || ${::SELF} == "vsh.self.elf" } {
+		set compress TRUE
+	    set authID "10700005ff000001"
+		set vendID "01000002"
+		set selfType "APP"
+		set keyRev "1C"
+	## ------------- ALL "DEV_FLASH/xxxx" module checks are below ----------------
+	} elseif { ([string first "dev_flash/sys/external/" $in 0] != -1) } {
+		set compress TRUE
+		set authID "1070000040000001"
+		set vendID "01000002"		
+		set selfType "APP"
+		set keyRev "1C"	
+    } elseif { ([string first "dev_flash/sys/internal/" $in 0] != -1) || ([string first "dev_flash/vsh/module/" $in 0] != -1) } {  
+		set compress TRUE
+		set authID "1070000052000001"
+		set vendID "01000002"			
+		set selfType "APP"
+		set keyRev "1C"
+    }
+	## ------------- DONE "DEV_FLASH/xxxx" module checks  ----------------
+	#
 	#
 	################ END OF AUTH_IDs TABLE ####################
 	
+	# ----- IF WE COULD NOT FIND THE "SELF" MATCH ABOVE, THEN CHECK HERE -----
+	#
 	# Load the pre-defined application var into a loop and compare it against the loaded self,
 	# search for the "::SELF" filename within the "patchself" string, as it's a full
 	# "dev_flash/xxxx" path
-	foreach patchSelf ${::APPSELF} {
-		set tempfile ${patchSelf}.elf
-		if { ([string first ${::SELF} $tempfile 0] != -1) } {
-			# if we found our "dev_flash/xxx" file in the list
-		    if { ${::SELF} == "vsh.self" } {
-		        set authID "10700005ff000001"
-			} else {
-		        set authID "1070000052000001"
+	if { $authID == "" } {
+		log "AUTHID was not found in lookup list, trying failsafe list..."
+		foreach patchSelf ${::APPSELF} {
+			set tempfile ${patchSelf}.elf
+			if { ([string first ${::SELF} $tempfile 0] != -1) } {
+				# if we found our "dev_flash/xxx" file in the list				
+				set authID "1070000052000001"				
+				set compress TRUE
+				set vendID "01000002"
+				set selfType "APP"					
+				if { ${::SUF} == ${::c} || ${::SUF} == ${::d} } {
+					set keyRev "1C"
+				} elseif { ${::SUF} == ${::a} } {
+					set keyRev "04"
+				} elseif { ${::SUF} == ${::b} } {
+					set keyRev "0A"
+				}
 			}
-			set compress TRUE
-		    set vendID "01000002"
-		    set selfType "APP"	
-			
-			if { ${::SUF} == ${::c} || ${::SUF} == ${::d} } {
-				set keyRev "1C"
-		    } elseif { ${::SUF} == ${::a} } {
-				set keyRev "04"
-			} elseif { ${::SUF} == ${::b} } {
-				set keyRev "0A"
-			}
-        }
+		}
 	}
 	## make sure we have a valid authID, if it's blank, 
 	## then we have an unhandled SELF type that needs to be added!!

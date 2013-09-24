@@ -58,6 +58,7 @@ namespace eval patch_xmb {
 	set ::patch_xmb::rapen ""
 	set ::patch_xmb::embed ""
 	set ::patch_xmb::hermes_enabled false
+	set ::patch_xmb::flag_icons_copied false
 		
     array set ::patch_xmb::options {
 		--patch-act-pkg true
@@ -232,14 +233,18 @@ namespace eval patch_xmb {
 	# patches
     proc patch_elf {elf} {			
 		# if "tv-cat" enabled, find the patch
+		# currently, only good for < 3.60
 		if {$::patch_xmb::options(--tv-cat)} {
-		
-			log "Patching [file tail $elf] to add tv category"       
-			set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"
-			set replace "\x64\x65\x76\x5f\x66\x6c\x61\x73\x68\x2f\x64\x61\x74\x61\x2f\x63\x65\x72\x74\x00\x00\x00\x00"
-		   
-			catch_die {::patch_elf $elf $search 0 $replace} \
-			"Unable to patch self [file tail $elf]"
+			set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]
+			if {$FWVer < "360"} {
+				log "Patching [file tail $elf] to add tv category"   
+				# dev_hdd0/game/BCES00275........
+				set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"
+				set replace "\x64\x65\x76\x5f\x66\x6c\x61\x73\x68\x2f\x64\x61\x74\x61\x2f\x63\x65\x72\x74\x00\x00\x00\x00"
+			   
+				catch_die {::patch_elf $elf $search 0 $replace} \
+				"Unable to patch self [file tail $elf]"
+			}
 		}
 		# if "add install pkg files" back to XMB enabled, patch it
 		if {$::patch_xmb::options(--patch-act-pkg)} {
@@ -714,8 +719,13 @@ namespace eval patch_xmb {
 		# go change the welcome screen
         ::patch_xmb::change_welcome_string $filepath
         
-        log "Copy custom icon's into dev_flash"
-        ::copy_mfw_imgs
+		# if we didn't already copy the image icons, 
+		# copy them over
+		if { !$::patch_xmb::flag_icons_copied } {
+			log "Copy custom icon's into dev_flash"
+			::copy_mfw_imgs
+			set ::patch_xmb::flag_icons_copied true
+		}
         
 		# if we chose an embedded app
         if { [expr {"$::patch_xmb::embed" ne ""}] } {
