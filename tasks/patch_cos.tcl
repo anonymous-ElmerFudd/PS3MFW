@@ -347,10 +347,13 @@ namespace eval ::patch_cos {
 		# if "--patch-lv2-lv1-peek-poke-4x" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-lv1-peek-poke-4x)} {
 		
-			log "Patching LV1 peek&poke call permission for LV2 into LV2 - part 1/2"				 
+			log "Patching LV1 peek&poke call permission for LV2 into LV2 - part 1/2"
+			# 7C 71 43 A6 7C 92 43 A6 48 00 00 00 00 00 00 00
+			# 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			# 7C 71 43 A6 7C 92 43 A6 7C B3 43 A6 7C 7A 02 A6
 			set ::patch_cos::search     "\x7C\x71\x43\xA6\x7C\x92\x43\xA6\x48\x00\x00\x00\x00\x00\x00\x00"
 			append ::patch_cos::search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-			append ::patch_cos::search  "\x7C\x71\x43\xA6\x7C\x92\x43\xA6"
+			append ::patch_cos::search  "\x7C\x71\x43\xA6\x7C\x92\x43\xA6\x7C\xB3\x43\xA6\x7C\x7A\x02\xA6"
 			set ::patch_cos::replace    "\xE8\x63\x00\x00\x4E\x80\x00\x20\xF8\x83\x00\x00\x4E\x80\x00\x20"
 			append ::patch_cos::replace "\x7C\x08\x02\xA6\xF8\x01\x00\x10\x39\x60\x00\xB6\x44\x00\x00\x22"
 			append ::patch_cos::replace "\x7C\x83\x23\x78\xE8\x01\x00\x10\x7C\x08\x03\xA6\x4E\x80\x00\x20"
@@ -361,7 +364,7 @@ namespace eval ::patch_cos {
 			append ::patch_cos::replace "\x00\x00\x17\x0C\x80\x00\x00\x00\x00\x00\x17\x14\x80\x00\x00\x00"
 			append ::patch_cos::replace "\x00\x00\x17\x1C\x80\x00\x00\x00\x00\x00\x17\x3C\x80\x00\x00\x00"
 			append ::patch_cos::replace "\x00\x00\x17\x5C"
-			set ::patch_cos::offset 3060
+			set ::patch_cos::offset 2060
 			# base function to decrypt the "self" to "elf" for patching
 			::patch_cos::patch_elf $elf					 					
 			

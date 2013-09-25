@@ -732,19 +732,23 @@ namespace eval patch_xmb {
 			if { !$::patch_xmb::hermes_enabled } {
 				log "WARNING! You want to change the embedded App but you forgot to set the patch for lv2 payload hermes 4.xx"
 				log "WARNING! Without this patch the App can not be mounted"
-				log "Skipping customization of the embedded App"   
+				log "Skipping customization of the embedded App"  
+				tk_messageBox -default ok -message "WARNING: HERMES payload not selected!" -icon warning
 			} else {
 				 log "Copy custom embedded app into dev_flash"
 				::patch_ps3_game $::patch_xmb::embed
 			}			
         } else {
 			if { $::patch_xmb::hermes_enabled } {
-				log "Installing standalone '*Install Package Files' app"
-				::patch_ps3_game ${::CUSTOM_PS3_GAME}
+				#log "Installing standalone '*Install Package Files' app"
+				#::patch_ps3_game ${::CUSTOM_PS3_GAME}
+				tk_messageBox -default ok -message "WARNING: Install PKG was not selected!" -icon warning
 			}
         }		
     }
    
+    ######################################################################################################################
+	#
     proc inject_nodes2 { path file } {
         log "Modifying XML(inject_nodes2): [file tail $file]"	
 		set filepath [file join $path $file]		
@@ -763,23 +767,30 @@ namespace eval patch_xmb {
         log "Saving XML"
         ::xml::SaveToFile $xml $filepath		
         
-        if {!$::patch_xmb::options(--add-install-pkg) && !$::patch_xmb::options(--add-pkg-mgr) && !$::patch_xmb::options(--add-hb-seg) && !$::patch_xmb::options(--add-emu-seg) } {
-			#::customize_firmware::options(--customize-embedded-app)
-			if {!$::patch_xmb::hermes_enabled} {
-				log "WARNING! You want to change the embedded App but you forgot to set the patch for lv2 payload hermes 4.xx"
-				log "WARNING! Without this patch the App can not be mounted"
-				log "Skipping customization of the embedded App"        
-			} else {
-				if { [expr {"$::patch_xmb::embed" ne ""}] } {
-					log "Copy custom embedded app into dev_flash"
-					::patch_ps3_game $::patch_xmb::embed
+		##  check for installing the embedded app
+        if {!$::patch_xmb::options(--add-install-pkg) && !$::patch_xmb::options(--add-pkg-mgr) && !$::patch_xmb::options(--add-hb-seg) && !$::patch_xmb::options(--add-emu-seg) } {	
+			if { [expr {"$::patch_xmb::embed" ne ""}] } {
+				if {!$::patch_xmb::hermes_enabled} {
+					log "WARNING! You want to change the embedded App but you forgot to set the patch for lv2 payload hermes 4.xx"
+					log "WARNING! Without this patch the App can not be mounted"
+					log "Skipping customization of the embedded App"  
+					tk_messageBox -default ok -message "WARNING: HERMES payload not selected!" -icon warning
 				} else {
-					log "Copy standalone '*Install Package Files' app into dev_flash"
-					::copy_ps3_game ${::CUSTOM_PS3_GAME}
-				}
-			}  			
+					if { [expr {"$::patch_xmb::embed" ne ""}] } {
+						log "Copy custom embedded app into dev_flash"
+						::patch_ps3_game $::patch_xmb::embed
+					} else {
+						## not sure if we need to do this, as it's also checked elsewhere
+						#log "Copy standalone '*Install Package Files' app into dev_flash"
+						#::copy_ps3_game ${::CUSTOM_PS3_GAME}
+						tk_messageBox -default ok -message "WARNING: Install PKG was not selected!" -icon warning
+					}
+				} 
+			}
         }
     }
+	#
+	#######################################     end of "inject_nodes2"  #########################################################
 	
 	# fix for network cat, sony left a unclosed brace which will "modify_xml" command cause a error
 	proc remove_line_from_network_cat {file} {
@@ -797,6 +808,7 @@ namespace eval patch_xmb {
         close $desti
         file rename -force $tmp $file
 	}
+	# test callback func for just debug-break
 	proc debug_test {args} {
 		die "DEBUG BREAK"
 	}
