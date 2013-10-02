@@ -280,8 +280,8 @@ namespace eval ::patch_cos {
         }
 		#if "lv1-remove-lv2-protection" enabled, patch it
 		if {$::patch_cos::options(--patch-lv1-remove-lv2-protection)} {
-            log "Patching LV1 hypervisior to remove LV2 protection"
-            
+		
+            log "Patching LV1 hypervisior to remove LV2 protection"            
             set ::patch_cos::search  "\x41\x9E\x00\x20\xE8\x62\x8A"
             set ::patch_cos::replace "\x48\x00"
             set ::patch_cos::offset 0				

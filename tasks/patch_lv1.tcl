@@ -10,9 +10,10 @@
 #
 
 # Priority: 0003
-# Description: Patch LV1 hypervisor
+# Description: Patch LV1 - MISC
 
-# Option --patch-lv1-mmap: Allow mapping of any memory area (Needed for LV2 Poke) NOT WORKING FOR 4.XX CFW !!
+# Option --patch-lv1-coreos-hash-check: Patch CoreOS Hash check. Product mode always on (downgrader)
+# Option --patch-lv1-mmap: Allow mapping of any memory area (Needed for LV2 Poke)
 # Option --patch-lv1-htab-write: Allow mapping of HTAB with write protection
 # Option --patch-lv1-mfc-sr1-mask: Allow to set all bits of SPE register MFC_SR1 with lv1_set_spe_privilege_state_area_1_register
 # Option --patch-lv1-dabr-priv-mask: Allow setting data access breakpoints in hypervisor state with lv1_set_dabr
@@ -25,16 +26,15 @@
 # Option --patch-lv1-sm-del-encdec-key: Allow deleting of all ENCDEC keys
 # Option --patch-lv1-repo-node-lpar: Allow creating/modifying/deleting of repository nodes in any LPAR
 # Option --patch-lv1-sysmgr-disable-integrity-check: Disable integrity check in System Manager (OtherOS++/downgrader)
-# Option --patch-lv1-sysmgr-disable-integrity-check-4x: Disable integrity check in System Manager (OtherOS++/downgrader/4.xx CFW)
-# Option --patch-lv1-gameos-sysmgr-ability: Allow access to all System Manager services of GameOS
-# Option --patch-lv1-gameos-gos-mode-one: Enable GuestOS mode 1 for GameOS
 # Option --patch-lv1-storage-skip-acl-check: Skip ACL checks for all storage devices (OtherOS++/downgrader)
-# Option --patch-lv1-otheros-plus-plus: OtherOS++ support
-# Option --patch-lv1-otheros-plus-plus-cold-boot-fix: OtherOS++ cold boot fix
-# Option --patch-lv1-coreos-hash-check: Patch CoreOS Hash check. Product mode always on (downgrader/4.xx CFW)
-# Option --patch-lv1-revokelist-hash-check: Patch Revoke list Hash check. Product mode always on (downgrader)
-# Option --patch-lv1-patch-productmode-erase: Patch In product mode erase standby bank skipped (downgrader)
+# Option --patch-lv1-gameos-sysmgr-ability:  [3.xx] Allow access to all System Manager services of GameOS
+# Option --patch-lv1-gameos-gos-mode-one:  [3.xx] Enable GuestOS mode 1 for GameOS
+# Option --patch-lv1-otheros-plus-plus-cold-boot-fix:  [3.xx] OtherOS++ cold boot fix
+# Option --patch-lv1-revokelist-hash-check:  [3.55] Patch Revoke list Hash check. Product mode always on (downgrader)
+# Option --patch-lv1-patch-productmode-erase:  [3.55] Patch In product mode erase standby bank skipped (downgrader)
+# Option --patch-lv1-otheros-plus-plus:  [3.55] OtherOS++ support
 
+# Type --patch-lv1-coreos-hash-check: boolean
 # Type --patch-lv1-mmap: boolean
 # Type --patch-lv1-htab-write: boolean
 # Type --patch-lv1-mfc-sr1-mask: boolean
@@ -48,19 +48,18 @@
 # Type --patch-lv1-sm-del-encdec-key: boolean
 # Type --patch-lv1-repo-node-lpar: boolean
 # Type --patch-lv1-sysmgr-disable-integrity-check: boolean
-# Type --patch-lv1-sysmgr-disable-integrity-check-4x: boolean
+# Type --patch-lv1-storage-skip-acl-check: boolean
 # Type --patch-lv1-gameos-sysmgr-ability: boolean
 # Type --patch-lv1-gameos-gos-mode-one: boolean
-# Type --patch-lv1-storage-skip-acl-check: boolean
-# Type --patch-lv1-otheros-plus-plus: boolean
 # Type --patch-lv1-otheros-plus-plus-cold-boot-fix: boolean
-# Type --patch-lv1-coreos-hash-check: boolean
 # Type --patch-lv1-revokelist-hash-check: boolean
 # Type --patch-lv1-patch-productmode-erase: boolean
+# Type --patch-lv1-otheros-plus-plus: boolean
 
 namespace eval ::patch_lv1 {
-
+	
     array set ::patch_lv1::options {
+		--patch-lv1-coreos-hash-check true
         --patch-lv1-mmap false                
         --patch-lv1-htab-write false
         --patch-lv1-mfc-sr1-mask false
@@ -74,21 +73,20 @@ namespace eval ::patch_lv1 {
         --patch-lv1-sm-del-encdec-key false
         --patch-lv1-repo-node-lpar false
         --patch-lv1-sysmgr-disable-integrity-check false
-        --patch-lv1-sysmgr-disable-integrity-check-4x true
+        --patch-lv1-storage-skip-acl-check false		
         --patch-lv1-gameos-sysmgr-ability false
         --patch-lv1-gameos-gos-mode-one false
-        --patch-lv1-storage-skip-acl-check false
-        --patch-lv1-otheros-plus-plus false
         --patch-lv1-otheros-plus-plus-cold-boot-fix false
-        --patch-lv1-coreos-hash-check true
-        --patch-lv1-revokelist-hash-check false
+		--patch-lv1-revokelist-hash-check false
         --patch-lv1-patch-productmode-erase false
+		--patch-lv1-otheros-plus-plus false
     }
 
     proc main { } {
 	
 		# begin by calling the main function to go through
 		# all the patches
+		set ::patch_lv1::FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
 		::patch_lv1::Do_LV1_Patches $::CUSTOM_COSUNPKG_DIR		
     }
 
@@ -106,199 +104,363 @@ namespace eval ::patch_lv1 {
 	### main proc to do the LV1 patches, all in one shot ####
 	##
     proc patch_lv1_elf {elf} {
-        if {$::patch_lv1::options(--patch-lv1-mmap)} {
-		
-            log "Patching LV1 hypervisor to allow mapping of any memory area (1006151)"         
-            set search  "\x39\x08\x05\x48\x39\x20\x00\x00\x38\x60\x00\x00\x4b\xff\xfc\x45"
-            set replace "\x01"
-         
-            catch_die {::patch_elf $elf $search 7 $replace} "Unable to patch self [file tail $elf]"
-        }                        
-       
-        if {$::patch_lv1::options(--patch-lv1-htab-write)} {
-		
-            log "Patching LV1 hypervisor to allow mapping of HTAB with write protection (1007280)"
-            set search  "\x2f\x1d\x00\x00\x61\x4a\x97\xd2\x7f\x80\xf0\x00\x79\x4a\x07\xc6"
-	        append search "\x65\x4a\xb5\x8e\x41\xdc\x00\x54\x3d\x40\x99\x79\x41\xda\x00\x54"
+	
+		# if "--patch-lv1-coreos-hash-check" enabled, patch it		
+        if {$::patch_lv1::options(--patch-lv1-coreos-hash-check)} {
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 
+			# OFW 3.60: @0x2C21D4
+			# OFW 4.46: @0x2DFA7C
+            log "Patch CoreOS Hash check. Product mode always on (downgrader) (2891684)"            		    
+           #set search  "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01" -- old value --
+		    set search  "\x88\x18\x00\x3E\x2F\x80\x00\xFF\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85"
             set replace "\x60\x00\x00\x00"
          
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search 8 $replace} "Unable to patch self [file tail $elf]"                        
+        }		      
+		# if "--patch-lv1-mmap" enabled, patch it
+        if {$::patch_lv1::options(--patch-lv1-mmap)} {
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x60C8C (0x240C8C)
+			# OFW 3.60 ==         (0x2EE138)
+			# OFW 4.46 == 0x61EC8
+            log "Patching LV1 hypervisor to allow mapping of any memory area (1006151)"			
+		   #set search  "\x39\x08\x05\x48\x39\x20\x00\x00\x38\x60\x00\x00\x4b\xff\xfc\x45" -- old value --
+		    set search  "\x41\x9E\xFF\xF0\x4B\xFF\xFD\x00\x38\x60\x00\x00\x4B\xFF\xFC\x58"                      
+            set replace "\x01"
+			
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search 7 $replace} "Unable to patch self [file tail $elf]"
+        }                        
+        # if "--patch-lv1-htab-write" enabled, patch it
+        if {$::patch_lv1::options(--patch-lv1-htab-write)} {
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0xF5E94 (0x2D5E94)
+			# OFW 3.60 == 0xF767C (0x2D767C)  
+			# OFW 4.46 == 0xFD268 ()
+            log "Patching LV1 hypervisor to allow mapping of HTAB with write protection (1007280)"
+            set search    "\x2f\x1d\x00\x00\x61\x4a\x97\xd2\x7f\x80\xf0\x00\x79\x4a\x07\xc6"
+	        append search "\x65\x4a\xb5\x8e\x41\xdc\x00\x54\x3d\x40\x99\x79\x41\xda\x00\x54"
+            set replace   "\x60\x00\x00\x00"
+			
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 28 $replace}  "Unable to patch self [file tail $elf]"
 	    }
-     
+		# if "--patch-lv1-mfc-sr1-mask" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-mfc-sr1-mask)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x112674 (0x2F2674)
+			# OFW 3.60 == 0x113E40 (0x2F3E40)  
+			# OFW 4.46 == 0x119A2C ()
             log "Patching LV1 hypervisor to allow setting all bits of SPE register MFC_SR1 with lv1_set_spe_privilege_state_area_1_register (1123960)"         
-            set search  "\xe8\x03\x00\x10\x39\x20\x00\x09\xe9\x43\x00\x00\x39\x00\x00\x00"
+            set search    "\xe8\x03\x00\x10\x39\x20\x00\x09\xe9\x43\x00\x00\x39\x00\x00\x00"
 	        append search "\x78\x00\xef\xa6\x7c\xab\x48\x38\x78\x00\x1f\xa4\x7d\x6b\x03\x78"
-            set replace "\x39\x20\xff\xff"
+            set replace   "\x39\x20\xff\xff"
           
+		    # PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 4 $replace} "Unable to patch self [file tail $elf]"
 	    }
-     
+		# if "--patch-lv1-dabr-priv-mask" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-dabr-priv-mask)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x103CF0 (0x2E3CF0)
+			# OFW 3.60 == 0x1054D8 (0x2E54D8)  
+			# OFW 4.46 == 0x10B0C4 ()
             log "Patching LV1 hypervisor to allow setting data access breakpoints in hypervisor state with lv1_set_dabr (1064180)"           
             set search  "\x60\x00\x00\x00\x38\x00\x00\x0b\x7f\xe9\x00\x38\x7f\xa9\xf8\x00"
             set replace "\x38\x00\x00\x0f"
          
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 4 $replace} "Unable to patch self [file tail $elf]"
 	    }
-     
+		# if "--patch-lv1-encdec-ioctl-0x85" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-encdec-ioctl-0x85)} {
-		
-            log "Patching LV1 hypervisor to allow ENCDEC IOCTL command 0x85 (603284)"          
-            set search  "\x38\x00\x00\x01\x39\x20\x00\x4f\x7c\x00\xf8\x36\x7c\x00\x48\x38"
-            set replace "\x39\x20\x00\x5f"
-         
-            catch_die {::patch_elf $elf $search 4 $replace} "Unable to patch self [file tail $elf]"
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x93490 (0x273490)
+			# OFW 3.60 == 0x934B4 (0x2734B4)  
+			# OFW 4.46 == 0xCF IOCTLs allowed!!			
+            log "Patching LV1 hypervisor to allow ENCDEC IOCTL command 0x85 (603284)"  
+			if {$::patch_lv1::FWVer < "370"} {
+				set search  "\x38\x00\x00\x01\x39\x20\x00\x4f\x7c\x00\xf8\x36\x7c\x00\x48\x38"
+				set replace "\x39\x20\x00\x5f"
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $elf $search 4 $replace} "Unable to patch self [file tail $elf]"
+			} else {
+				log "SKIPPING \"ENCDEC IOCTL command 0x85 patch\", as it's unneeded in this firmware version!"
+			}         			
 	    }
-     
+		# if "--patch-lv1-gpu-4kb-iopage" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-gpu-4kb-iopage)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x34980 (0x214980)
+			# OFW 3.60 == 0x34980 (0x214980)
+			# OFW 4.46 == 0x34F0C (0x214F0C)
             log "Patching LV1 hypervisor to allow 4kb IO page size for GPU GART memory (215440)"         
-            set search  "\x6d\x00\x55\x55\x2f\xa9\x00\x00\x68\x00\x55\x55\x39\x20\x00\x00"
+           #set search  "\x6d\x00\x55\x55\x2f\xa9\x00\x00\x68\x00\x55\x55\x39\x20\x00\x00" -- old value -- (patch offset=84)
+		    set search  "\xF9\x23\x01\x98\xF9\x23\x01\xA0\xF9\x23\x01\xA8\x41\x9E\x00\x0C\x3C\x00\x00\x01"
             set replace "\x38\x00\x10\x00"
          
-            catch_die {::patch_elf $elf $search 84 $replace} "Unable to patch self [file tail $elf]"
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search 16 $replace} "Unable to patch self [file tail $elf]"
 	    }
-     
-        if {$::patch_lv1::options(--patch-lv1-dispmgr-access)} {
-		
-            log "Patching Dispatcher Manager to allow access to all SS services"           
+		# if "--patch-lv1-dispmgr-access" enabled, patch it		
+        if {$::patch_lv1::options(--patch-lv1-dispmgr-access)} {		
+            # patch SS services part 1/3       
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x38EF1C (0x5BEF1C)
+			# OFW 3.60 == 0x38F68C (0x5BF68C)
+			# OFW 4.46 == 0x3AD9F0 (0x5BD9F0)
             log "Patching Dispatcher Manager to allow access to all SS services 1/3 (3731240)"
             set search  "\xe8\x17\x00\x08\x7f\xc4\xf3\x78\x7f\x83\xe3\x78\xf8\x01\x00\x98"
             set replace "\x60\x00\x00\x00"
            
+		    # PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 12 $replace} "Unable to patch self [file tail $elf]"
          
+			# patch SS services part 2/3 
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x38EF44 (0x5BEF44)
+			# OFW 3.60 == 0x38F6B4 (0x5BF6B4)
+			# OFW 4.46 == 0x3ADA18 (0x5BDA18)
             log "Patching Dispatcher Manager to allow access to all SS services 2/3 (3731276)"
             set search  "\x7f\xa4\xeb\x78\x7f\x85\xe3\x78\x4b\xff\xf0\xe5\x54\x63\x06\x3e"
             set replace "\x38\x60\x00\x01"
            
+		    # PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 8 $replace} "Unable to patch self [file tail $elf]"
          
+			# patch SS services part 3/3 
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x38EFC0 (0x5BEFC0)
+			# OFW 3.60 == 0x38F730 (0x5BF730)
+			# OFW 4.46 == 0x3ADA94 (0x5BDA94)
             log "Patching Dispatcher Manager to allow access to all SS services 3/3 (3731396)"
-            set search  "\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00\x5f\xa5"
+		   #set search  "\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00\x60\x65"-- 3.60+
+           #set search  "\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00\x5f\xa5"-- old patch (3.55)
+		    set search  "\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00"
             set replace "\x3b\xe0\x00\x01\x9b\xe1\x00\x70\x38\x60\x00\x00"
          
+		    # PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 4 $replace} "Unable to patch self [file tail $elf]"
         }
-     
+		# if "--patch-lv1-iimgr-access" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-iimgr-access)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x340798 (0x570798)
+			# OFW 3.60 == 0x340B88 (0x570B88)
+			# OFW 4.46 == 0x35E844 (0x56E844)
             log "Patching Indi Info Manager to allow access to all its services (3409824)"          
             set search  "\x38\x60\x00\x0d\x38\x00\x00\x0d\x7c\x63\x00\x38\x4e\x80\x00\x20"
             set replace "\x38\x60\x00\x00"
          
+		    # PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 8 $replace} "Unable to patch self [file tail $elf]"
         }
-       
+        # if "--patch-lv1-um-extract-pkg" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-um-extract-pkg)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x2C502C (0x4F502C)
+			# OFW 3.60 == 0x2C4DCC (0x4F4DCC)
+			# OFW 4.46 == 0x2E2670 (0x4F2670)
             log "Patching Update Manager to enable extracting for all package types (2904128)"         
-            set search  "\x38\x1f\xff\xf9\x2f\x1d\x00\x01\x2b\x80\x00\x01\x38\x00\x00\x00"
+            set search    "\x38\x1f\xff\xf9\x2f\x1d\x00\x01\x2b\x80\x00\x01\x38\x00\x00\x00"
 	        append search "\xf8\x1b\x00\x00\x41\x9d\x00\xa8\x7b\xfd\x00\x20\x7f\x44\xd3\x78"
-            set replace "\x60\x00\x00\x00"
+            set replace   "\x60\x00\x00\x00"
          
+		    # PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 20 $replace} "Unable to patch self [file tail $elf]"
         }
-      
+		# if "--patch-lv1-um-write-eprom-product-mode" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-um-write-eprom-product-mode)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x2C7A28 (0x4F7A28)
+			# OFW 3.60 == 0x2C7954 (0x4F7954)
+			# OFW 4.46 == 0x2E540C (0x4F540C)
             log "Patching Update Manager to enable setting product mode by using Update Manager Write EPROM (2914856)"         
             set search  "\xe8\x18\x00\x08\x2f\xa0\x00\x00\x40\x9e\x00\x10\x7f\xc3\xf3\x78"
             set replace "\x38\x00\x00\x00"
          
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 0 $replace}  "Unable to patch self [file tail $elf]"
         }
-     
+		# if "--patch-lv1-sm-del-encdec-key" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-sm-del-encdec-key)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x2DC40C (0x50C40C)
+			# OFW 3.60 == 0x2DCAE4 (0x50CAE4)
+			# OFW 4.46 == 0x2FB31C (0x50B31C)
             log "Patching Storage Manager to allow deleting of all ENCDEC keys (2999328)"         
-            set search  "\x7d\x24\x4b\x78\x39\x29\xff\xf4\x7f\xa3\xeb\x78\x2b\xa9\x00\x03"
+            set search    "\x7d\x24\x4b\x78\x39\x29\xff\xf4\x7f\xa3\xeb\x78\x2b\xa9\x00\x03"
             append search "\x38\x00\x00\x09\x41\x9d\x00\x4c"
-            set replace "\x60\x00\x00\x00"
-         
+            set replace   "\x60\x00\x00\x00"
+			
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 20 $replace} "Unable to patch self [file tail $elf]"
         }
-     
+		# if "--patch-lv1-repo-node-lpar" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-repo-node-lpar)} {
-		
-            log "Patching LV1 hypervisor to allow creating/modifying/deleting of repository nodes in any LPAR"         
+		    # verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0xFD810 (0x2DD810)
+			# OFW 3.60 == 0xFEFF8 (0x2DEFF8)
+			# OFW 4.46 == 0x104BE4 (0x2E4BE4)    			
             log "Patching LV1 hypervisor to allow creating/modifying/deleting of repository nodes in any LPAR 1/3 (1038416)"
-            set search  "\x39\x20\x00\x00\xe9\x69\x00\x00\x4b\xff\xff\x68\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
-	        append search "\xf8\x21\xff\x11\x39\x29\x98\x18\xfb\xa1\x00\xd8"
-            set replace  "\xe8\x1e\x00\x20\xe9\x3e\x00\x28\xe9\x5e\x00\x30\xe9\x1e\x00\x38\xe8\xfe\x00\x40"
+            set search     "\x39\x20\x00\x00\xe9\x69\x00\x00\x4b\xff\xff\x68\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
+	        append search  "\xf8\x21\xff\x11\x39\x29\x98\x18\xfb\xa1\x00\xd8"		   
+            set replace    "\xe8\x1e\x00\x20\xe9\x3e\x00\x28\xe9\x5e\x00\x30\xe9\x1e\x00\x38\xe8\xfe\x00\x40"
 	        append replace "\xe8\xde\x00\x48\xeb\xfe\x00\x18"
-         
+			
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 64 $replace}  "Unable to patch self [file tail $elf]"
-         
+			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0xFDCB4 (0x2DDCB4)
+			# OFW 3.60 == 0xFF49C (0x2DF49C)
+			# OFW 4.46 == 0x105088 (0x2E5088)    		    
             log "Patching LV1 hypervisor to allow creating/modifying/deleting of repository nodes in any LPAR 2/3 (1039604)"
-            set search  "\x39\x20\x00\x00\xe9\x29\x00\x00\x4b\xff\xff\x9c\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
-	        append search "\xf8\x21\xff\x11\x39\x29\x98\x18\xfb\xa1\x00\xd8"
-            set replace  "\xe8\x1e\x00\x20\xe9\x3e\x00\x28\xe9\x5e\x00\x30\xe9\x1e\x00\x38\xe8\xfe\x00\x40"
+            set search     "\x39\x20\x00\x00\xe9\x29\x00\x00\x4b\xff\xff\x9c\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
+	        append search  "\xf8\x21\xff\x11\x39\x29\x98\x18\xfb\xa1\x00\xd8"
+            set replace    "\xe8\x1e\x00\x20\xe9\x3e\x00\x28\xe9\x5e\x00\x30\xe9\x1e\x00\x38\xe8\xfe\x00\x40"
 	        append replace "\xe8\xde\x00\x48\xeb\xfe\x00\x18"
-         
+			
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 64 $replace} "Unable to patch self [file tail $elf]"
          
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0xFD590 (0x2DD590)
+			# OFW 3.60 == 0xFED78 (0x2DED78)
+			# OFW 4.46 == 0x104964 (0x2E4964)     
             log "Patching LV1 hypervisor to allow creating/modifying/deleting of repository nodes in any LPAR 3/3 (1037772)"
-            set search  "\x39\x20\x00\x00\xe9\x29\x00\x00\x4b\xff\xfe\x70\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
+            set search    "\x39\x20\x00\x00\xe9\x29\x00\x00\x4b\xff\xfe\x70\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
 	        append search "\xf8\x21\xff\x31\x39\x29\x98\x18\xfb\xa1\x00\xb8"
-            set replace  "\xe8\x1e\x00\x20\xe9\x5e\x00\x28\xe9\x1e\x00\x30\xe8\xfe\x00\x38\xeb\xfe\x00\x18"
-         
+            set replace   "\xe8\x1e\x00\x20\xe9\x5e\x00\x28\xe9\x1e\x00\x30\xe8\xfe\x00\x38\xeb\xfe\x00\x18"
+			
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 60 $replace} "Unable to patch self [file tail $elf]"
-        }
-     
-        if {$::patch_lv1::options(--patch-lv1-sysmgr-disable-integrity-check)} {
-		
-            log "Patching System Manager to disable integrity check (OtherOS++/downgrader) (2216116)"         
-            set search  "\x38\x60\x00\x01\xf8\x01\x00\x90\x88\x1f\x00\x00\x2f\x80\x00\x00"
-            set replace "\x38\x60\x00\x00"
-         
-            catch_die {::patch_elf $elf $search 20 $replace} "Unable to patch self [file tail $elf]"
-        }
-     
-        if {$::patch_lv1::options(--patch-lv1-sysmgr-disable-integrity-check-4x)} {
-		
+        }		
+		# if "--patch-lv1-sysmgr-disable-integrity-check" enabled, patch it		
+        if {$::patch_lv1::options(--patch-lv1-sysmgr-disable-integrity-check)} {	
+			# **** NOTE:  MAY NEED TO OPTIMIZE BETTER....(patch offset is past the match bytes)  ****
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x21D0A0 (0x44D0A0)
+			# OFW 3.60 == 0x21D0BC (0x44D0BC)
+			# OFW 4.46 == 0x23A980 (0x44A980)   
+			#set search  "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x78"
+			#set replace "\x60\x00\x00\x00"
+			#set replace "\x38\x60\x00\x00" -- old patch?? or is this correct???
             log "Patching System Manager to disable integrity check (OtherOS++/downgrader) (2216116)"            
-            set search  "\x38\x60\x00\x01\xf8\x01\x00\x90\x88\x1f\x00\x00\x2f\x80\x00\x00"
+            set search  "\x38\x60\x00\x01\xf8\x01\x00\x90\x88\x1f\x00\x00\x2f\x80\x00\x00"		   
             set replace "\x60\x00\x00\x00"
             
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 20 $replace} "Unable to patch self [file tail $elf]"
         }
-      
-        if {$::patch_lv1::options(--patch-lv1-gameos-sysmgr-ability)} {
-		
-            log "Patching System Manager ability mask of GameOS to allow access to all System Manager services (2237028)"         
-            set search  "\xe8\x1f\x01\xc0\x39\x20\x00\x03\xf9\x5f\x00\x60\x64\x00\x00\x3b\xf9\x3f\x01\xc8"
-            append search "\x60\x00\xf7\xee\xf8\x1f\x01\xc0\xe8\x01\x00\x90"
-            set replace "\x64\x00\xff\xff\xf9\x3f\x01\xc8\x60\x00\xff\xfe"
+		# if "--patch-lv1-storage-skip-acl-check" enabled, patch it
+        if {$::patch_lv1::options(--patch-lv1-storage-skip-acl-check)} {
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x7B340 (0x25B340)
+			# OFW 3.60 == 0x7B364 (0x25B364)
+			# OFW 4.46 == 0x7C504 (0x25C504) 
+            log "Patching LV1 to enable skipping of ACL checks for all storage devices (OtherOS++/downgrader) (504640)"         
+            set search    "\x54\x63\x06\x3e\x2f\x83\x00\x00\x41\x9e\x00\x14\xe8\x01\x00\x70\x54\x00\x07\xfe"
+	        append search "\x2f\x80\x00\x00\x40\x9e\x00\x18"
+            set replace   "\x38\x60\x00\x01\x2f\x83\x00\x00\x41\x9e\x00\x14\x38\x00\x00\x01"
          
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search 0 $replace}  "Unable to patch self [file tail $elf]"
+        }
+		
+		##################### 		BEGIN BROKEN/3.XX ONLY PATCHES 		##########################################################
+		# if "--patch-lv1-gameos-sysmgr-ability" enabled, patch it
+        if {$::patch_lv1::options(--patch-lv1-gameos-sysmgr-ability)} {
+			## *** NEEDS REFINING, CODE CHANGED IN 4.xx ***
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x222258 (0x452258)
+			# OFW 3.60 == 0x222274 (0x452274)
+			# OFW 4.46 == ???
+			die "CURRENTLY NOT SUPPORTED, NEEDS UPDATING!!"
+			# -------------------------------------------- #			
+			
+            log "Patching System Manager ability mask of GameOS to allow access to all System Manager services (2237028)"         
+            set search    "\xe8\x1f\x01\xc0\x39\x20\x00\x03\xf9\x5f\x00\x60\x64\x00\x00\x3b\xf9\x3f\x01\xc8"
+            append search "\x60\x00\xf7\xee\xf8\x1f\x01\xc0\xe8\x01\x00\x90"
+            set replace   "\x64\x00\xff\xff\xf9\x3f\x01\xc8\x60\x00\xff\xfe"
+         
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 12 $replace} "Unable to patch self [file tail $elf]"
         }
-        
+        # if "--patch-lv1-gameos-gos-mode-one" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-gameos-gos-mode-one)} {
-		
+			# **** CANNOT FIND THIS PATCH!!! *****
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x21D25C (0x44D25C)
+			# OFW 3.60 == 0x21D278 (0x44D278)
+			# OFW 4.46 == ???
+			die "CURRENTLY NOT SUPPORTED, NEEDS UPDATING!!"
+			## --------------------------------------------- ####
+			
             log "Patching Initial GuestOS Loader to enable GuestOS mode 1 for GameOS (2216552)"         
             set search  "\xe9\x29\x00\x00\x2f\xa9\x00\x01\x40\x9e\x00\x18\x38\x60\x00\x00"
             set replace "\x38\x60\x00\x01"
          
+			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search 12 $replace} "Unable to patch self [file tail $elf]"
         }
-     
-        if {$::patch_lv1::options(--patch-lv1-storage-skip-acl-check)} {
-		
-            log "Patching LV1 to enable skipping of ACL checks for all storage devices (OtherOS++/downgrader) (504640)"         
-            set search  "\x54\x63\x06\x3e\x2f\x83\x00\x00\x41\x9e\x00\x14\xe8\x01\x00\x70\x54\x00\x07\xfe"
-	        append search "\x2f\x80\x00\x00\x40\x9e\x00\x18"
-            set replace "\x38\x60\x00\x01\x2f\x83\x00\x00\x41\x9e\x00\x14\x38\x00\x00\x01"
+		# if "--patch-lv1-otheros-plus-plus-cold-boot-fix" enabed, patch it
+        if {$::patch_lv1::options(--patch-lv1-otheros-plus-plus-cold-boot-fix)} {
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x21D25C (0x44D25C)
+			# OFW 3.60 == 0x21D278 (0x44D278)
+			# OFW 4.46 == ???
+			die "CURRENTLY NOT SUPPORTED, NEEDS UPDATING!!"
+			## --------------------------------------------- ####
+			
+            log "Patching Initial GuestOS Loader to fix cold boot problem for OtherOS++ (2216540)"           
+            set search  "\xe9\x29\x00\x00\x2f\xa9\x00\x01\x40\x9e\x00\x18"
+            set replace "\x39\x20\x00\x03"
          
-            catch_die {::patch_elf $elf $search 0 $replace}  "Unable to patch self [file tail $elf]"
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
         }
-      
-        if {$::patch_lv1::options(--patch-lv1-otheros-plus-plus)} {
+		##################### 				END BROKEN/3.XX ONLY PATCHES 			   ##########################################################
 		
-            log "Patching Secure LPAR Loader to add OtherOS++ support"          
+		#### ----------------------------------------------------- BEGIN:  3.XX PATCHES AREA ----------------------------------------------- ####
+		#
+		# if "--patch-lv1-revokelist-hash-check" enabled, patch it
+		#  **** PATCH ONLY VALID FOR FW 3.55 ********
+        if {$::patch_lv1::options(--patch-lv1-revokelist-hash-check)} {
+			
+            log "Patch Revoke list Hash check. Product mode always on (downgrader) (2894836)"            			
+			if {$::patch_lv1::FWVer > "355"} {
+				die "PATCH NOT SUPPORTED ABOVE 3.55!"
+			} else {							
+				set search "\x41\x9E\x00\x1C\x7F\xA3\xEB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01"
+				set replace "\x60\x00\x00\x00\x7F\xA3\xEB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01"
+				# PATCH THE ELF
+				catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+			}
+        }
+        # if "--patch-lv1-patch-productmode-erase" enabled, patch it
+		#  **** PATCH ONLY VALID FOR FW 3.55 ********
+        if {$::patch_lv1::options(--patch-lv1-patch-productmode-erase)} {
+		
+            log "Patch In product mode erase standby bank skipped (downgrader) (2911100)"			
+			if {$::patch_lv1::FWVer > "355"} {
+				die "PATCH NOT SUPPORTED ABOVE 3.55!"
+			} else {
+				set search "\x41\x9E\x00\x0C\xE8\xA2\x8A\x38\x48\x00\x00\xCC\x7B\xFD\x00\x20"
+				set replace "\x60\x00\x00\x00\xE8\xA2\x8A\x38\x48\x00\x00\xCC\x7B\xFD\x00\x20"
+				# PATCH THE ELF
+				catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+			}
+        }
+		# if "--patch-lv1-otheros-plus-plus" enabled, patch it
+        if {$::patch_lv1::options(--patch-lv1-otheros-plus-plus)} {		
+            # **** CANNOT FIND THIS PATCH!!! *****
+			die "This patch is currently not supported!!!!"
+			## --------------------------------------------- #### 
+			
+			
             log "Patching Secure LPAR Loader to add OtherOS++ support 1/5 (3639260)"
             set search "\x53\x43\x45\x00\x00\x00\x00\x02\x80\x00\x00\x01\x00\x00\x01\xe0\x00\x00\x00\x00"
             append search "\x00\x00\x04\x80\x00\x00\x00\x00\x00\x03\x8a\x50\x00\x00\x00\x00\x00\x00\x00\x03"
@@ -415,47 +577,8 @@ namespace eval ::patch_lv1 {
          
             catch_die {::patch_elf $elf $search 28 $replace} "Unable to patch self [file tail $elf]"
         }
-     
-        if {$::patch_lv1::options(--patch-lv1-otheros-plus-plus-cold-boot-fix)} {
-		
-            log "Patching Initial GuestOS Loader to fix cold boot problem for OtherOS++ (2216540)"           
-            set search  "\xe9\x29\x00\x00\x2f\xa9\x00\x01\x40\x9e\x00\x18"
-            set replace "\x39\x20\x00\x03"
-         
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
-        }
-     
-        if {$::patch_lv1::options(--patch-lv1-coreos-hash-check)} {
-		
-            log "Patch CoreOS Hash check. Product mode always on (downgrader) (2891684)"            
-            set search "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01"
-            set replace "\x60\x00\x00\x00"
-         
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
-            
-            log "Using 4.xx CFW search value"
-            set search "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x78"
-            set replace "\x60\x00\x00\x00"
-         
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
-        }
-        
-        if {$::patch_lv1::options(--patch-lv1-revokelist-hash-check)} {
-		
-            log "Patch Revoke list Hash check. Product mode always on (downgrader) (2894836)"            
-            set search "\x41\x9E\x00\x1C\x7F\xA3\xEB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01"
-            set replace "\x60\x00\x00\x00\x7F\xA3\xEB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01"
-           
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
-        }
-        
-        if {$::patch_lv1::options(--patch-lv1-patch-productmode-erase)} {
-		
-            log "Patch In product mode erase standby bank skipped (downgrader) (2911100)"            
-            set search "\x41\x9E\x00\x0C\xE8\xA2\x8A\x38\x48\x00\x00\xCC\x7B\xFD\x00\x20"
-            set replace "\x60\x00\x00\x00\xE8\xA2\x8A\x38\x48\x00\x00\xCC\x7B\xFD\x00\x20"
-         
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
-        }
+		##
+		##
+		#### ----------------------------------------------------- END:  3.XX PATCHES AREA ----------------------------------------------- ####
     }
 }
