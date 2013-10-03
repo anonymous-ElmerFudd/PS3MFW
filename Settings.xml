@@ -5,5 +5,5 @@
     <Theme>xpnative</Theme>
     <IN_FILE>C:/_tools/PS3/PS3MFW/IN/PS3UPDAT_4.46.PUP</IN_FILE>
     <OUT_FILE>C:/_tools/PS3/PS3MFW/OUT/test.pup</OUT_FILE>
-<tasks>patch_cos patch_xmb</tasks>
+<tasks>patch_cos patch_xmb patch_lv1 patch_gameos</tasks>
 </Settings>
