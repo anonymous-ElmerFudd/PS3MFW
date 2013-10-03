@@ -3,7 +3,6 @@
 # ps3mfw -- PS3 MFW creator
 #
 # Copyright (C) Anonymous Developers (Code Monkeys)
-# Copyright (C) glevand (geoffrey.levand@mail.ru)
 #
 # This software is distributed under the terms of the GNU General Public
 # License ("GPL") version 3, as published by the Free Software Foundation.
@@ -242,17 +241,17 @@ namespace eval ::patch_cos {
 		if {$::patch_cos::options(--patch-lv1-peek-poke)} {
 		
             log "Patching LV1 hypervisor - peek/poke support(1189356) part 1/2"         
-            set ::patch_cos::search  "\x38\x00\x00\x00\x64\x00\xff\xff\x60\x00\xff\xec\xf8\x03\x00\xc0"
+            set ::patch_cos::search    "\x38\x00\x00\x00\x64\x00\xff\xff\x60\x00\xff\xec\xf8\x03\x00\xc0"
 	        append ::patch_cos::search "\x4e\x80\x00\x20\x38\x00\x00\x00"
-            set ::patch_cos::replace "\xe8\x83\x00\x18\xe8\x84\x00\x00\xf8\x83\x00\xc8"         
+            set ::patch_cos::replace   "\xe8\x83\x00\x18\xe8\x84\x00\x00\xf8\x83\x00\xc8"         
 			set ::patch_cos::offset 4				
 			# base function to decrypt the "self" to "elf" for patching
 			::patch_cos::patch_elf $elf   
          
 			log "Patching LV1 hypervisor - peek/poke support(1189356) part 2/2" 
-            set ::patch_cos::search  "\x4e\x80\x00\x20\x38\x00\x00\x00\x64\x00\xff\xff\x60\x00\xff\xec"
+            set ::patch_cos::search    "\x4e\x80\x00\x20\x38\x00\x00\x00\x64\x00\xff\xff\x60\x00\xff\xec"
 	        append ::patch_cos::search "\xf8\x03\x00\xc0\x4e\x80\x00\x20"
-            set ::patch_cos::replace "\xe8\xa3\x00\x20\xe8\x83\x00\x18\xf8\xa4\x00\x00"         
+            set ::patch_cos::replace   "\xe8\xa3\x00\x20\xe8\x83\x00\x18\xf8\xa4\x00\x00"         
 			set ::patch_cos::offset 8				
 			# base function to decrypt the "self" to "elf" for patching
 			::patch_cos::patch_elf $elf          

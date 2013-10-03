@@ -3,7 +3,6 @@
 # ps3mfw -- PS3 MFW creator
 #
 # Copyright (C) Anonymous Developers (Code Monkeys)
-# Copyright (C) glevand (geoffrey.levand@mail.ru)
 #
 # This software is distributed under the terms of the GNU General Public
 # License ("GPL") version 3, as published by the Free Software Foundation.
