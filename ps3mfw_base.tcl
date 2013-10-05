@@ -1273,13 +1273,17 @@ proc modify_upl_file {callback args} {
     } else {
         die "File $file is not writable in $unpkgdir"
     }
+	# re-pkg up the archive
+	::pkg_archive $unpkgdir $pkg
 
-    if {[::get_pup_version] >= ${::NEWCFW}} {
-        ::new_pkg_archive $unpkgdir $pkg
-        ::copy_spkg
-    } else {
-        ::pkg_archive $unpkgdir $pkg
-    }
+	# commenting out, as we should not need
+	# to do this?
+    #if {[::get_pup_version] >= ${::NEWCFW}} {
+    #    ::new_pkg_archive $unpkgdir $pkg
+    #    ::copy_spkg
+    #} else {
+    #    ::pkg_archive $unpkgdir $pkg
+    #}
 }
 
 proc remove_node_from_xmb_xml { xml key message} {

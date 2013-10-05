@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 1600
+# Priority: 301
 # Category: Game
-# Description: Clean unwanted icons from the XMB Game Category
+# Description: CLEAN: Clean unwanted icons from the XMB Game Category
     
 # Option --clean-game-gamedata: Remove "Game Data" icon from the XMB Game Category
 # Option --clean-game-mcutility: Remove "Memory Card Utility (PS/PS2)" icon from the XMB Game Category

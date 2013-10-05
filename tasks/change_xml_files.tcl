@@ -12,8 +12,8 @@
 
 # Created By RazorX
 
-# Priority: 2201
-# Description: Replace XML Files (Limited)
+# Priority: 211
+# Description: CHANGE: Change XML Files (Limited)
 
 # Option --xml-game: category_game.xml filename
 # Option --xml-friend: category_friend.xml filename

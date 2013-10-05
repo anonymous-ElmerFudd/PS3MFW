@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 500
-# Description: Allow Install PKG (Part 1, 4.xx)
+# Priority: 113
+# Description: PATCH: Allow Install PKG (Part 1, 4.xx)
 
 # Option --allow-install-pkg: Patch to allow installation of packages (part 1, 4.xx)
 
@@ -22,10 +22,9 @@ namespace eval ::patch_xtra1 {
     }
 
     proc main {} {
-		set self [file join dev_flash vsh module explore_category_game.sprx]
-			
+		set self [file join dev_flash vsh module explore_category_game.sprx]			
         ::modify_devflash_file $self ::patch_xtra1::patch_self
-		}
+	}
 
 		proc patch_self { self } {
         if {!$::patch_xtra1::options(--allow-install-pkg)} {
@@ -40,10 +39,12 @@ namespace eval ::patch_xtra1 {
 		    log "Patching [file tail $elf] to allow install pkg"
 			log "Special feature added by RedDot-3ND7355"
 			
-			set search "\xF8\x21\xFE\xD1\x7C\x08\x02\xA6\xFB\x81\x01\x10\x3B\x81\x00\x70"
+			set search  "\xF8\x21\xFE\xD1\x7C\x08\x02\xA6\xFB\x81\x01\x10\x3B\x81\x00\x70"
 			set replace "\x38\x60\x00\x01\x4E\x80\x00\x20\xFB\x81\x01\x10\x3B\x81\x00\x70"
+			set offset 0
 			
-			catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"          
 		}
 	}
 }

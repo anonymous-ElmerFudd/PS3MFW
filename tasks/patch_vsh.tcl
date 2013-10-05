@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 800
-# Description: Patch VSH
+# Priority: 110
+# Description: PATCH: Patch VSH - Miscellaneous
 
 # Option --disable-cinavia-protection-4x: Disable Cinavia Protection (4.xx)
 # Option --allow-pseudoretail-pkg-dex: Patch to allow installation of pseudo-retail packages on DEX

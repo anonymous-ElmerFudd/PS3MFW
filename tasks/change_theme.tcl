@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 2400
-# Description: Change default "Air Paint" theme
+# Priority: 208
+# Description: CHANGE: Change default "Air Paint" theme
 
 # Option --theme-src: Source theme file
 # Option --theme-dst: Destination theme slot

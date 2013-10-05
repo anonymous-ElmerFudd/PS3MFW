@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 0002
-# Description: Patch XMB
+# Priority: 0004
+# Description: PATCH: XMB - Miscellaneous
 
 # Option --patch-act-pkg: Patch the standard  '*Install Package Files'  function back in to the XMB (4.30+) 
 # Option --patch-package-files: Add "Install Package Files" icon to the XMB Game Category    

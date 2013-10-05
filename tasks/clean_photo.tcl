@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 1200
+# Priority: 304
 # Category: Photo
-# Description: Clean unwanted icons from the XMB Photo Category
+# Description: CLEAN: Clean unwanted icons from the XMB Photo Category
     
 # Option --clean-photo-dlna-scan: Remove "Search for Media Servers" icon from the XMB Photo Category
 # Option --clean-photo-dlna-device: Remove "Network Media Servers" icon from the XMB Photo Category

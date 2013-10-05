@@ -9,7 +9,7 @@
 #
 
 # Priority: 200
-# Description: Add a custom message to the 'New Features' installation screen
+# Description: CHANGE: Add a custom message to the 'New Features' installation screen
 
 # Option --license-auto-add-features: Automatically generate the enabled features of PS3MFW
 # Option --license-features-message: Prefix message to the generated features list

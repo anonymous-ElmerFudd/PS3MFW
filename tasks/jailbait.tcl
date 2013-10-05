@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 730
-# Description: Jailbait patches to spoof firmware build & version for SEN/PSN access
+# Priority: 402
+# Description: MISC: Jailbait patches to spoof firmware build & version for SEN/PSN access
 
 # Option --jailbait: Select firmware version to spoof
 # Type --jailbait: combobox { { 4.21 58071 20120630 0001:CEX-ww 4824@security/sdk_branches/release_421/trunk 49276@sys/sdk_branches/release_421/trunk 16040@x3/branches/target421 6205@paf/branches/target421 90261@vsh/branches/target421 83@sys_jp/branches/target421 8891@emu/branches/target101/ps1 8948@emu/branches/target420/ps1_net 8890@emu/branches/target202/ps1_new 8960@emu/branches/target400/ps2 16578@branches/target400/gx 15529@branches/soft190/soft 8962@emu/branches/target420/psp 3924@emerald/target42x 19089@bdp/prof5/branches/target42x } }

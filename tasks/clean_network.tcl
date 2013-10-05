@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 1700
+# Priority: 303
 # Category: Network
-# Description: Clean unwanted icons from the XMB Network Category
+# Description: CLEAN: Clean unwanted icons from the XMB Network Category
     
 # Option --clean-network-browser: Remove "Internet Browser" icon from the XMB Network Category
 # Option --clean-network-folding-at-home: Remove "Life with PlayStation" icon from the XMB Network Category

@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 2300
-# Description: Patch shop/promo firmware for installation retail unit
+# Priority: 107
+# Description: PATCH: Patch shop/promo firmware for installation retail unit
 
 # Option --patch-promo-flags: Patch promo_flags file
 # Option --patch-update-flags: Patch update_flags file

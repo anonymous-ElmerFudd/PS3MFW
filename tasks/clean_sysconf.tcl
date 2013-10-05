@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 1100
+# Priority: 306
 # Category: Settings
-# Description: Clean unwanted icons from the XMB Settings Category
+# Description: CLEAN: Clean unwanted icons from the XMB Settings Category
 
 # Option --clean_sysconf_chat: Remove "Chat Settings" icon from the XMB Settings Category
 # Option --clean_sysconf_print: Remove "Printer Settings" icon from the XMB Settings Category

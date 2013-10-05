@@ -10,8 +10,8 @@
 
 # Notes: ac3 codec a52 channels stereo samplerate 48kHz bitrate 640kb/s
 
-# Priority: 2200
-# Description: Replace coldboot audio/video files (USE CAUTION)
+# Priority: 204
+# Description: CHANGE: Change coldboot audio/video files (USE CAUTION)
 
 # Option --coldboot-raf: coldboot.raf video filename
 # Option --coldboot-stereo: coldboot_stereo.ac3 audio filename

@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 950
-# Description: Language Pack
+# Priority: 403
+# Description: MISC: Language Pack
 
 # Option --language-pack: Language Pack path
 # Option --language-replace: Language Pack to replace (keep empty for none)

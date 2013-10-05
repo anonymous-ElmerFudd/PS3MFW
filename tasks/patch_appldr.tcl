@@ -8,15 +8,16 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 0005
-# Description: Patch APPLDR - MISC
+# Priority: 0003
+# Description: PATCH: APPLDR - Miscellaneous
 
+# Option --patch-misc-rogero-patches:  Patch Appldr with misc ROGERO patches
 # Option --patch-appldr-fself-340: [3.xx] Patch Appldr to allow Fself (3.40-3.55) set debug true (Experimental!)
 # Option --patch-appldr-fself-330: [3.xx] Patch Appldr to allow Fself (3.10-3.30) set debug true (Experimental!)
 # Option --add-356keys-to-appldr341: [3.xx] Patch Appldr to add the 3.56 keys to appldr 3.41
 # Option --add-360keys-to-appldr355: [3.xx] Patch Appldr to add the 3.60 keys to appldr 3.55
 
-
+# Type --patch-misc-rogero-patches: boolean
 # Type --patch-appldr-340: boolean
 # Type --patch-appldr-330: boolean
 # Type --add-356keys-to-appldr341 boolean
@@ -25,6 +26,7 @@
 namespace eval ::patch_appldr {
 
     array set ::patch_appldr::options {
+		--patch-misc-rogero-patches true
         --patch-appldr-fself-340 false
         --patch-appldr-fself-330 false
 		--add-356keys-to-appldr341 false
@@ -47,6 +49,41 @@ namespace eval ::patch_appldr {
 		
 		log "Applying MISC APPLDR patches...."	
 		
+		# patch appldr for "misc" ROGERO patches
+		if {$::patch_appldr::options(--patch-misc-rogero-patches)} {			
+			# verified OFW ver. 3.60 - 4.46+
+			# OFW 3.60 == 0x1BE4 (0x146E4)
+			# OFW 3.70 == 0x1BE4 (0x146E4)  
+			# OFW 4.46 == 0x1CDC (0x147DC)
+			log "Patching Appldr with Rogero patch 1/3"						 
+			set search  "\x34\x09\x80\x80\x04\x00\x2A\x03\x18\x04\x80\x81\x34\xFF\xC0\xD0"
+			set replace "\x40\x80\x00\x03"
+			set offset 4         				
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      
+			
+			log "Patching Appldr with Rogero patch 2/3"	
+			# verified OFW ver. 3.60 - 4.46+
+			# OFW 3.60 == 0x1EAC (0x149AC)
+			# OFW 3.70 == 0x1EAC (0x149AC)  
+			# OFW 4.46 == 0x1FA4 (0x14AA4)
+			set search  "\x55\xC0\x09\x91\x58\x24\x88\x90\x23\x00\x0A\x10\x1C\x08\x00\x84\x40\x80\x04\x05\x43\xF0\x00\x03"
+			set replace "\x40\x80\x00\x10"
+			set offset 4      				
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+			
+			log "Patching Appldr with Rogero patch 3/3"	
+			# verified OFW ver. 3.60 - 4.46+
+			# OFW 3.60 == 0x3D10 (0x16810)
+			# OFW 3.70 == 0x3D10 (0x16810)  
+			# OFW 4.46 == 0x3D98 (0x16898)
+			set search  "\x04\x00\x01\xD0\x21\x00\x0F\x03\x04\x00\x28\x83\x33\x7C"
+			set replace "\x40\x80\x00\x03"
+			set offset 20      				
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"		
+		}		
 		# patch appldr for "fself 3.40"
 		if {$::patch_appldr::options(--patch-appldr-fself-340)} {
 		

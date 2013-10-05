@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 0004
-# Description: Patch GAMEOS - MISC
+# Priority: 0005
+# Description: PATCH: GAMEOS - Miscellaneous
 
 # Option --patch-disable-pupsearch-in-game-disc: Patch Recovery Menu - Disable searching for update packages in GAME disc
 # Option --patch-gameos-hdd-region-size: Patch Recovery Menu - Create GameOS HDD region smaller than default
@@ -53,7 +53,7 @@ namespace eval ::patch_gameos {
 		set self "default.spp"
 		set path $::CUSTOM_COSUNPKG_DIR
 		set file [file join $path $self]
-		::modify_self_file $file ::patch_gameos::Do_DefaultSpp_Patches	              
+		::modify_spp_file $file ::patch_gameos::Do_DefaultSpp_Patches		
     }  		
 	
 	#################################		Do_EmerInit_Patches		#######################################################################################

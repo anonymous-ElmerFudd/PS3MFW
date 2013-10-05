@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 0003
-# Description: Patch LV1 - MISC
+# Priority: 0001
+# Description: PATCH: LV1 - Miscellaneous
 
 # Option --patch-lv1-coreos-hash-check: Patch CoreOS Hash check. Product mode always on (downgrader)
 # Option --patch-lv1-mmap: Allow mapping of any memory area (Needed for LV2 Poke)
@@ -107,14 +107,14 @@ namespace eval ::patch_lv1 {
 		# if "--patch-lv1-coreos-hash-check" enabled, patch it		
         if {$::patch_lv1::options(--patch-lv1-coreos-hash-check)} {
 			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 
-			# OFW 3.60: @0x2C21D4
-			# OFW 4.46: @0x2DFA7C
+			# OFW 3.55: 0x2C1FA0
+			# OFW 3.60: 0x2C21CC
+			# OFW 4.46: 0x2DFA7C
             log "Patch CoreOS Hash check. Product mode always on (downgrader) (2891684)"            		    
-           #set search  "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01" -- old value --
-		    set search  "\x88\x18\x00\x3E\x2F\x80\x00\xFF\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85"
+           #set search  "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01" -- old value --			
+			set search  "\x2F\x80\x00\xFF\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2"									
             set replace "\x60\x00\x00\x00"
-			set offset 8
+			set offset 4
          
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                       

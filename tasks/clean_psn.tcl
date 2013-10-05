@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 1800
+# Priority: 305
 # Category: PlayStation Network
-# Description: Clean unwanted icons from the XMB PlayStation Network Category
+# Description: CLEAN: Clean unwanted icons from the XMB PlayStation Network Category
     
 # Option --clean-psn-commerce-new: Remove "What's New" icon from the XMB PlayStation Network Category
 # Option --clean-psn-home: Remove "PlayStation Home" icon from the XMB PlayStation Network Category

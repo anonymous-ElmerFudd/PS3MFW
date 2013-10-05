@@ -159,7 +159,7 @@ if {${::current_opt} != ""} {
 }
 
 if {[llength ${::tasks}] == 0 } {
-	set ::tasks [list auto_gen_cfw]
+	set ::tasks [list patch_cos]
 	foreach task ${::tasks} {
 		source [file join ${::TASKS_DIR} ${::task}.tcl]
 	}

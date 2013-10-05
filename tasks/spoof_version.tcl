@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 2600
-# Description: Spoof firmware build / version
+# Priority: 117
+# Description: PATCH: Spoof firmware build / version
 
 # Option --spoof: Select firmware version to spoof
 # Type --spoof: combobox { {1.02 1788 001:CEX-ww} {1.10 2120 001:CEX-ww} {1.11 2232 001:CEX-ww} {1.30 2400 001:CEX-ww} {1.31 2494 001:CEX-ww} {1.32 2587 001:CEX-ww} {1.50 3014 001:CEX-ww} {1.51 3229 001:CEX-ww} {1.54 3563 001:CEX-ww} {1.60 3940 001:CEX-ww} {1.70 4540 001:CEX-ww} {1.80 5354 001:CEX-ww} {1.81 5746 001:CEX-ww} {1.82 5986 001:CEX-ww} {1.90 6591 001:CEX-ww} {1.92 7272 001:CEX-ww} {1.93 7444 001:CEX-ww} {1.94 7510 001:CEX-ww} {2.00 8237 001:CEX-ww} {2.01 8426 001:CEX-ww} {2.10 9181 001:CEX-ww} {2.16 10444 001:CEX-ww} {2.17 11729 001:CEX-ww} {2.20 12342 001:CEX-ww} {2.30 13778 001:CEX-ww} {2.35 15109 001:CEX-ww} {2.36 16093 001:CEX-ww} {2.40 17023 001:CEX-ww} {2.41 17362 001:CEX-ww} {3.00 34641 001:CEX-ww} {2.42 18467 001:CEX-ww} {2.43 19024 001:CEX-ww} {2.50 23368 001:CEX-ww} {2.52 24267 001:CEX-ww} {2.53 25075 001:CEX-ww} {2.60 28392 001:CEX-ww} {2.70 30429 001:CEX-ww} {2.76 31347 001:CEX-ww} {2.80 32582 001:CEX-ww} {3.00 34641 001:CEX-ww} {3.01 35108 001:CEX-ww} {3.10 37233 001:CEX-ww} {3.15 38031 001:CEX-ww} {3.20 39999 001:CEX-ww} {3.21 41486 001:CEX-ww} {3.30 42164 001:CEX-ww} {3.40 44261 001:CEX-ww} {3.41 45039 001:CEX-ww} {3.42 45831 001:CEX-ww} {3.50 46135 001:CEX-ww} {3.55 47516 001:CEX-ww} {3.56 48165 001:CEX-ww} {3.56 48247 001:CEX-ww} {3.60 48686 001:CEX-ww} {3.61 49561 001:CEX-ww} {3.65 49764 001:CEX-ww} {3.66 50527 001:CEX-ww} {3.70 51968 001:CEX-ww} {3.72 52565 001:CEX-ww} {3.73 52870 001:CEX-ww} }
@@ -67,12 +67,12 @@ namespace eval ::spoof_version {
       catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf] with [::hexify $replace]"
 
 #      debug "Patching 0x31a7c0" 
-#      set search "\x48\x00\x00\x38\xa0\x7f\x00\x04\x39\x60\x00\x01"
+#      set search  "\x48\x00\x00\x38\xa0\x7f\x00\x04\x39\x60\x00\x01"
 #      set replace "\x38\x60\x00\x82"
 #      catch_die {::patch_elf $elf $search 4 $replace} "Unable to patch self [file tail $elf]"
 
 #      debug "Patching ..."
-#      set search "\x4b\xff\xfe\x80\xf8\x21\xff\x81\x7c\x08\x02\xa6\x38\x61\x00\x70"
+#      set search  "\x4b\xff\xfe\x80\xf8\x21\xff\x81\x7c\x08\x02\xa6\x38\x61\x00\x70"
 #      set replace "\x38\x60\x00\x01\x4e\x80\x00\x20"
 #      catch_die {::patch_elf $elf $search 4 $replace} "Unable to patch self [file tail $elf]"
 
@@ -80,7 +80,7 @@ namespace eval ::spoof_version {
       set search    "\xeb\xe1\x00\x80\x38\x21\x00\x90\x7c\x08\x03\xa6\x4e\x80\x00\x20"
       append search "\xf8\x21\xff\x61\x7c\x08\x02\xa6\xfb\xe1\x00\x98\xf8\x01\x00\xb0"
       append search "\x7c\x7f\x1b\x78\x38\x00\x00\x00\x38\x61\x00\x74\xfb\x81\x00\x80"
-      set replace "\x38\x60\x00\x00\x4e\x80\x00\x20"
+      set replace   "\x38\x60\x00\x00\x4e\x80\x00\x20"
       catch_die {::patch_elf $elf $search 16 $replace} "Unable to patch self [file tail $elf]"
     }
 

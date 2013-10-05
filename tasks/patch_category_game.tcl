@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 1000
-# Description: Add new icons to the XMB Game category
+# Priority: 100
+# Description: PATCH: XMB - Add new icons to the XMB Game category
     
 # Option --patch-package-files: Add "Install Package Files" icon to the XMB Game Category
 # Option --patch-app-home: Add "/app_home" icon to the XMB Game Category

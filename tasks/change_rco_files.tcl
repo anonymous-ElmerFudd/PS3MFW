@@ -12,8 +12,8 @@
 
 # Created By RazorX
 
-# Priority: 2200
-# Description: Replace RCO Files (Limited)
+# Priority: 206
+# Description: CHANGE: Change RCO Files (Limited)
 
 # Option --rco-game: explore_category_game.rco filename
 # Option --rco-friend: friendtrophy_plugin.rco filename

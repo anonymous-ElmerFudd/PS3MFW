@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
  
-# Priority: 2900
-# Description: Change a specific file in devflash manually
+# Priority: 205
+# Description: CHANGE: Change a specific file in devflash manually
 
 # Option --change-filenames: Filenames to change (must start with 'dev_flash/')
 

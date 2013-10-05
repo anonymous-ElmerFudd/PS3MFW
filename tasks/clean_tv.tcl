@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 1500
+# Priority: 307
 # Category: TV
-# Description: Clean unwanted icons from the XMB TV Category
+# Description: CLEAN: Clean unwanted icons from the XMB TV Category
 
 # Option --clean_tv_xil: Remove "xil" icon from the XMB TV Category
 # Option --clean_tv_gameexit: Remove "gameexit" icon from the XMB TV Category

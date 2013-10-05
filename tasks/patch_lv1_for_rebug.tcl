@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 300
-# Description: Patch LV1 hypervisor for REBUG
+# Priority: 101
+# Description: PATCH: LV1 hypervisor for REBUG
 
 # Option --patch-lv1-rebug-htab-write: Allow mapping of HTAB with write protection
 # Option --patch-lv1-rebug-encdec-ioctl-0x85: Allow ENCDEC IOCTL command 0x85
@@ -40,18 +40,18 @@
 namespace eval ::patch_lv1_for_rebug {
 
     array set ::patch_lv1_for_rebug::options {
-        --patch-lv1-rebug-htab-write true
+    --patch-lv1-rebug-htab-write true
 	--patch-lv1-rebug-encdec-ioctl-0x85 true
-        --patch-lv1-rebug-dispmgr-access true
+    --patch-lv1-rebug-dispmgr-access true
 	--patch-lv1-rebug-iimgr-access true
-        --patch-lv1-rebug-um-extract-pkg true
+    --patch-lv1-rebug-um-extract-pkg true
 	--patch-lv1-rebug-um-write-eprom-product-mode true
-        --patch-lv1-rebug-sm-del-encdec-key true
-        --patch-lv1-rebug-repo-node-lpar true
-        --patch-lv1-rebug-ata-region0-access true
+    --patch-lv1-rebug-sm-del-encdec-key true
+    --patch-lv1-rebug-repo-node-lpar true
+    --patch-lv1-rebug-ata-region0-access true
 	--patch-lv1-rebug-sysmgr-disable-integrity-check true
-        --patch-lv1-rebug-gameos-sysmgr-ability true
-        --patch-lv1-rebug-otheros-plus-plus true
+    --patch-lv1-rebug-gameos-sysmgr-ability true
+    --patch-lv1-rebug-otheros-plus-plus true
     }
 
     proc main { } {

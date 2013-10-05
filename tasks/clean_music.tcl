@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 1300
+# Priority: 302
 # Category: Music
-# Description: Clean unwanted icons from the XMB Music Category
+# Description: CLEAN: Clean unwanted icons from the XMB Music Category
     
 # Option --clean-music-dlna-scan: Remove "Search for Media Servers" icon from the XMB Music Category
 # Option --clean-music-dlna-device: Remove "Network Media Servers" icon from the XMB Music Category

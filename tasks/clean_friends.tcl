@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 1900
+# Priority: 300
 # Category: Friends
-# Description: Clean unwanted icons from the XMB Friends Category
+# Description: CLEAN: Clean unwanted icons from the XMB Friends Category
 
 # Option --clean-friends-avcroom: Remove "Video Chat" icon from the XMB Friends Category
 # Option --clean-friends-chat: Remove "Chat Room" icon from the XMB Friends Category

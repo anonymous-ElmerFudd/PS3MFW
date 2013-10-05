@@ -8,9 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 1400
+# Priority: 308
 # Category: Video
-# Description: Clean unwanted icons from the XMB Video Category
+# Description: CLEAN: Clean unwanted icons from the XMB Video Category
     
 # Option --clean-video-bddata-mgmt: Remove "BD Data Utility" icon from the XMB Video Category
 # Option --clean-video-dlna-scan: Remove "Search for Media Servers" icon from the XMB Video Category

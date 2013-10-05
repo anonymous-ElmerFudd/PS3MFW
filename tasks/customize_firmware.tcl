@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 1000
-# Description: Customize MFW (USE WITH CAUTION)
+# Priority: 212
+# Description: CHANGE: Customize MFW (USE WITH CAUTION)
 
 # Option --customize-coldboot-raf: Change default coldboot icon
 # Option --customize-coldboot-stereo: Change default coldboot sound

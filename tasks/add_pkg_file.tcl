@@ -12,8 +12,8 @@
 
 # Created By RazorX
 
-# Priority: 1010
-# Description: Add Package File(s) To Custom Firmware
+# Priority: 0201
+# Description: CHANGE: Add Package File(s) To Custom Firmware
 
 
 # Option --pkg-label::

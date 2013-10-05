@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 2100
-# Description: Allow firmware update of console with broken blu-ray drive
+# Priority: 202
+# Description: CHANGE: Allow firmware update of console with broken blu-ray drive
     
 # Option --remove-bd-revoke: remove BdpRevoke (ENABLING THIS WILL REMOVE BLU-RAY DRIVE FIRMWARE)
 # Option --remove-bd-firmware: remove BD firmware (ENABLING THIS WILL REMOVE BLU-RAY DRIVE FIRMWARE)

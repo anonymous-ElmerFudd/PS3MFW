@@ -8,8 +8,8 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 100
-# Description: Change PUP build / version
+# Priority: 210
+# Description: CHANGE: Change PUP build / version
 
 # Option --pup-build: PUP build number
 # Option --version-string: If set, overrides the entire PUP version string
