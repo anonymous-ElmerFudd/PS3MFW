@@ -80,7 +80,7 @@ namespace eval ::patch_appldr {
 			# OFW 4.46 == 0x3D98 (0x16898)
 			set search  "\x04\x00\x01\xD0\x21\x00\x0F\x03\x04\x00\x28\x83\x33\x7C"
 			set replace "\x40\x80\x00\x03"
-			set offset 20      				
+			set offset 12      				
 			# PATCH THE ELF BINARY
             catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"		
 		}		
