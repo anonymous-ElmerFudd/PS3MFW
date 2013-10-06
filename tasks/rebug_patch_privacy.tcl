@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 115
+# Priority: 118
 # Description: PATCH: Patch all REBUG self/sprx to secure privacy
 
 # Option --patch-playstation-com: Patch communication to playstation.com

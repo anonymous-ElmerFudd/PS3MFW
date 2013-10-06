@@ -10,7 +10,7 @@
 
 # Notes: use only official REBUG files (3.55.2.PUP/Update0.X.PKG)
 
-# Priority: 116
+# Priority: 119
 # Description: PATCH: Patch REBUG All-In-One Task
 
 # Option --vsh-self: vsh.self EDAT file

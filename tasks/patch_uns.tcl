@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 109
+# Priority: 103
 # Description: PATCH: Patch VSH for unsigned PKG's (4.xx)
 
 # Option --allow-unsigned-app-4xx: Patch to allow running of unsigned applications

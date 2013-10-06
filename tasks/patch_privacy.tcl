@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 103
+# Priority: 106
 # Description: PATCH: Secure privacy (Block Online Games/Sys Updates)
 
 # Option --patch-playstation-com: Patch communication to playstation.com

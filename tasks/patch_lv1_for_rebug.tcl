@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 101
+# Priority: 104
 # Description: PATCH: LV1 hypervisor for REBUG
 
 # Option --patch-lv1-rebug-htab-write: Allow mapping of HTAB with write protection

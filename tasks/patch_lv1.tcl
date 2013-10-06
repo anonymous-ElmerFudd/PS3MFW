@@ -12,6 +12,7 @@
 # Description: PATCH: LV1 - Miscellaneous
 
 # Option --patch-lv1-coreos-hash-check: Patch CoreOS Hash check. Product mode always on (downgrader)
+# Option --patch-lv1-sysmgr-disable-integrity-check: Disable integrity check in System Manager (OtherOS++/downgrader)
 # Option --patch-lv1-mmap: Allow mapping of any memory area (Needed for LV2 Poke)
 # Option --patch-lv1-htab-write: Allow mapping of HTAB with write protection
 # Option --patch-lv1-mfc-sr1-mask: Allow to set all bits of SPE register MFC_SR1 with lv1_set_spe_privilege_state_area_1_register
@@ -24,7 +25,6 @@
 # Option --patch-lv1-um-write-eprom-product-mode: Allow enabling product mode by using Update Manager Write EPROM
 # Option --patch-lv1-sm-del-encdec-key: Allow deleting of all ENCDEC keys
 # Option --patch-lv1-repo-node-lpar: Allow creating/modifying/deleting of repository nodes in any LPAR
-# Option --patch-lv1-sysmgr-disable-integrity-check: Disable integrity check in System Manager (OtherOS++/downgrader)
 # Option --patch-lv1-storage-skip-acl-check: Skip ACL checks for all storage devices (OtherOS++/downgrader)
 # Option --patch-lv1-gameos-sysmgr-ability:  [3.xx] Allow access to all System Manager services of GameOS
 # Option --patch-lv1-gameos-gos-mode-one:  [3.xx] Enable GuestOS mode 1 for GameOS
@@ -34,6 +34,7 @@
 # Option --patch-lv1-otheros-plus-plus:  [3.55] OtherOS++ support
 
 # Type --patch-lv1-coreos-hash-check: boolean
+# Type --patch-lv1-sysmgr-disable-integrity-check: boolean
 # Type --patch-lv1-mmap: boolean
 # Type --patch-lv1-htab-write: boolean
 # Type --patch-lv1-mfc-sr1-mask: boolean
@@ -46,7 +47,6 @@
 # Type --patch-lv1-um-write-eprom-product-mode: boolean
 # Type --patch-lv1-sm-del-encdec-key: boolean
 # Type --patch-lv1-repo-node-lpar: boolean
-# Type --patch-lv1-sysmgr-disable-integrity-check: boolean
 # Type --patch-lv1-storage-skip-acl-check: boolean
 # Type --patch-lv1-gameos-sysmgr-ability: boolean
 # Type --patch-lv1-gameos-gos-mode-one: boolean
@@ -59,6 +59,7 @@ namespace eval ::patch_lv1 {
 	
     array set ::patch_lv1::options {
 		--patch-lv1-coreos-hash-check true
+	    --patch-lv1-sysmgr-disable-integrity-check true
         --patch-lv1-mmap false                
         --patch-lv1-htab-write false
         --patch-lv1-mfc-sr1-mask false
@@ -71,7 +72,6 @@ namespace eval ::patch_lv1 {
         --patch-lv1-um-write-eprom-product-mode false
         --patch-lv1-sm-del-encdec-key false
         --patch-lv1-repo-node-lpar false
-        --patch-lv1-sysmgr-disable-integrity-check false
         --patch-lv1-storage-skip-acl-check false		
         --patch-lv1-gameos-sysmgr-ability false
         --patch-lv1-gameos-gos-mode-one false
@@ -118,7 +118,25 @@ namespace eval ::patch_lv1 {
          
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                       
-        }		      
+        }
+		# if "--patch-lv1-sysmgr-disable-integrity-check" enabled, patch it		
+        if {$::patch_lv1::options(--patch-lv1-sysmgr-disable-integrity-check)} {	
+			# **** NOTE:  MAY NEED TO OPTIMIZE BETTER....(patch offset is past the match bytes)  ****
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x21D0A0 (0x44D0A0)
+			# OFW 3.60 == 0x21D0BC (0x44D0BC)
+			# OFW 4.46 == 0x23A980 (0x44A980)   
+			#set search  "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x78"
+			#set replace "\x60\x00\x00\x00"
+			#set replace "\x38\x60\x00\x00" -- old patch?? or is this correct???
+            log "Patching System Manager to disable integrity check (OtherOS++/downgrader) (2216116)"            
+            set search  "\x38\x60\x00\x01\xf8\x01\x00\x90\x88\x1f\x00\x00\x2f\x80\x00\x00"		   
+            set replace "\x60\x00\x00\x00"
+			set offset 20
+            
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+        }
 		# if "--patch-lv1-mmap" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-mmap)} {
 			# verified OFW ver. 3.55 - 4.46+
@@ -353,25 +371,7 @@ namespace eval ::patch_lv1 {
 			
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
-        }		
-		# if "--patch-lv1-sysmgr-disable-integrity-check" enabled, patch it		
-        if {$::patch_lv1::options(--patch-lv1-sysmgr-disable-integrity-check)} {	
-			# **** NOTE:  MAY NEED TO OPTIMIZE BETTER....(patch offset is past the match bytes)  ****
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x21D0A0 (0x44D0A0)
-			# OFW 3.60 == 0x21D0BC (0x44D0BC)
-			# OFW 4.46 == 0x23A980 (0x44A980)   
-			#set search  "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x78"
-			#set replace "\x60\x00\x00\x00"
-			#set replace "\x38\x60\x00\x00" -- old patch?? or is this correct???
-            log "Patching System Manager to disable integrity check (OtherOS++/downgrader) (2216116)"            
-            set search  "\x38\x60\x00\x01\xf8\x01\x00\x90\x88\x1f\x00\x00\x2f\x80\x00\x00"		   
-            set replace "\x60\x00\x00\x00"
-			set offset 20
-            
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
-        }
+        }				
 		# if "--patch-lv1-storage-skip-acl-check" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-storage-skip-acl-check)} {
 			# verified OFW ver. 3.55 - 4.46+

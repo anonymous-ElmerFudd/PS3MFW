@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 108
+# Priority: 111
 # Description: PATCH: Patch translations- fix typos, change strings, replace languages
 
 # Option --fix-typo-sysconf-Italian: Fix a typo in the Italian localization of the sysconf plugin

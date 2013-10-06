@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 102
+# Priority: 105
 # Description: PATCH: Package installer
 
 # Option --allow-pseudoretail-pkg: Patch to allow installation of pseudo-retail packages (4.xx)

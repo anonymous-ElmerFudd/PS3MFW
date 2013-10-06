@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 112
+# Priority: 115
 # Description: PATCH: Remove unwanted icons from the XMB
 
 # Option --patch-xmb-plugin: Remove below items from the XMB

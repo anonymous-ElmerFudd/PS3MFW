@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 110
+# Priority: 101
 # Description: PATCH: Patch VSH - Miscellaneous
 
 # Option --disable-cinavia-protection-4x: Disable Cinavia Protection (4.xx)

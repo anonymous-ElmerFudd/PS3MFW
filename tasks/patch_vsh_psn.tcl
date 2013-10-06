@@ -10,7 +10,7 @@
 
 # Created By RazorX
 
-# Priority: 111
+# Priority: 102
 # Description: PATCH: Patch VSH for Offline PSN Activator
 
 # Option --allow-activating-psn-retail1: Patch to allow activating psn content offline for 3.55 retail

@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 114
+# Priority: 117
 # Description: PATCH: Allow Install PKG (Part 2, 4.xx)
 
 # Option --allow-install-pkg2: Patch to allow installation of packages (part 2, 4.xx)
