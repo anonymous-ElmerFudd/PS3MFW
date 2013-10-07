@@ -20,12 +20,13 @@
 # Option --patch-lv2-npdrm-ecdsa-check: [4.xx]  LV2: --> Patch LV2 to disable NPDRM ECDSA check 4.xx (Jailbait)
 # Option --patch-lv2-payload-hermes-4x: [4.xx]  LV2: --> Patch LV2 to implement hermes payload SC8 /app_home/ redirection & embedded app mount 4.xx
 # Option --patch-lv2-SC36-4x: [4.xx]  LV2: --> Patch LV2 to implement SysCall36 4.xx
-# Option --patch-spkg-ecdsa-check: [4.xx]  SPU_PKG_RVK: --> Patch FW PKG Verifier to disable ECDSA check for spkg files
-# Option --patch-lv2-peek-poke-355: [3.xx]  LV2: --> Patch LV2 to add Peek&Poke system calls 3.55
-# Option --patch-lv2-lv1-peek-poke-355: [3.xx]  LV2: --> Patch LV2 to add LV1 Peek&Poke system calls 3.55 (LV1 peek/poke patch necessary)
-# Option --patch-lv2-lv1-call-355: [3.xx]  LV2: --> Patch LV2 to add LV1 Call system call 3.55
-# Option --patch-lv2-payload-hermes-355: [3.xx]  LV2: --> Patch LV2 to implement hermes payload with SC8 and /app_home/ redirection 3.55
-# Option --patch-lv2-SC36-355: [3.xx]  LV2: --> Patch LV2 to implement SysCall36 3.55
+# Option --patch-spkg-ecdsa-check: [4.xx]  ALT: --> Patch FW PKG Verifier to disable ECDSA check for spkg files (spu_pkg_rvk_verifier.self)
+# Option --patch-RSOD-bypass: [4.xx]  ALT: --> Patch to bypass RSOD errors (basic_plugins.sprx)
+# Option --patch-lv2-peek-poke-355: [3.55]  LV2: --> Patch LV2 to add Peek&Poke system calls 3.55
+# Option --patch-lv2-lv1-peek-poke-355: [3.55]  LV2: --> Patch LV2 to add LV1 Peek&Poke system calls 3.55 (LV1 peek/poke patch necessary)
+# Option --patch-lv2-lv1-call-355: [3.55]  LV2: --> Patch LV2 to add LV1 Call system call 3.55
+# Option --patch-lv2-payload-hermes-355: [3.55]  LV2: --> Patch LV2 to implement hermes payload with SC8 and /app_home/ redirection 3.55
+# Option --patch-lv2-SC36-355: [3.55]  LV2: --> Patch LV2 to implement SysCall36 3.55
 
 # Type --patch-lv0-nodescramble-lv1ldr: boolean
 # Type --patch-lv0-ldrs-ecdsa-checks: boolean
@@ -34,6 +35,7 @@
 # Type --patch-lv2-npdrm-ecdsa-check: boolean
 # Type --patch-lv2-payload-hermes-4x: boolean
 # Type --patch-spkg-ecdsa-check: boolean
+# Type --patch-RSOD-bypass: boolean
 # Type --patch-lv2-SC36-4x: boolean
 # Type --patch-lv1-peek-poke: boolean
 # Type --patch-lv1-remove-lv2-protection: boolean
@@ -60,6 +62,7 @@ namespace eval ::patch_cos {
         --patch-lv2-npdrm-ecdsa-check true
         --patch-lv2-payload-hermes-4x true
 		--patch-spkg-ecdsa-check true
+		--patch-RSOD-bypass true
         --patch-lv2-SC36-4x true
         --patch-lv2-peek-poke-355 false
         --patch-lv2-lv1-peek-poke-355 false
@@ -82,7 +85,7 @@ namespace eval ::patch_cos {
 		set addhbseg_enabled false
 		set addemuseg_enabled false
 		set patchpkgfiles_enabled false
-		set patchapphome_enabled false
+		set patchapphome_enabled false		
 		
 		if {[info exists ::patch_cos::options(--patch-lv2-payload-hermes-4x)]} {
 			set hermes_enabled $::patch_cos::options(--patch-lv2-payload-hermes-4x) }
@@ -574,22 +577,43 @@ namespace eval ::patch_cos {
 			set ::patch_cos::offset 12			
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf	
-        }				
+        }
+		# if "--patch-RSOD-bypass" is enabled, patch in "dev_flash\vsh\module\basic_plugins.sprx"
+		if {$::patch_cos::options(--patch-RSOD-bypass)} {
+		
+            log "Patching BASIC_PLUGINS.sprx to patch RSOD bypass"  
+			set BASIC_PLUGINS [file join dev_flash vsh module basic_plugins.sprx]
+			::modify_devflash_file $BASIC_PLUGINS ::patch_cos::patch_devflash_self			
+        }	
 	}
 	### ------------------------------------- END:    Do_Misc_OS_Patches{} --------------------------------------------- ###   
 	
 	
-	# ---------------------------BEGIN:  patch_elf   --------------------------------------------------
-	#
+	# stub proc for calling the ::copy_ps3_game routine
+	proc install_pkg {arg} {		
+		::copy_ps3_game ${::CUSTOM_PS3_GAME}
+	}		
 	# this is the proc for calling the ps3mfw_base::patch_elf{} routine
-	#
 	proc patch_elf {elf} {               
         catch_die {::patch_elf $elf $::patch_cos::search $::patch_cos::offset $::patch_cos::replace} \
         "Unable to patch self [file tail $elf]"
     }
-	# --------------------------------------------------------------------------------------	
-	# stub proc for calling the ::copy_ps3_game routine
-	proc install_pkg {arg} {		
-		::copy_ps3_game ${::CUSTOM_PS3_GAME}
-	}
+	proc patch_devflash_self {self} {		
+        log "Patching [file tail $self]"
+        ::modify_self_file $self ::patch_cos::patch_devflash_file
+    }
+	
+	# this proc is for patching dev_flash files
+	proc patch_devflash_file {elf} {   
+		
+		# if "--patch-RSOD-bypass" is enabled, patch in "dev_flash\vsh\module\basic_plugins.sprx"
+		if {$::patch_cos::options(--patch-RSOD-bypass)} {
+			set search     "\x41\x9E\x00\x10\x2F\x9F\x00\x02\x40\x9E\x00\x20\x48\x00\x00\x10"     
+            set replace    "\x48\x00"
+			set offset 8	
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+		}
+    }
+	# --------------------------------------------------------------------------------------		
 }
