@@ -53,9 +53,8 @@ proc extract_lv0 {path file} {
 	
 	# if firmware is >= 3.65, LV1LDR is crypted, otherwise it's
 	# not crypted.  Also, check if we "override" this setting
-	# by the flag in the "patch_coreos" task
-	set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
-	if {$FWVer >= "365"} {
+	# by the flag in the "patch_coreos" task	
+	if {${::NEWMFW_VER} >= "3.65"} {
 		set lv1ldr_crypt yes
 		if {$::FLAG_NO_LV1LDR_CRYPT != 0} {	
 			set lv1ldr_crypt no
@@ -82,9 +81,8 @@ proc import_lv0 {path file} {
 	
 	# if firmware is >= 3.65, LV1LDR is crypted, otherwise it's
 	# not crypted.  Also, check if we "override" this setting
-	# by the flag in the "patch_coreos" task
-	set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
-	if {$FWVer >= "365"} {
+	# by the flag in the "patch_coreos" task	
+	if {${::NEWMFW_VER} >= "3.65"} {
 		set lv1ldr_crypt yes
 		if {$::FLAG_NO_LV1LDR_CRYPT != 0} {	
 			set lv1ldr_crypt no
@@ -453,20 +451,22 @@ proc find_devflash_archive {dir find} {
     }
     return ""
 }
-
+# proc for building the 'spkg' package
 proc spkg {pkg} {
     shell ${::SPKG} [file nativename $pkg]
 }
-
+# proc for building the "new" pkg with spkg headers
 proc new_pkg {pkg dest} {
+	log "Building NEW SPKG retail package"
     shell ${::NEWPKG} retail [file nativename $pkg] [file nativename $dest]
 }
 
 proc unpkg {pkg dest} {
     shell ${::UNPKG} [file nativename $pkg] [file nativename $dest]
 }
-
+# proc for building the normal 'pkg' package
 proc pkg {pkg dest} {
+	log "Building ORIGINAL PKG retail package"
     shell ${::PKG} retail [file nativename $pkg] [file nativename $dest]
 }
 
@@ -520,7 +520,7 @@ proc modify_coreos_file { file callback args } {
 	## at the start/end of the MFW build script
 	die "THIS ROUTINE IS NO LONGER SUPPORTED!!!"
 	
-    log "Modifying CORE_OS file [file tail $file]"   
+    log "Modifying CORE_OS file [file tail $file]"  	
     set pkg [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.pkg]
     set unpkgdir [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.unpkg]
     set cosunpkgdir [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE]
@@ -536,11 +536,13 @@ proc modify_coreos_file { file callback args } {
     } else {
         die "File $file is not writable in CORE_OS_PACKAGE"
     }
-
+	# rebuild the CORE_OS PKG
     ::cospkg_package $cosunpkgdir [file join $unpkgdir content]
     
-    if {[::get_pup_version] >= ${::NEWCFW}} {
-       ::new_pkg_archive $unpkgdir $pkg
+	# if we are >= 3.56 FW, we need to build the new
+	# "spkg" headers, otherwise use normal pkg build
+	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
+		::new_pkg_archive $unpkgdir $pkg
         ::copy_spkg
     } else {
         ::pkg_archive $unpkgdir $pkg
@@ -552,7 +554,7 @@ proc modify_coreos_files { files callback args } {
 	## at the start/end of the MFW build script
 	die "THIS ROUTINE IS NO LONGER SUPPORTED!!!"
 	
-    log "Modifying CORE_OS files [file tail $files]" 
+    log "Modifying CORE_OS files [file tail $files]" 	
     set pkg [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.pkg]
     set unpkgdir [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.unpkg]
     set cosunpkgdir [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE]
@@ -571,11 +573,13 @@ proc modify_coreos_files { files callback args } {
             die "File $file is not writable in CORE_OS_PACKAGE"
         }
 	}
-
+	# rebuild the CORE_OS PKG
     ::cospkg_package $cosunpkgdir [file join $unpkgdir content]
     
-    if {[::get_pup_version] >= ${::NEWCFW}} {
-        ::new_pkg_archive $unpkgdir $pkg	
+    # if we are >= 3.56 FW, we need to build the new
+	# "spkg" headers, otherwise use normal pkg build
+	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
+		::new_pkg_archive $unpkgdir $pkg
         ::copy_spkg
     } else {
         ::pkg_archive $unpkgdir $pkg
@@ -592,9 +596,8 @@ proc unpack_coreos_files { args } {
     ::unpkg_archive $::CUSTOM_PKG_DIR $::CUSTOM_UNPKG_DIR
     ::cosunpkg_package [file join $::CUSTOM_UNPKG_DIR content] $::CUSTOM_COSUNPKG_DIR	
 	
-	# if firmware is >= 3.60, we need to extract LV0 contents
-	set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
-	if {$FWVer >= "360"} {
+	# if firmware is >= 3.60, we need to extract LV0 contents	
+	if {${::NEWMFW_VER} >= "3.60"} {
 		catch_die {extract_lv0 $::CUSTOM_COSUNPKG_DIR "lv0"} "ERROR: Could not extract LV0"
 	}
 	
@@ -610,15 +613,24 @@ proc repack_coreos_files { args } {
 	#::CUSTOM_COSUNPKG_DIR == $cosunpkg
     log "RE-PACKAGING CORE_OS files..." 
 
-	# if firmware is >= 3.60, we need to import LV0 contents
-	set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]
-	if {$FWVer >= "360"} {
+	# if firmware is >= 3.60, we need to import LV0 contents	
+	if {${::NEWMFW_VER} >= "3.60"} {
 		catch_die {import_lv0 $::CUSTOM_COSUNPKG_DIR "lv0"} "ERROR: Could not import LV0"
 	}	
     
 	# re-package up the files
-    ::cospkg_package $::CUSTOM_COSUNPKG_DIR [file join $::CUSTOM_UNPKG_DIR content]   
-   	::pkg_archive $::CUSTOM_UNPKG_DIR $::CUSTOM_PKG_DIR		
+    ::cospkg_package $::CUSTOM_COSUNPKG_DIR [file join $::CUSTOM_UNPKG_DIR content]      	
+		
+	# if we are >= 3.56 FW, we need to build the new
+	# "spkg" headers, otherwise use normal pkg build	
+	set pkg $::CUSTOM_PKG_DIR
+    set unpkgdir $::CUSTOM_UNPKG_DIR
+	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
+		::new_pkg_archive $unpkgdir $pkg
+        ::copy_spkg
+    } else {
+        ::pkg_archive $unpkgdir $pkg
+    }
 	
 	# set the global flag that "CORE_OS" is packed
 	set ::FLAG_COREOS_UNPACKED 0
@@ -693,6 +705,7 @@ proc makeself {in out} {
    set vendID "ff000000"
    set selfType ""
    set compress FALSE
+   set skipsection FALSE
    
 
     # Reading the pup suffix var and set up fw/self version var 	
@@ -1023,7 +1036,7 @@ proc makeself {in out} {
 		die "Unhandled SELF TYPE:\"${::SELF}\", fix script to support it!"
 	}		
 	# run the scetool to resign the elf file
-    shell ${::SCETOOL} -0 SELF -1 $compress -2 $keyRev -3 $authID -4 $vendID -5 $selfType -A $versionVar -6 $fwversiVar -e $in $out
+    shell ${::SCETOOL} -0 SELF -1 $compress -s $skipsection -2 $keyRev -3 $authID -4 $vendID -5 $selfType -A $versionVar -6 $fwversiVar -e $in $out
 }
 
 proc decrypt_self {in out} {
@@ -1171,8 +1184,7 @@ proc patch_file_multi {file search replace_offset replace {ignore_bytes {}}} {
 
 proc modify_devflash_file {file callback args} {
 
-    log "Modifying dev_flash file [file tail $file]"
-	
+    log "Modifying dev_flash file [file tail $file]"		
     set tar_file [find_devflash_archive ${::CUSTOM_DEVFLASH_DIR} $file]
     if {$tar_file == ""} {
         die "Could not find [file tail $file] in devflash file"
@@ -1198,21 +1210,21 @@ proc modify_devflash_file {file callback args} {
     
     set pkg [file join ${::CUSTOM_UPDATE_DIR} $pkg_file]
     set unpkgdir [file join ${::CUSTOM_DEVFLASH_DIR} $pkg_file]
-	::pkg_archive $unpkgdir $pkg
 	
-	# commenting out, as we should not need
-	# to do this?
-    #if {[::get_pup_version] >= ${::NEWCFW}} {
-    #    ::new_pkg_archive $unpkgdir $pkg
-    #    ::copy_spkg
-    #} else {
-    #    ::pkg_archive $unpkgdir $pkg
-    #}
+	# if we are >= 3.56 FW, we need to build the new
+	# "spkg" headers, otherwise use normal pkg build
+	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
+		::new_pkg_archive $unpkgdir $pkg
+        ::copy_spkg
+    } else {
+        ::pkg_archive $unpkgdir $pkg
+    }
 }
 
-proc modify_devflash_files {path files callback args} {
-
+proc modify_devflash_files {path files callback args} {	
+	
     foreach file $files {
+	
         set file [file join $path $file]
         log "Modifying dev_flash file [file tail $file] in devflash file"
         
@@ -1242,23 +1254,21 @@ proc modify_devflash_files {path files callback args} {
         create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash		
         
         set pkg [file join ${::CUSTOM_UPDATE_DIR} $pkg_file]
-        set unpkgdir [file join ${::CUSTOM_DEVFLASH_DIR} $pkg_file]
-		::pkg_archive $unpkgdir $pkg
+        set unpkgdir [file join ${::CUSTOM_DEVFLASH_DIR} $pkg_file]		
 		
-		# commenting out, as we should not need
-		# to do this?
-        #if {[::get_pup_version] >= ${::NEWCFW}} {
-        #    ::new_pkg_archive $unpkgdir $pkg
-        #    ::copy_spkg
-        #} else {
-        #    ::pkg_archive $unpkgdir $pkg
-        #}
-    }
-	
+		# if we are >= 3.56 FW, we need to build the new
+		# "spkg" headers, otherwise use normal pkg build
+		if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
+			::new_pkg_archive $unpkgdir $pkg
+			::copy_spkg
+		} else {
+			::pkg_archive $unpkgdir $pkg
+		}
+    }	
 }
 
 proc modify_upl_file {callback args} {
-    log "Modifying UPL.xml file"
+    log "Modifying UPL.xml file"	
     set file "content"
     
     set pkg [file join ${::CUSTOM_UPDATE_DIR} UPL.xml.pkg]
@@ -1273,17 +1283,15 @@ proc modify_upl_file {callback args} {
     } else {
         die "File $file is not writable in $unpkgdir"
     }
-	# re-pkg up the archive
-	::pkg_archive $unpkgdir $pkg
-
-	# commenting out, as we should not need
-	# to do this?
-    #if {[::get_pup_version] >= ${::NEWCFW}} {
-    #    ::new_pkg_archive $unpkgdir $pkg
-    #    ::copy_spkg
-    #} else {
-    #    ::pkg_archive $unpkgdir $pkg
-    #}
+	
+	# if we are >= 3.56 FW, we need to build the new
+	# "spkg" headers, otherwise use normal pkg build
+	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
+		::new_pkg_archive $unpkgdir $pkg
+        ::copy_spkg
+    } else {
+        ::pkg_archive $unpkgdir $pkg
+    }
 }
 
 proc remove_node_from_xmb_xml { xml key message} {

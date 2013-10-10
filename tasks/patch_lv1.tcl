@@ -84,8 +84,7 @@ namespace eval ::patch_lv1 {
     proc main { } {
 	
 		# begin by calling the main function to go through
-		# all the patches
-		set ::patch_lv1::FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
+		# all the patches		
 		::patch_lv1::Do_LV1_Patches $::CUSTOM_COSUNPKG_DIR		
     }
 
@@ -203,7 +202,7 @@ namespace eval ::patch_lv1 {
 			# OFW 3.60 == 0x934B4 (0x2734B4)  
 			# OFW 4.46 == 0xCF IOCTLs allowed!!			
             log "Patching LV1 hypervisor to allow ENCDEC IOCTL command 0x85 (603284)"  
-			if {$::patch_lv1::FWVer < "370"} {
+			if {${::NEWMFW_VER} < "3.70"} {
 				set search  "\x38\x00\x00\x01\x39\x20\x00\x4f\x7c\x00\xf8\x36\x7c\x00\x48\x38"
 				set replace "\x39\x20\x00\x5f"
 				set offset 4
@@ -452,7 +451,7 @@ namespace eval ::patch_lv1 {
         if {$::patch_lv1::options(--patch-lv1-revokelist-hash-check)} {
 			
             log "Patch Revoke list Hash check. Product mode always on (downgrader) (2894836)"            			
-			if {$::patch_lv1::FWVer > "355"} {
+			if {${::NEWMFW_VER} > "3.55"} {
 				die "PATCH NOT SUPPORTED ABOVE 3.55!"
 			} else {							
 				set search "\x41\x9E\x00\x1C\x7F\xA3\xEB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01"
@@ -467,7 +466,7 @@ namespace eval ::patch_lv1 {
         if {$::patch_lv1::options(--patch-lv1-patch-productmode-erase)} {
 		
             log "Patch In product mode erase standby bank skipped (downgrader) (2911100)"			
-			if {$::patch_lv1::FWVer > "355"} {
+			if {${::NEWMFW_VER} > "3.55"} {
 				die "PATCH NOT SUPPORTED ABOVE 3.55!"
 			} else {
 				set search "\x41\x9E\x00\x0C\xE8\xA2\x8A\x38\x48\x00\x00\xCC\x7B\xFD\x00\x20"

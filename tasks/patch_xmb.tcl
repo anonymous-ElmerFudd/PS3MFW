@@ -234,9 +234,8 @@ namespace eval patch_xmb {
     proc patch_elf {elf} {			
 		# if "tv-cat" enabled, find the patch
 		# currently, only good for < 3.60
-		if {$::patch_xmb::options(--tv-cat)} {
-			set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]
-			if {$FWVer < "360"} {
+		if {$::patch_xmb::options(--tv-cat)} {			
+			if {${::NEWMFW_VER} < "3.60"} {
 				log "Patching [file tail $elf] to add tv category"   
 				# dev_hdd0/game/BCES00275........
 				set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"

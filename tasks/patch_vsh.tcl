@@ -8,15 +8,15 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 101
+# Priority: 0005
 # Description: PATCH: Patch VSH - Miscellaneous
 
+# Option --allow-unsigned-app: Patch to allow running of unsigned applications
 # Option --disable-cinavia-protection-4x: Disable Cinavia Protection (4.xx)
 # Option --allow-pseudoretail-pkg-dex: Patch to allow installation of pseudo-retail packages on DEX
 # Option --allow-retail-pkg-dex: Patch to allow installation of retail packages on DEX
 # Option --allow-pseudoretail-pkg: Patch to allow installation of pseudo-retail packages
 # Option --allow-debug-pkg: Patch to allow installation of debug packages
-# Option --allow-unsigned-app: Patch to allow running of unsigned applications
 # Option --patch-vsh-react-psn-v2-341-debug: Jailbait - Patch to implement ReactPSN v2.0 into VSH 3.41 DEBUG
 # Option --patch-vsh-react-psn-v2-355-debug: Jailbait - Patch to implement ReactPSN v2.0 into VSH 3.55 DEBUG
 # Option --patch-vsh-react-psn-v2-341: Jailbait - Patch to implement ReactPSN v2.0 into VSH 3.41
@@ -27,12 +27,12 @@
 # Option --customize-fw-ssl-cer: Change SSL - New SSL CA certificate (source)
 # Option --customize-fw-change-cer: Change SSL - SSL CA public certificate (destination)
 
+# Type --allow-unsigned-app: boolean
 # Type --disable-cinavia-protection-4x: boolean
 # Type --allow-pseudoretail-pkg-dex: boolean
 # Type --allow-retail-pkg-dex: boolean
 # Type --allow-pseudoretail-pkg: boolean
 # Type --allow-debug-pkg: boolean
-# Type --allow-unsigned-app: boolean
 # Type --patch-vsh-react-psn-v2-341-debug: boolean
 # Type --patch-vsh-react-psn-v2-355-debug: boolean
 # Type --patch-vsh-react-psn-v2-341: boolean
@@ -46,27 +46,27 @@
 namespace eval ::patch_vsh {
 
     array set ::patch_vsh::options {
+		--allow-unsigned-app true
 	    --disable-cinavia-protection-4x true
         --allow-pseudoretail-pkg-dex false
         --allow-retail-pkg-dex false
         --allow-pseudoretail-pkg true
-        --allow-debug-pkg true
-        --allow-unsigned-app false
+        --allow-debug-pkg true        
         --patch-vsh-react-psn-v2-341-debug false
         --patch-vsh-react-psn-v2-355-debug false
         --patch-vsh-react-psn-v2-341 false
         --patch-vsh-react-psn-v2-355 false
         --patch-vsh-react-psn-v2-4x true
         --spoof-psn-passphrase false
-        --spoof-new "Select fw version to spoof"
-        --customize-fw-ssl-cer "CAxx.cer"
-        --customize-fw-change-cer "Choose cert(s) to patch"
+        --spoof-new ""
+        --customize-fw-ssl-cer ""
+        --customize-fw-change-cer ""
     }
 
     proc main { } {
         variable options
-        set src $options(--customized-fw-ssl-cer)
-        set dst $options(--customized-fw-change-cer)
+        set src $::patch_vsh::options(--customize-fw-ssl-cer)
+        set dst $::patch_vsh::options(--customize-fw-change-cer)
         set path [file join dev_flash data cert]
      
         if {$::patch_vsh::options(--allow-pseudoretail-pkg) || $::patch_vsh::options(--allow-debug-pkg) || $::patch_vsh::options(--allow-pseudoretail-pkg-dex) || $::patch_vsh::options(--allow-retail-pkg-dex)} {
@@ -79,7 +79,7 @@ namespace eval ::patch_vsh {
             ::modify_devflash_file $self ::patch_vsh::patch_self
         }
      
-        if {$::patch_vsh::options(--spoof-new) != 0 } {
+        if {$::patch_vsh::options(--spoof-new) != "" } {
           variable options
           set release [lindex $options(--spoof-old) 0]
           set build [lindex $options(--spoof-old) 1]
@@ -108,8 +108,8 @@ namespace eval ::patch_vsh {
             log "Patching UPL.xml"
             ::modify_upl_file ::patch_vsh::upl_xml
         }
-        
-        if {$::patch_vsh::options::(--customize-fw-ssl-cer) == 0} {
+        # if "--customize-fw-ssl-cer" is defined, patch it
+        if {$::patch_vsh::options::(--customize-fw-ssl-cer) != ""} {
             if {[file exists $src] == 0 } {
                 die "Source SSL CA public certificate file $src does not exist"
             } elseif {[string equal $dst "DNAS"] == 1} {
@@ -130,8 +130,8 @@ namespace eval ::patch_vsh {
                 ::modify_devflash_file $dst ::patch_vsh::copy_customized_file $src
             }
         }
-		
-		if {$::patch_vsh::options::(--disable-cinavia-protection-4x) && ${::SUF} == ${::c}} {
+		# if "--disable-cinavia-protection-4x" enabled, patch it
+		if {$::patch_vsh::options::(--disable-cinavia-protection-4x)} {
 		    log "Swapping videoplayer_plugin.sprx from Debug FW to Retail one..."
 			log "...to disable cinavia protection"
 			::patch_vsh::swappCinavia
@@ -143,167 +143,212 @@ namespace eval ::patch_vsh {
     }
 
     proc patch_elf {elf} {
-        if {$::patch_vsh::options(--allow-pseudoretail-pkg-dex) } {
-            log "Patching [file tail $elf] to allow pseudo-retail pkg installs on dex"
-         
-            set search "\x7c\x60\x1b\x78\xf8\x1f\x01\x80"
-            set replace "\x38\x00\x00\x00"
-         
-            catch_die {::patch_elf $elf $search 0 $replace} \
-            "Unable to patch self [file tail $elf]"
-        }
-     
-		if {$::patch_vsh::options(--allow-retail-pkg-dex) } {
-            log "Patching [file tail $elf] to allow retail pkg installs on dex"
-         
-            set search "\x2f\x80\x00\x00\x41\x9e\x01\xb0\x3b\xa1\x00\x80"
-            set replace "\x60\x00\x00\x00"
-         
-            catch_die {::patch_elf $elf $search 4 $replace} \
-            "Unable to patch self [file tail $elf]"
-        }
-     
-        if {$::patch_vsh::options(--allow-pseudoretail-pkg) } {
-            log "Patching [file tail $elf] to allow pseudo-retail pkg installs"
-         
-            set search "\x7c\x60\x1b\x78\xf8\x1f\x01\x80"
-            set replace "\x38\x00\x00\x00"
-         
-            catch_die {::patch_elf $elf $search 0 $replace} \
-            "Unable to patch self [file tail $elf]"
-        }
-     
-        if {$::patch_vsh::options(--allow-debug-pkg) } {
-            log "Patching [file tail $elf] to allow debug pkg installs"
-         
-            set search "\x2f\x89\x00\x00\x41\x9e\x00\x4c\x38\x00\x00\x00"
-            set replace "\x60\x00\x00\x00"
-         
-            catch_die {::patch_elf $elf $search 4 $replace} \
-            "Unable to patch self [file tail $elf]"
-        }
-        
+	
+		# if "--allow-unsigned-app" enabled, patch it
         if {$::patch_vsh::options(--allow-unsigned-app)} {
-            log "Patching [file tail $elf] to allow running of unsigned applications"
-         
-            set search "\xF8\x21\xFF\x81\x7C\x08\x02\xA6\x38\x61\x00\x70\xF8\x01\x00\x90\x4B\xFF\xFF\xE1\x38\x00\x00\x00"
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x5FFEE8 (0x60FEE8)			
+			# OFW 3.70 == 0x61A3C4 (0x62A3C4)  
+			# OFW 4.46 == 0x5EA584 (0x5FA584)
+            log "Patching [file tail $elf] to allow running of unsigned applications 1/2"         
+            set search  "\xF8\x21\xFF\x81\x7C\x08\x02\xA6\x38\x61\x00\x70\xF8\x01\x00\x90\x4B\xFF\xFF\xE1\x38\x00\x00\x00"
             set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
          
-            set search "\xA0\x7F\x00\x04\x39\x60\x00\x01\x38\x03\xFF\x7F\x2B\xA0\x00\x01\x40\x9D\x00\x08\x39\x60\x00\x00"
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x30A7C0 (0x31A7C0)			
+			# OFW 3.70 == 0x31B55C (0x32B55C)  
+			# OFW 4.46 == 0x241C2C (0x251C2C)
+			log "Patching [file tail $elf] to allow running of unsigned applications 2/2"
+            set search  "\xA0\x7F\x00\x04\x39\x60\x00\x01\x38\x03\xFF\x7F\x2B\xA0\x00\x01\x40\x9D\x00\x08\x39\x60\x00\x00"
             set replace "\x60\x00\x00\x00"
+			set offset 20
          
-            catch_die {::patch_elf $elf $search 20 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
         }
-        
+		# if "--allow-pseudoretail-pkg-dex" enabled, patch it
+        if {$::patch_vsh::options(--allow-pseudoretail-pkg-dex) } {
+		
+            log "Patching [file tail $elf] to allow pseudo-retail pkg installs on dex"         
+            set search  "\x7c\x60\x1b\x78\xf8\x1f\x01\x80"
+            set replace "\x38\x00\x00\x00"
+			set offset 0
+         
+           # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
+        }
+		# if "--allow-retail-pkg-dex" enabled, patch it
+		if {$::patch_vsh::options(--allow-retail-pkg-dex) } {
+		
+            log "Patching [file tail $elf] to allow retail pkg installs on dex"         
+            set search  "\x2f\x80\x00\x00\x41\x9e\x01\xb0\x3b\xa1\x00\x80"
+            set replace "\x60\x00\x00\x00"
+			set offset 4
+         
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
+        }
+		# if "--allow-pseudoretail-pkg" enabled, patch it
+        if {$::patch_vsh::options(--allow-pseudoretail-pkg) } {
+		
+            log "Patching [file tail $elf] to allow pseudo-retail pkg installs"         
+            set search "\x7c\x60\x1b\x78\xf8\x1f\x01\x80"
+            set replace "\x38\x00\x00\x00"
+			set offset 0
+         
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"   
+        }
+		# if "--allow-debug-pkg" enabled, patch it
+        if {$::patch_vsh::options(--allow-debug-pkg) } {
+		
+            log "Patching [file tail $elf] to allow debug pkg installs"         
+            set search  "\x2f\x89\x00\x00\x41\x9e\x00\x4c\x38\x00\x00\x00"
+            set replace "\x60\x00\x00\x00"
+			set offset 4
+         
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
+        }  
+        # if "--patch-vsh-react-psn-v2-341-debug" enabled, patch it
         if {$::patch_vsh::options(--patch-vsh-react-psn-v2-341-debug)} {
-            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"
-         
-            set search "\x4B\xCF\x3E\x99"
+		
+            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"         
+            set search  "\x4B\xCF\x3E\x99"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
          
             log "Patching [file tail $elf] to disable delating of unsigned act.dat & .rif files"
-            set search "\x48\x31\x47\x1D"
+            set search  "\x48\x31\x47\x1D"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
         }
-        
+        # if "--patch-vsh-react-psn-v2-341" enabled, patch it
         if {$::patch_vsh::options(--patch-vsh-react-psn-v2-341)} {
-            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"
-         
-            set search "\x4B\xCF\xAF\xB1"
+		
+            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"         
+            set search  "\x4B\xCF\xAF\xB1"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
          
             log "Patching [file tail $elf] to disable delating of unsigned act.dat & .rif files"
-            set search "\x48\x31\x43\xAD"
+            set search  "\x48\x31\x43\xAD"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
         }
-        
+        # if "--patch-vsh-react-psn-v2-355-debug" enabled, patch it
         if {$::patch_vsh::options(--patch-vsh-react-psn-v2-355-debug)} {
-            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"
-         
-            set search "\x4B\xCE\xEA\x6D"
+		
+            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"         
+            set search  "\x4B\xCE\xEA\x6D"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
          
             log "Patching [file tail $elf] to disable delating of unsigned act.dat & .rif files"
-            set search "\x48\x31\xB7\xD5"
+            set search  "\x48\x31\xB7\xD5"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
         }
-        
+        # if "--patch-vsh-react-psn-v2-355" enabled, patch it
         if {$::patch_vsh::options(--patch-vsh-react-psn-v2-355)} {
-            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"
-         
-            set search "\x4B\xCF\x5B\x45"
+		
+            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"         
+            set search  "\x4B\xCF\x5B\x45"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
          
             log "Patching [file tail $elf] to disable delating of unsigned act.dat & .rif files"
-            set search "\x48\x31\xB4\x65"
+            set search  "\x48\x31\xB4\x65"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
         }
-        
+        # if "--patch-vsh-react-psn-v2-4x" enabled, patch it
         if {$::patch_vsh::options(--patch-vsh-react-psn-v2-4x)} {
-            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"
-          
-            set search "\x4B\xDC\x03\xA9"
+		
+            log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"          
+            set search  "\x4B\xDC\x03\xA9"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
          
-            log "Patching [file tail $elf] to disable delating of unsigned act.dat & .rif files"
-            set search "\x48\x3D\x55\x6D"
+            log "Patching [file tail $elf] to disable deleting of unsigned act.dat & .rif files"
+            set search  "\x48\x3D\x55\x6D"
             set replace "\x38\x60\x00\x00"
+			set offset 0
          
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
             
         }
-        
+        # if "--spoof-psn-passphrase" enabled, patch it
         if {$::patch_vsh::options(--spoof-psn-passphrase)} {
-            log "Patching [file tail $elf] new passphrase for PSN access"
-            
+		
+            log "Patching [file tail $elf] new passphrase for PSN access"            
             set search     "\x"
             append search  "\x"
             append search  "\x"
             set replace    "\x"
             append replace "\x"
             append replace "\x"
+			set offset 0
             
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
         }
         
         if {$::patch_vsh::options(--spoof-new) != 0} {
             variable options
-            set release [lindex $options(--spoof) 0]
-            set build [lindex $options(--spoof) 1]
+            set release [lindex $::patch_vsh::options(--spoof-new) 0]
+            set build [lindex $::patch_vsh::options(--spoof-new) 1]
           
-            log "Patching [file tail $elf] with new build/version number for PSN access"
-         
+            log "Patching [file tail $elf] with new build/version number for PSN access"         
             debug "Patching build number"
             set search "[format %0.5d [::get_pup_build]]"
             set replace "[format %0.5d $build]"
-            catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf] with [::hexify $replace]"
+			set offset 0
+			
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
             
             debug "Patching version number"
             set search "99.99"
             set major [lindex [split $release "."] 0]
             set minor [lindex [split $release "."] 1]
             set replace "[format %0.2d ${major}].[format %0.2d ${minor}]\x00\x00\0x00\0x00"
-            catch_die {::patch_elf $elf $search 8 $replace} "Unable to patch self [file tail $elf]"
+			set offset 8
+			
+            # PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
         }
     }
 

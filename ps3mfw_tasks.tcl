@@ -87,7 +87,7 @@ proc build_mfw {input output tasks} {
     if {[info exists ::env(PATH)]} {
         debug "PATH=$::env(PATH)"
     }
-
+	# remove all previous files, etc
     clean_up
 	
 	# Add the input OFW SHA1 to the DB
@@ -113,20 +113,21 @@ proc build_mfw {input output tasks} {
     # PREPARE PS3UPDAT.PUP for modification
     unpack_source_pup ${input} ${::CUSTOM_PUP_DIR}
 	
-	 # set the pup version into a variable so commands later can check it and do fw specific thingy's
+	# set the pup version into a variable so commands later can check it and do fw specific thingy's
+	# save off the "OFW MAJOR.MINOR" into a global for usage throughout
 	debug "checking pup version"
     set ::SUF [::get_pup_version]	
 	set ::OFW_MAJOR_VER [lindex [split $::SUF "."] 0]
-    set ::OFW_MINOR_VER [lindex [split $::SUF "."] 1]	
+    set ::OFW_MINOR_VER [lindex [split $::SUF "."] 1]
+	set ::NEWMFW_VER [format "%.1d.%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
 	debug "Getting pup version OK! var = ${::SUF}"
 	
 	# extract "custom_update.tar
     extract_tar ${::CUSTOM_UPDATE_TAR} ${::CUSTOM_UPDATE_DIR}
 	
-	# if firmware is > 3.55 we need to extract
-	# spkg_hdr.tar
-	set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]
-	if {$FWVer >= "356"} {
+	# if firmware is >= 3.56 we need to extract
+	# spkg_hdr.tar	
+	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
 		extract_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} }	
 
     # copy original PUP to working dir
@@ -151,9 +152,9 @@ proc build_mfw {input output tasks} {
     # RECREATE PS3UPDAT.PUP
     file delete -force ${::CUSTOM_DEVFLASH_DIR}
 	debug "custom dev_flash deleted"
-	# if firmware is >= 3.56, we need to repack spkg files
-	set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]
-	if {$FWVer >= "356"} {
+	
+	# if firmware is >= 3.56, we need to repack spkg files	
+	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
 		set filesSPKG [lsort [glob -directory ${::CUSTOM_SPKG_DIR} *.1]]
 		debug "spkg's added to list"
 	}
@@ -167,11 +168,17 @@ proc build_mfw {input output tasks} {
 	debug "dev_flash added to list"
     create_tar ${::CUSTOM_UPDATE_TAR} ${::CUSTOM_UPDATE_DIR} ${files}
 	debug "PKG TAR created"	
-	# if firmware is >= 3.56, we need to repack spkg files
-	set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]
-	if {$FWVer >= "356"} {
+	
+	# if firmware is >= 3.56, we need to repack spkg files	
+	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
 		create_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} ${filesSPKG}
 		debug "SPKG TAR created"
 	}
-    pack_custom_pup ${::CUSTOM_PUP_DIR} ${::OUT_FILE}
+	# cleanup any previous output builds
+	set final_output "${::OUT_FILE}_$::OFW_MAJOR_VER.$::OFW_MINOR_VER.pup"
+	catch_die {file delete -force -- ${::OUT_FILE}} "Could not cleanup output files"
+	
+	# finalize the completed PUP
+    pack_custom_pup ${::CUSTOM_PUP_DIR} ${final_output}
+	log "CUSTOM FIMWARE  $::OFW_MAJOR_VER.$::OFW_MINOR_VER  BUILD COMPLETE!!!"
 }

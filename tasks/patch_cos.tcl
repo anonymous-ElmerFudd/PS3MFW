@@ -355,13 +355,12 @@ namespace eval ::patch_cos {
 			
 			# code pattern at start of 'vector table', same across all FWs
 			# for >= 3.70 FW, offset is 0x7EB (2027)
-			# for < 3.70 FW, offset is 0x7BB (1979)
-			set FWVer [format "%.1d%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
+			# for < 3.70 FW, offset is 0x7BB (1979)			
 			set search     "\x83\x86\x5C\xCB\x37\x6F\x5D\x5C\x43\x93\xA4\xBA\x53\x35\x90\x03"			
 			set replace    "\x80\x00\x00\x00\x00\x00\x17\x78\x80\x00\x00\x00\x00\x00\x17\x80"
 			append replace "\x80\x00\x00\x00\x00\x00\x17\x88\x80\x00\x00\x00\x00\x00\x17\x90"
 			append replace "\x80\x00\x00\x00\x00\x00\x17\x98"
-			if {$FWVer >= "370"} {
+			if {${::NEWMFW_VER} >= "3.70"} {
 				set offset 2027
 			} else {
 				set offset 1979
