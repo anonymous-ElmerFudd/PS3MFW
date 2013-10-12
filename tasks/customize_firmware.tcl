@@ -58,6 +58,11 @@ namespace eval customize_firmware {
     }
 
     proc main {} {
+	
+		tk_messageBox -default ok -message "WARNING: THIS SCRIPT IS CURRENTLY BROKEN!!" -icon warning
+		die "EXITING, As this script still needs to be fixed!!"		
+		
+		# setup the global vars for this script
 	    ::customize_firmware::set_var_cf
         
         if {[file exists $::customize_firmware::options(--customize-system-sound-rco)] == 0 } { 

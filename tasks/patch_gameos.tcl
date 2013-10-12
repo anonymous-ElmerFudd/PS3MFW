@@ -11,14 +11,14 @@
 # Priority: 0006
 # Description: PATCH: GAMEOS - Miscellaneous
 
-# Option --patch-disable-pupsearch-in-game-disc: Patch Recovery Menu - Disable searching for update packages in GAME disc
-# Option --patch-gameos-hdd-region-size: Patch Recovery Menu - Create GameOS HDD region smaller than default
+# Option --patch-disable-pupsearch-in-game-disc: Disable searching for update packages in GAME disc
+# Option --patch-gameos-hdd-region-size: Create GameOS HDD region smaller than default
 # Option --patch-gameos-hdd-region-size-half: Create GameOS HDD region of size half of installed HDD
 # Option --patch-gameos-hdd-region-size-quarter: Create GameOS HDD region of size quarter of installed HDD
 # Option --patch-gameos-hdd-region-size-eighth: Create GameOS HDD region of size eighth of installed HDD
 # Option --patch-gameos-hdd-region-size-22gb-smaller: Create GameOS HDD region of size 22GB smaller than default
 # Option --patch-disable-pup-search-in-game-disc: Disable searching for update packages in GAME disc.
-# Option --patch-profile-gameos-bootmem-size: Patch Profile (SPP) - Increase boot memory size of GameOS (Needed for OtherOS++)
+# Option --patch-profile-gameos-bootmem-size: Increase boot memory size of GameOS (Needed for OtherOS++) (default.spp)
 
 # Type --patch-disable-pupsearch-in-game-disc: boolean
 # Type --patch-gameos-hdd-region-size: combobox {{ -do nothing-} {1/eighth of drive} {1/quarter of drive} {1/half of drive} {22GB} {10GB} {20GB} {30GB} {40GB} {50GB} {60GB} {70GB} {80GB} {90GB} {100GB} {110GB} {120GB} {130GB} {140GB} {150GB} {160GB} {170GB} {180GB} {190GB} {200GB} {210GB} {220GB} {230GB} {240GB} {250GB} {260GB} {270GB} {280GB} {290GB} {300GB} {310GB} {320GB} {330GB} {340GB} {350GB} {360GB} {370GB} {380GB} {390GB} {400GB} {410GB} {420GB} {430GB} {440GB} {450GB} {460GB} {470GB} {480GB} {490GB} {500GB} {510GB} {520GB} {530GB} {540GB} {550GB} {560GB} {570GB} {580GB} {590GB} {600GB} {610GB} {620GB} {630GB} {640GB} {650GB} {660GB} {670GB} {680GB} {690GB} {700GB} {710GB} {720GB} {730GB} {740GB} {750GB} {760GB} {770GB} {780GB} {790GB} {800GB} {810GB} {820GB} {830GB} {840GB} {850GB} {860GB} {870GB} {880GB} {890GB} {900GB} {910GB} {920GB} {930GB} {940GB} {950GB} {960GB} {970GB} {980GB} {990GB} {1000GB}}
@@ -62,13 +62,21 @@ namespace eval ::patch_gameos {
     proc Do_EmerInit_Patches {elf} {
 	
 		# if patches for "disable search-in-game-disc" or "gameos-hdd-region-size"		
-		if { $::patch_gameos::options(--patch-disable-pupsearch-in-game-disc) || [expr "${::patch_gameos::options(--patch-gameos-hdd-region-size)}" ne ""]} {					
+		if { $::patch_gameos::options(--patch-disable-pupsearch-in-game-disc) || $::patch_gameos::options(--patch-gameos-hdd-region-size) != "" } {					
 			
 			# if "--patch-pup-search-in-game-disc" enabled, do patch
 			if {$::patch_gameos::options(--patch-disable-pupsearch-in-game-disc)} {
-				
+				# verified OFW ver. 3.55 - 4.46+
+				# OFW 3.55: 0x40468 (0x50468)
+				# OFW 3.70: 0x40A98 (0x50A98)
+				# OFW 4.30: 0x43288 (0x53288)
+				# OFW 4.46: 0x432A0 (0x532A0)
 				log "Patching EMER_INIT to disable searching for update packages in GAME disc"				
-				set search  "\x80\x01\x00\x74\x2F\x80\x00\x00\x40\x9E\x00\x14\x7F\xE3\xFB\x78"
+			    if {${::NEWMFW_VER} <= "3.55"} {
+					set search  "\x80\x01\x00\x74\x2F\x80\x00\x00\x40\x9E\x00\x14\x7F\xA3\xEB\x78"
+				} else { 
+					set search  "\x80\x01\x00\x74\x2F\x80\x00\x00\x40\x9E\x00\x14\x7F\xE3\xFB\x78"
+				}
 				set replace "\x38\x00\x00\x01"				 
 				set offset 0
 				
@@ -78,13 +86,27 @@ namespace eval ::patch_gameos {
 			# determine if we have a user-defined HDD "size",
 			# if we have one set, then do the HDD resize patch
 			set size $::patch_gameos::options(--patch-gameos-hdd-region-size)								
-			if { [expr {"$size" ne ""}] } {
-			
-				log "Patching EMER_INIT to create GameOS HDD region of size $size of installed HDD"				 
-				set search    "\xe9\x21\x00\xa0\x79\x4a\x00\x20\xe9\x1b\x00\x00\x38\x00\x00\x00"
-				append search "\x7d\x26\x48\x50\x7d\x49\x03\xa6\x39\x40\x00\x00\x38\xe9\xff\xf8"
-				set replace   "\x79\x27"
-			 
+			if { $size != "" } {
+				# verified OFW ver. 3.55 - 4.46+
+				# OFW 3.55: 0x5B590 (0x6B590)
+				# OFW 3.70: 0x5BE2C (0x6BE2C)
+				# OFW 4.00: 0x5BE44 (0x6BE44)
+				# OFW 4.20: 0x5E95C (0x6E95C)
+				# OFW 4.30: 0x5EA1C (0x6E1AC) ** NEW PATCH **
+				# OFW 4.46: 0x5EA18 (0x6EA18) ** NEW PATCH **
+				log "Patching EMER_INIT to create GameOS HDD region of size $size of installed HDD"	
+				if {${::NEWMFW_VER} < "4.20"} {
+					set search    "\xE9\x21\x00\xA0\x79\x4A\x00\x20\xE9\x1B\x00\x00\x38\x00\x00\x00"
+					append search "\x7D\x26\x48\x50\x7D\x49\x03\xA6\x39\x40\x00\x00\x38\xE9\xFF\xF8"
+					set replace   "\x79\x27"
+					set offset 28
+				} else {
+					set search    "\x7D\x26\x38\x50\xEB\x78\x00\x00\x3B\xA0\x00\x00\x3B\x49\xFF\xF8"
+					append search "\x38\x00\x00\x00"
+					set replace   "\x79\x3A"
+					set offset 12
+				}				
+				
 				if {[string equal ${size} "1/eighth of drive"] == 1} {
 					append replace "\xe8\xc2"
 				} elseif {[string equal ${size} "1/quarter of drive"] == 1} {
@@ -293,8 +315,7 @@ namespace eval ::patch_gameos {
 					append replace "\x84\x40"
 				} elseif {[string equal ${size} "1000GB"] == 1} {
 					append replace "\x83\x00"
-				}			 
-				set offset 28
+				}			 				
 				
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      					
@@ -302,48 +323,96 @@ namespace eval ::patch_gameos {
 		}	
 		# if "--patch-gameos-hdd-region-size-half" enabled, patch it
         if {$::patch_gameos::options(--patch-gameos-hdd-region-size-half)} {
-		
-            log "Patching emergency init to create GameOS HDD region of size half of installed HDD"
-            set search    "\xe9\x21\x00\xa0\x79\x4a\x00\x20\xe9\x1b\x00\x00\x38\x00\x00\x00\x7d\x26\x48\x50"
-            append search "\x7d\x49\x03\xa6\x39\x40\x00\x00\x38\xe9\xff\xf8"
-            set replace   "\x79\x27\xf8\x42"
-			set offset 28
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x5B590 (0x6B590)
+			# OFW 3.70: 0x5BE2C (0x6BE2C)
+			# OFW 4.00: 0x5BE44 (0x6BE44)
+			# OFW 4.30: 0x5EA1C (0x6E1AC) ** NEW PATCH **
+			# OFW 4.46: 0x5EA18 (0x6EA18) ** NEW PATCH **
+            log "Patching emergency init to create GameOS HDD region of size half of installed HDD"           
+			if {${::NEWMFW_VER} < "4.20"} {
+				set search    "\xE9\x21\x00\xA0\x79\x4A\x00\x20\xE9\x1B\x00\x00\x38\x00\x00\x00"
+				append search "\x7D\x26\x48\x50\x7D\x49\x03\xA6\x39\x40\x00\x00\x38\xE9\xFF\xF8"
+				set replace   "\x79\x27\xF8\x42"
+				set offset 28
+			} else {
+				set search    "\x7D\x26\x38\x50\xEB\x78\x00\x00\x3B\xA0\x00\x00\x3B\x49\xFF\xF8"
+				append search "\x38\x00\x00\x00"
+				set replace   "\x79\x3A\xF8\x42"
+				set offset 12
+			}
 
             # PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
         }
 		# if "--patch-gameos-hdd-region-size-quarter" enabled, patch it
         if {$::patch_gameos::options(--patch-gameos-hdd-region-size-quarter)} {
-		
-            log "Patching emergency init to create GameOS HDD region of size quarter of installed HDD"
-            set search    "\xe9\x21\x00\xa0\x79\x4a\x00\x20\xe9\x1b\x00\x00\x38\x00\x00\x00\x7d\x26\x48\x50"
-            append search "\x7d\x49\x03\xa6\x39\x40\x00\x00\x38\xe9\xff\xf8"
-            set replace   "\x79\x27\xf0\x82"
-			set offset 28
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x5B590 (0x6B590)
+			# OFW 3.70: 0x5BE2C (0x6BE2C)
+			# OFW 4.00: 0x5BE44 (0x6BE44)
+			# OFW 4.30: 0x5EA1C (0x6E1AC) ** NEW PATCH **
+			# OFW 4.46: 0x5EA18 (0x6EA18) ** NEW PATCH **
+            log "Patching emergency init to create GameOS HDD region of size quarter of installed HDD"           
+			if {${::NEWMFW_VER} < "4.20"} {
+				set search    "\xE9\x21\x00\xA0\x79\x4A\x00\x20\xE9\x1B\x00\x00\x38\x00\x00\x00"
+				append search "\x7D\x26\x48\x50\x7D\x49\x03\xA6\x39\x40\x00\x00\x38\xE9\xFF\xF8"
+				set replace   "\x79\x27\xF0\x82"
+				set offset 28
+			} else {
+				set search    "\x7D\x26\x38\x50\xEB\x78\x00\x00\x3B\xA0\x00\x00\x3B\x49\xFF\xF8"
+				append search "\x38\x00\x00\x00"
+				set replace   "\x79\x3A\xF0\x82"
+				set offset 12
+			}
 
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
         }
 		# if "--patch-gameos-hdd-region-size-eighth" enabled, patch it
         if {$::patch_gameos::options(--patch-gameos-hdd-region-size-eighth)} {
-		
-            log "Patching emergency init to create GameOS HDD region of size eighth of installed HDD"
-            set search    "\xe9\x21\x00\xa0\x79\x4a\x00\x20\xe9\x1b\x00\x00\x38\x00\x00\x00\x7d\x26\x48\x50"
-            append search "\x7d\x49\x03\xa6\x39\x40\x00\x00\x38\xe9\xff\xf8"
-            set replace   "\x79\x27\xe8\xc2"
-			set offset 28
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x5B590 (0x6B590)
+			# OFW 3.70: 0x5BE2C (0x6BE2C)
+			# OFW 4.00: 0x5BE44 (0x6BE44)
+			# OFW 4.30: 0x5EA1C (0x6E1AC) ** NEW PATCH **
+			# OFW 4.46: 0x5EA18 (0x6EA18) ** NEW PATCH **
+            log "Patching emergency init to create GameOS HDD region of size eighth of installed HDD"            
+			if {${::NEWMFW_VER} < "4.20"} {
+				set search    "\xE9\x21\x00\xA0\x79\x4A\x00\x20\xE9\x1B\x00\x00\x38\x00\x00\x00"
+				append search "\x7D\x26\x48\x50\x7D\x49\x03\xA6\x39\x40\x00\x00\x38\xE9\xFF\xF8"
+				set replace   "\x79\x27\xE8\xC2"
+				set offset 28
+			} else {
+				set search    "\x7D\x26\x38\x50\xEB\x78\x00\x00\x3B\xA0\x00\x00\x3B\x49\xFF\xF8"
+				append search "\x38\x00\x00\x00"
+				set replace   "\x79\x3A\xE8\xC2"
+				set offset 12
+			}
             
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
         }
 		# if "--patch-gameos-hdd-region-size-22gb-smaller" enabled, patch it
         if {$::patch_gameos::options(--patch-gameos-hdd-region-size-22gb-smaller)} {
-		
-            log "Patching emergency init to create GameOS HDD region of size 22GB smaller than default"
-            set search    "\xe9\x21\x00\xa0\x79\x4a\x00\x20\xe9\x1b\x00\x00\x38\x00\x00\x00\x7d\x26\x48\x50"
-            append search "\x7d\x49\x03\xa6\x39\x40\x00\x00\x38\xe9\xff\xf8"
-            set replace   "\x3c\xe9\xfd\x40"
-			set offset 28
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x5B590 (0x6B590)
+			# OFW 3.70: 0x5BE2C (0x6BE2C)
+			# OFW 4.00: 0x5BE44 (0x6BE44)
+			# OFW 4.30: 0x5EA1C (0x6E1AC) ** NEW PATCH **
+			# OFW 4.46: 0x5EA18 (0x6EA18) ** NEW PATCH **
+            log "Patching emergency init to create GameOS HDD region of size 22GB smaller than default"            
+			if {${::NEWMFW_VER} < "4.20"} {
+				set search    "\xE9\x21\x00\xA0\x79\x4A\x00\x20\xE9\x1B\x00\x00\x38\x00\x00\x00"
+				append search "\x7D\x26\x48\x50\x7D\x49\x03\xA6\x39\x40\x00\x00\x38\xE9\xFF\xF8"
+				set replace   "\x3C\xE9\xFD\x40"
+				set offset 28
+			} else {
+				set search    "\x7D\x26\x38\x50\xEB\x78\x00\x00\x3B\xA0\x00\x00\x3B\x49\xFF\xF8"
+				append search "\x38\x00\x00\x00"
+				set replace   "\x3F\x49\xFD\x40"
+				set offset 12
+			}
             
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
@@ -356,13 +425,19 @@ namespace eval ::patch_gameos {
 	
 		# if "gameos-bootmem-size" patch enabled
 		if {$::patch_gameos::options(--patch-profile-gameos-bootmem-size)} {
-		
-			log "Patching GameOS profile to increase boot memory size" 			
-			set search    "\x50\x53\x33\x5f\x4c\x50\x41\x52\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x2C0 (patch@ 0x3F0)
+			# OFW 3.70: 0x2C0 (patch@ 0x3F0)
+			# OFW 4.00: 0x2C0 (patch@ 0x3F0)
+			# OFW 4.30: 0x2C0 (patch@ 0x3F0)
+			# OFW 4.46: 0x2C0 (patch@ 0x3F0)
+			log "Patching GameOS profile to increase boot memory size"
+			#PS3_LPAR...............................P.p....../flh/os/lv2_kernel.self.........
+			set search    "\x50\x53\x33\x5F\x4C\x50\x41\x52\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 			append search "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x02\x50"
-			append search "\x10\x70\x00\x00\x02\x00\x00\x01\x2f\x66\x6c\x68\x2f\x6f\x73\x2f\x6c\x76\x32\x5f"
-			append search "\x6b\x65\x72\x6e\x65\x6c\x2e\x73\x65\x6c\x66\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-			set replace   "\x00\x00\x00\x00\x00\x00\x00\x1b"							
+			append search "\x10\x70\x00\x00\x02\x00\x00\x01\x2F\x66\x6C\x68\x2F\x6F\x73\x2F\x6C\x76\x32\x5F"
+			append search "\x6B\x65\x72\x6E\x65\x6C\x2E\x73\x65\x6C\x66\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+			set replace   "\x00\x00\x00\x00\x00\x00\x00\x1B"							
 			set offset 304	
 			
 			# PATCH THE ELF BINARY

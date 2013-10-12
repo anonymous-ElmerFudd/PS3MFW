@@ -234,15 +234,22 @@ namespace eval patch_xmb {
     proc patch_elf {elf} {			
 		# if "tv-cat" enabled, find the patch
 		# currently, only good for < 3.60
-		if {$::patch_xmb::options(--tv-cat)} {			
+		if {$::patch_xmb::options(--tv-cat)} {				
 			if {${::NEWMFW_VER} < "3.60"} {
-				log "Patching [file tail $elf] to add tv category"   
+				# verified OFW ver. 3.55 - 4.46+
+				# OFW 3.55: 0x (0x)
+				# OFW 3.60: *** NO LONGER AVAILABLE ??  ***
+				log "Patching [file tail $elf] to add tv category"  
+				# ***  this patch is for "xmb_plugin.sprx"  ***
 				# dev_hdd0/game/BCES00275........
 				set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"
 				set replace "\x64\x65\x76\x5f\x66\x6c\x61\x73\x68\x2f\x64\x61\x74\x61\x2f\x63\x65\x72\x74\x00\x00\x00\x00"
 			   
 				catch_die {::patch_elf $elf $search 0 $replace} \
 				"Unable to patch self [file tail $elf]"
+			} else {
+				log "ERROR:  This patch is only available on OFW < 3.60!!"
+				die "ERROR:  This patch is only available on OFW < 3.60!!"
 			}
 		}
 		# if "add install pkg files" back to XMB enabled, patch it
@@ -251,7 +258,11 @@ namespace eval patch_xmb {
 			# verified against "Rogero 4.46 - 09/20/2013"
 			# patches are valid for OFW 4.00 - 4.46+
 			if { [string first "nas_plugin.sprx" $elf 0] != -1 } {
-			
+				# verified OFW ver. 3.55 - 4.46+
+				# OFW 3.55: 0x (0x)
+				# OFW 3.70: 0x (0x)
+				# OFW 4.30: 0x (0x)
+				# OFW 4.46: 0x (0x)
 				log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 1/2"     				
 				set search  "\x40\x9E\x00\x3C\x3D\x20\x00\x06\x38\x00\x00\x29"
 				set replace "\x48\x00"
@@ -259,6 +270,11 @@ namespace eval patch_xmb {
 				# go apply the patches
 				catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"			
 				
+				# verified OFW ver. 3.55 - 4.46+
+				# OFW 3.55: 0x (0x)
+				# OFW 3.70: 0x (0x)
+				# OFW 4.30: 0x (0x)
+				# OFW 4.46: 0x (0x)
 				log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 2/2"     				
 				set search  "\x2F\x89\x00\x00\x41\x9E\x00\x4C\x38\x00\x00\x00"
 				set replace "\x40"
@@ -267,7 +283,11 @@ namespace eval patch_xmb {
 				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
 				
 			} else {
-			
+				# verified OFW ver. 3.55 - 4.46+
+				# OFW 3.55: 0x (0x)
+				# OFW 3.70: 0x (0x)
+				# OFW 4.30: 0x (0x)
+				# OFW 4.46: 0x (0x)
 				log "Patching [file tail $elf] to add Install Package Files back to the XMB"         
 				set search  "\xF8\x21\xFE\xD1\x7C\x08\x02\xA6\xFB\x81\x01\x10\x3B\x81\x00\x70"
 				set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"

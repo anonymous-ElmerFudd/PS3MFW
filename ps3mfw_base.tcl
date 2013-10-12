@@ -703,6 +703,10 @@ proc makeself {in out} {
    set keyRev "00"
    set authID ""
    set vendID "ff000000"
+   set ctrlflags     "40000000000000000000000000000000"
+   append ctrlflags  "00000000000000000000000000000000"
+   set capabflags    "00000000000000000000000000000000"
+   append capabflags "000000000000007B0000000100020000"
    set selfType ""
    set compress FALSE
    set skipsection FALSE
@@ -750,6 +754,10 @@ proc makeself {in out} {
 		set compress FALSE
 		set authID "1070000022000001"
 		set vendID "07000001"
+		set ctrlflags     "00000000000000000000000000000000"
+		append ctrlflags  "00000000000000000000000000000000"
+		set capabflags    "00000000000000000000000000000000"
+		append capabflags "00000000000000780000000000000000"
 		set selfType "ISO"
 		set keyRev "01"
     } elseif { ${::SELF} == "retail game/update" } {
@@ -1036,7 +1044,7 @@ proc makeself {in out} {
 		die "Unhandled SELF TYPE:\"${::SELF}\", fix script to support it!"
 	}		
 	# run the scetool to resign the elf file
-    shell ${::SCETOOL} -0 SELF -1 $compress -s $skipsection -2 $keyRev -3 $authID -4 $vendID -5 $selfType -A $versionVar -6 $fwversiVar -e $in $out
+    shell ${::SCETOOL} -0 SELF -1 $compress -s $skipsection -2 $keyRev -3 $authID -4 $vendID -5 $selfType -A $versionVar -6 $fwversiVar -8 $ctrlflags -9 $capabflags -e $in $out
 }
 
 proc decrypt_self {in out} {

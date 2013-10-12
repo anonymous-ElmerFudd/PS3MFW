@@ -11,17 +11,17 @@
 # Priority: 0000
 # Description: PATCH CORE-OS
 
-# Option --patch-lv0-nodescramble-lv1ldr: [4.xx]  LV0: --> Patch to disable LV0 descrambling of LV1LDR
-# Option --patch-lv0-ldrs-ecdsa-checks: [4.xx]  LV0: --> Patch to disable ECDSA checks in ALL LV0-loaders
-# Option --patch-lv1-peek-poke: [4.xx]  LV1: --> Patch for peek/poke support (unused lv1 calls 182 and 183/4.xx CFW)
-# Option --patch-lv1-remove-lv2-protection: [4.xx]  LV1: --> Patch to remove LV2 protection
-# Option --patch-lv2-peek-poke-4x: [4.xx]  LV2: --> Patch LV2 to add Peek&Poke system calls 4.xx
-# Option --patch-lv2-lv1-peek-poke-4x: [4.xx]  LV2: --> Patch LV2 to add LV1 Peek&Poke system calls 4.xx (LV1 peek/poke patch necessary)
-# Option --patch-lv2-npdrm-ecdsa-check: [4.xx]  LV2: --> Patch LV2 to disable NPDRM ECDSA check 4.xx (Jailbait)
-# Option --patch-lv2-payload-hermes-4x: [4.xx]  LV2: --> Patch LV2 to implement hermes payload SC8 /app_home/ redirection & embedded app mount 4.xx
-# Option --patch-lv2-SC36-4x: [4.xx]  LV2: --> Patch LV2 to implement SysCall36 4.xx
-# Option --patch-spkg-ecdsa-check: [4.xx]  ALT: --> Patch FW PKG Verifier to disable ECDSA check for spkg files (spu_pkg_rvk_verifier.self)
-# Option --patch-RSOD-bypass: [4.xx]  ALT: --> Patch to bypass RSOD errors (basic_plugins.sprx)
+# Option --patch-lv0-nodescramble-lv1ldr: [3.xx/4.xx]  LV0: --> Patch to disable LV0 descrambling of LV1LDR (3.xx/4.xx)
+# Option --patch-lv0-ldrs-ecdsa-checks: [3.xx/4.xx]  LV0: --> Patch to disable ECDSA checks in ALL LV0-loaders (3.xx/4.xx)
+# Option --patch-lv1-peek-poke: [3.xx/4.xx]  LV1: --> Patch for peek/poke support (unused lv1 calls 182 and 183) (3.xx/4.xx)
+# Option --patch-lv1-remove-lv2-protection: [3.xx/4.xx]  LV1: --> Patch to remove LV2 protection (3.xx/4.xx)
+# Option --patch-lv2-peek-poke-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to add Peek&Poke system calls (3.xx/4.xx)
+# Option --patch-lv2-lv1-peek-poke-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to add LV1 Peek&Poke system calls (LV1 peek/poke patch necessary) (3.xx/4.xx)
+# Option --patch-lv2-npdrm-ecdsa-check: [3.xx/4.xx]  LV2: --> Patch LV2 to disable NPDRM ECDSA check  (Jailbait) (3.xx/4.xx)
+# Option --patch-lv2-payload-hermes-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to implement hermes payload SC8 /app_home/ redirection & embedded app mount (3.xx/4.xx)
+# Option --patch-lv2-SC36-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to implement SysCall36 (3.xx/4.xx)
+# Option --patch-spkg-ecdsa-check: [3.xx/4.xx]  ALT: --> Patch FW PKG Verifier to disable ECDSA check for spkg files (spu_pkg_rvk_verifier.self) (3.xx/4.xx)
+# Option --patch-RSOD-bypass: [3.xx/4.xx]  ALT: --> Patch to bypass RSOD errors (basic_plugins.sprx) (3.xx/4.xx)
 # Option --patch-lv2-peek-poke-355: [3.55]  LV2: --> Patch LV2 to add Peek&Poke system calls 3.55
 # Option --patch-lv2-lv1-peek-poke-355: [3.55]  LV2: --> Patch LV2 to add LV1 Peek&Poke system calls 3.55 (LV1 peek/poke patch necessary)
 # Option --patch-lv2-lv1-call-355: [3.55]  LV2: --> Patch LV2 to add LV1 Call system call 3.55
@@ -34,9 +34,9 @@
 # Type --patch-lv2-lv1-peek-poke-4x: boolean
 # Type --patch-lv2-npdrm-ecdsa-check: boolean
 # Type --patch-lv2-payload-hermes-4x: boolean
+# Type --patch-lv2-SC36-4x: boolean
 # Type --patch-spkg-ecdsa-check: boolean
 # Type --patch-RSOD-bypass: boolean
-# Type --patch-lv2-SC36-4x: boolean
 # Type --patch-lv1-peek-poke: boolean
 # Type --patch-lv1-remove-lv2-protection: boolean
 # Type --patch-lv2-peek-poke-355: boolean
@@ -61,9 +61,9 @@ namespace eval ::patch_cos {
         --patch-lv2-lv1-peek-poke-4x true
         --patch-lv2-npdrm-ecdsa-check true
         --patch-lv2-payload-hermes-4x true
+		--patch-lv2-SC36-4x true
 		--patch-spkg-ecdsa-check true
-		--patch-RSOD-bypass true
-        --patch-lv2-SC36-4x true
+		--patch-RSOD-bypass true        
         --patch-lv2-peek-poke-355 false
         --patch-lv2-lv1-peek-poke-355 false
         --patch-lv2-lv1-call-355 false
@@ -163,7 +163,11 @@ namespace eval ::patch_cos {
 		# enable the "FLAG_PATCH_FILE_MULTI" true, so we patch
 		# ALL occurances of ECDSA checks in each ldr
 		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {		
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x81A8 (0x1ACA8)			
+			# OFW 3.70 == 0x6E48 (0x19948)  
+			# OFW 4.00 == 0x6E50 (0x19950) 
+			# OFW 4.46 == 0x6EC4 (0x199C4)
 			log "Patching 4.xx LV1LDR ECDSA CHECKS......"            
 			set self "lv1ldr.self"
 			set file [file join $path $self]			
@@ -175,6 +179,11 @@ namespace eval ::patch_cos {
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf
 
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x43C0 (0x16EC0)			
+			# OFW 3.70 == 0x4458 (0x16F58)  
+			# OFW 4.00 == 0x47F0 (0x172F0) 
+			# OFW 4.46 == 0x47E8 (0x172E8)
 			log "Patching 4.xx LV2LDR ECDSA CHECKS......"
 			set self "lv2ldr.self"
 			set file [file join $path $self]			
@@ -186,6 +195,11 @@ namespace eval ::patch_cos {
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf
 		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x49F0 (0x2A170)			
+			# OFW 3.70 == 0x2750 (0x27ED0)  
+			# OFW 4.00 == 0x2750 (0x27ED0) 
+			# OFW 4.46 == 0x2898 (0x28018)
 			log "Patching 4.xx ISOLDR ECDSA CHECKS......"       
 			set self "isoldr.self"
 			set file [file join $path $self]
@@ -197,6 +211,11 @@ namespace eval ::patch_cos {
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf
 			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x9F60 (0x1CA60)			
+			# OFW 3.70 == 0x56B0 (0x181B0)  
+			# OFW 4.00 == 0x5778 (0x18278) 
+			# OFW 4.46 == 0x5740 (0x18240)
 			log "Patching 4.xx APPLDR ECDSA CHECKS......"
 			set self "appldr.self"
 			set file [file join $path $self]			
@@ -209,20 +228,30 @@ namespace eval ::patch_cos {
 			::modify_self_file $file ::patch_cos::patch_elf            						
 		}					
 		# if "lv0-LV1LDR descramble" patch is enabled, patch in "lv0.elf"
+		# ** LV0 IS ONLY SCRAMBLED IN OFW VERSIONS 3.65+ **
         if {$::patch_cos::options(--patch-lv0-nodescramble-lv1ldr)} {
-		
-			log "Patching Lv0 to disable LV1LDR descramble"
-			set self "lv0"
-			set file [file join $path $self]			
-			set ::FLAG_NO_LV1LDR_CRYPT 1
+			# verified OFW ver. 3.56 - 4.46+
+			# OFW 3.65 == 0x279A8 (0x80079A8)			
+			# OFW 3.70 == 0x27A58 (0x8007A58)  
+			# OFW 4.00 == 0x27A58 (0x8007A58) 
+			# OFW 4.46 == 0x27AD0 (0x8007AD0)
+			if {${::NEWMFW_VER} >= "3.65"} {
 			
-			set ::patch_cos::search  "\xE8\x61\x00\x70\x80\x81\x00\x7C\x48\x00\x09\xB1\xEB"
-            set ::patch_cos::replace "\x60\x00\x00\x00"
-			set ::patch_cos::offset 8						
-			# base function to decrypt the "self" to "elf" for patching
-            ::modify_self_file $file ::patch_cos::patch_elf			
+				log "Patching Lv0 to disable LV1LDR descramble"
+				set self "lv0"
+				set file [file join $path $self]			
+				set ::FLAG_NO_LV1LDR_CRYPT 1			
 			
-			#tk_messageBox -default ok -message "Please add the 00 padding to the '$self' file now!, then press ok to continue" -icon warning
+				set ::patch_cos::search    "\x64\x84\xB0\x00\x48\x00\x00\xFC\xE8\x61\x00\x70\x80\x81\x00\x7C"
+				append ::patch_cos::search "\x48\x00"
+				set ::patch_cos::replace   "\x60\x00\x00\x00"
+				set ::patch_cos::offset 16						
+				# base function to decrypt the "self" to "elf" for patching
+				::modify_self_file $file ::patch_cos::patch_elf	
+				
+			} else {	
+				log "SKIPPING LV0-DESCRAMBLE PATCH, LV0 is NOT scrambled in FW below 3.65...."				
+			}
         }			
 		
 		log "Done LV0 patches...."
@@ -242,30 +271,43 @@ namespace eval ::patch_cos {
 		
 		# if "lv1-peek-poke" enabled, patch it
 		if {$::patch_cos::options(--patch-lv1-peek-poke)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x1225E8 (0x3025E8)
+			# OFW 3.60: 0x123DB4 (0x303DB4			
+			# OFW 4.30: 0x1299C0 (0x3099C0)
+			# OFW 4.46: 0x1299C0 (0x3099C0)		
             log "Patching LV1 hypervisor - peek/poke support(1189356) part 1/2"         
-            set search    "\x38\x00\x00\x00\x64\x00\xff\xff\x60\x00\xff\xec\xf8\x03\x00\xc0"
-	        append search "\x4e\x80\x00\x20\x38\x00\x00\x00"
-            set replace   "\xe8\x83\x00\x18\xe8\x84\x00\x00\xf8\x83\x00\xc8"         
+            set search    "\x38\x00\x00\x00\x64\x00\xFF\xFF\x60\x00\xFF\xEC\xF8\x03\x00\xC0"
+	        append search "\x4E\x80\x00\x20\x38\x00\x00\x00"
+            set replace   "\xE8\x83\x00\x18\xE8\x84\x00\x00\xF8\x83\x00\xC8"         
 			set offset 4				
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                
-         
+			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x1225F8 (0x3025F8)
+			# OFW 3.60: 0x123DC4 (0x303DC4			
+			# OFW 4.30: 0x1299D0 (0x3099D0)
+			# OFW 4.46: 0x1299D0 (0x3099D0)	
 			log "Patching LV1 hypervisor - peek/poke support(1189356) part 2/2" 
-            set search    "\x4e\x80\x00\x20\x38\x00\x00\x00\x64\x00\xff\xff\x60\x00\xff\xec"
-	        append search "\xf8\x03\x00\xc0\x4e\x80\x00\x20"
-            set replace   "\xe8\xa3\x00\x20\xe8\x83\x00\x18\xf8\xa4\x00\x00"         
+            set search    "\x4E\x80\x00\x20\x38\x00\x00\x00\x64\x00\xFF\xFF\x60\x00\xFF\xEC"
+	        append search "\xF8\x03\x00\xC0\x4E\x80\x00\x20\xE9\x22"
+            set replace   "\xE8\xA3\x00\x20\xE8\x83\x00\x18\xF8\xA4\x00\x00"         
 			set offset 8				
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                    
         }
 		#if "lv1-remove-lv2-protection" enabled, patch it
 		if {$::patch_cos::options(--patch-lv1-remove-lv2-protection)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x21D0B8 (0x44D0B8)
+			# OFW 3.60: 0x21D0D4 (0x44D0D4)			
+			# OFW 4.30: 0x23A998 (0x44A998)
+			# OFW 4.46: 0x23A998 (0x44A998)	
             log "Patching LV1 hypervisior to remove LV2 protection"            
-            set search  "\x41\x9E\x00\x20\xE8\x62\x8A"
+            set search  "\x2F\x83\x00\x00\x38\x60\x00\x01\x41\x9E\x00\x20\xE8\x62"
             set replace "\x48\x00"
-            set offset 0				
+            set offset 8				
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                         
         }
@@ -310,28 +352,42 @@ namespace eval ::patch_cos {
 		}
 		# if "--patch-lv2-peek-poke-4x" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-peek-poke-4x)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x65F64 (0x55F64)
+			# OFW 3.60: 0x6692C (0x5692C)			
+			# OFW 4.30: 0x67234 (0x57234)
+			# OFW 4.46: 0x66184 (0x56184)	
 			log "Patching LV2 peek&poke for 4.xx CFW - part 1/2"				 
-			set search     "\x63\xFF\x00\x3E\x4B\xFF\xFF\x0C"
-			set replace    "\x3B\xE0\x00\x00"
-			set offset 0
+			set search   "\x3F\xE0\x80\x01\x63\xFF\x00\x3E\x4B\xFF\xFF\x0C\x83\xBC\x00\x78"
+			set replace  "\x3B\xE0\x00\x00"
+			set offset 4
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    		 					
 			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x65E98 (0x55E98)
+			# OFW 3.60: 0x66860 (0x56860)			
+			# OFW 4.30: 0x67168 (0x57168)
+			# OFW 4.46: 0x660B8 (0x560B8)	
 			log "Patching LV2 peek&poke for 4.xx CFW - part 2/2"	
-			set search     "\x41\x9E\xFF\xD4\x38\xDE"
-			set replace    "\x60\x00\x00\x00"
-			set offset 0
+			set search    "\x3F\xE0\x80\x01\x2F\x84\x00\x02\x63\xFF\x00\x3D\x41\x9E\xFF\xD4"
+			append search "\x38\xDE\x00\x07"
+			set replace   "\x60\x00\x00\x00"
+			set offset 12
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			 
 		}
 		# if "--patch-lv2-lv1-peek-poke-4x" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-lv1-peek-poke-4x)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x10F00 (0xF00) ** PATCH @0x1170C **
+			# OFW 3.60: 0x10F00 (0xF00) ** PATCH @0x1170C **		
+			# OFW 4.30: 0x10F00 (0xF00) ** PATCH @0x1170C **
+			# OFW 4.46: 0x10F00 (0xF00)	** PATCH @0x1170C **
 			log "Patching LV1 peek&poke call permission for LV2 into LV2 - part 1/2"
 			# 7C 71 43 A6 7C 92 43 A6 48 00 00 00 00 00 00 00
 			# 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-			# 7C 71 43 A6 7C 92 43 A6 7C B3 43 A6 7C 7A 02 A6
+			# 7C 71 43 A6 7C 92 43 A6 7C B3 43 A6 7C 7A 02 A6......
 			set search     "\x7C\x71\x43\xA6\x7C\x92\x43\xA6\x48\x00\x00\x00\x00\x00\x00\x00"
 			append search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 			append search  "\x7C\x71\x43\xA6\x7C\x92\x43\xA6\x7C\xB3\x43\xA6\x7C\x7A\x02\xA6"
@@ -349,9 +405,15 @@ namespace eval ::patch_cos {
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			 					
 			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x355DE5 (0x345DE5) ** PATCH @0x3565A0 **
+			# OFW 3.60: 0x35D05D (0x34D05D) ** PATCH @0x35D818 **		
+			# OFW 4.30: 0x36D425 (0x35D425) ** PATCH @0x36DC10 **
+			# OFW 4.46: 0x36E0A5 (0x35E0A5)	** PATCH @0x36E890 **
+			# OFW 4.50: 0x36E915 (0x35E915)	** PATCH @0x36F100 **
 			log "Patching LV1 peek&poke call permission for LV2 into LV2 - part 2/2"
 			# old patch, saving for reference, but not universal enough for all FWs
-			# set ::patch_cos::search     "\x80\x00\x00\x00\x00\x2F\xEA\x40"
+			# set search   "\x80\x00\x00\x00\x00\x2F\xEA\x40"
 			
 			# code pattern at start of 'vector table', same across all FWs
 			# for >= 3.70 FW, offset is 0x7EB (2027)
@@ -370,45 +432,87 @@ namespace eval ::patch_cos {
 		}
 		# if "-patch-lv2-npdrm-ecdsa-check" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-npdrm-ecdsa-check)} {
-		
-			log "Patching NPDRM ECDSA check disabled"				
-			# saving old patch for reference
-			#set search    "\x41\x9E\xFD\x68\x4B\xFF\xFD\x68\xE9\x22\x99\x90\x7C\x08\x02\xA6"
-			set search     "\x41\x9E\xFD\x68\x4B\xFF\xFD\x68\xE9\x22\x99"
-			set replace    "\x38\x60\x00\x00\x4E\x80\x00\x20"
-			set offset 8
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x8AEE8???? (0x)  ** unsure of this patch **
+			# OFW 3.60: 0x69CAC (0x59CAC)
+			# OFW 4.30: 0x6A6B8 (0x5A6B8)
+			# OFW 4.46: 0x69608 (0x59608)
+			
+			## since patch is unsure for OFW <= 3.55, only patch if > 3.55
+			if {${::NEWMFW_VER} > "3.55"} {
+				log "Patching NPDRM ECDSA check disabled"				
+				# saving old patch for reference
+				#set search    "\x41\x9E\xFD\x68\x4B\xFF\xFD\x68\xE9\x22\x99\x90\x7C\x08\x02\xA6"
+				set search     "\x3C\x60\x80\x01\x60\x63\x00\x17\x41\x9E\xFD\x68\x4B\xFF\xFD\x68"
+				append search  "\xE9\x22"
+				set replace    "\x38\x60\x00\x00\x4E\x80\x00\x20"
+				set offset 16
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  
+				
+			} else {
+				log "NPDRM ECDSA Patch not supported for OFW <= 3.55!!"
+				die "NPDRM ECDSA Patch not supported for OFW <= 3.55!!"
+			}
 		}
 		# if "--patch-lv2-SC36-4x" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-SC36-4x)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x65F10 (0x55F10)
+			# OFW 3.60: 0x668D8 (0x568D8)
+			# OFW 4.30: 0x671E0 (0x571E0)
+			# OFW 4.46: 0x66130 (0x56130)
 			log "Patching LV2 with SysCall36 4.xx CFW part 1/3"			
-			set search     "\x41\x9E\x00\xD8\x41\x9D\x00\xC0\x2F\x84\x00\x04\x40\x9C\x00\x48"
+			set search     "\x41\x9E\x00\xD8\x41\x9D\x00\xC0\x2F\x84\x00\x04\x40\x9C\x00\x48"			
 			set replace    "\x60\x00\x00\x00\x2F\x84\x00\x04\x48\x00\x00\x98"
 			set offset 4
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			
 			
-			log "Patching LV2 with SysCall36 4.xx CFW part 2/3"			
-			set search     "\x41\x9E\x00\x70\xE8\x61\x01\x88"
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x8AF60 (0x7AF60)
+			# OFW 3.60: 0x6A194 (0x5A194)
+			# OFW 4.30: 0x6ABA0 (0x5ABA0)
+			# OFW 4.46: 0x69AF0 (0x59AF0)
+			log "Patching LV2 with SysCall36 4.xx CFW part 2/3"	
+			if {${::NEWMFW_VER} <= "3.55"} {
+				# pattern for <= 3.55 OFW
+				set search "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x20\xE8\x61"
+			} else {
+				# pattern for > 3.55 OFW
+				set search "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x70\xE8\x61"
+			}			
 			set replace    "\x60\x00\x00\x00"
-			set offset 0
+			set offset 8
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    		 					
 
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x8AF74 (0x7AF74)
+			# OFW 3.60: 0x6A1A8 (0x5A1A8)
+			# OFW 4.30: 0x6ABB4 (0x5ABB4)
+			# OFW 4.46: 0x69B04 (0x59B04)
 			log "Patching LV2 with SysCall36 4.xx CFW part 3/3"
-			# OLD PATCH
-			#set search     "\x4B\xFF\xF3\x31\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x70"
-			set search     "\x41\x9E\x00\x70\x38\x61\x00\x70\x4B\xFF"
+			if {${::NEWMFW_VER} <= "3.55"} {
+				# pattern for <= 3.55 OFW							
+			   #set search "\x4B\xFF\xF3\x31\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x70"	# OLD PATCH		
+				set search "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x20\x80\x61\x00\x7C"
+			} else {
+				# pattern for > 3.55 OFW
+				set search "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x70\x38\x61\x00\x70"
+			}
 			set replace    "\x60\x00\x00\x00"
-			set offset 0
+			set offset 8
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			 
 		}
 		# if "--patch-lv2-payload-hermes-4x" enabled, then patch
 		if {$::patch_cos::options(--patch-lv2-payload-hermes-4x)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x2E8460 (0x2D8460)
+			# OFW 3.60: 0x2EB940 (0x2DB940)
+			# OFW 4.30: 0x2F9F98 (0x2E9F98)
+			# OFW 4.46: 0x2FAA48 (0x2EAA48)
 			log "Patching Hermes payload 4.xx into LV2"				
 			set search     	"\x52\x52\x30\x20\x3A\x20\x30\x78"			
 			set replace    	"\xF8\x21\xFF\x61\x7C\x08\x02\xA6\xFB\x81\x00\x80\xFB\xA1\x00\x88"
@@ -565,7 +669,11 @@ namespace eval ::patch_cos {
 		log "Applying OS Misc File patches...."						
 		# if "--patch-spkg-ecdsa-check" is enabled, patch in "spu_pkg_rvk_verifier.self"
 		if {$::patch_cos::options(--patch-spkg-ecdsa-check)} {
-		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x3060 (0x37E0)
+			# OFW 3.60: 0x3060 (0x37E0)
+			# OFW 4.30: 0x3060 (0x37E0)
+			# OFW 4.46: 0x3060 (0x37E0)
             log "Patching SPKG ECDSA verifier to disable ECDSA check"  
 			set self "spu_pkg_rvk_verifier.self"
 			set file [file join $path $self]			
@@ -604,14 +712,24 @@ namespace eval ::patch_cos {
 	
 	# this proc is for patching dev_flash files
 	proc patch_devflash_file {elf} {   
-		
-		# if "--patch-RSOD-bypass" is enabled, patch in "dev_flash\vsh\module\basic_plugins.sprx"
-		if {$::patch_cos::options(--patch-RSOD-bypass)} {
-			set search     "\x41\x9E\x00\x10\x2F\x9F\x00\x02\x40\x9E\x00\x20\x48\x00\x00\x10"     
-            set replace    "\x48\x00"
-			set offset 8	
-			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+		# verified OFW ver. 4.00 - 4.46+
+		# OFW 3.55: NOT FOUND
+		# OFW 3.60: NOT FOUND
+		# OFW 4.00: 0xFEEC (0xFDFC)
+		# OFW 4.30: 0xFF00 (0xFE10)
+		# OFW 4.46: 0xFF00 (0xFE10)		
+		if {${::NEWMFW_VER} < "4.00"} {
+				log "RSOD BYPASS PATCH NOT SUPPORTED BELOW 4.00!"
+				die "RSOD BYPASS PATCH NOT SUPPORTED BELOW 4.00!"
+		} else {
+			# if "--patch-RSOD-bypass" is enabled, patch in "dev_flash\vsh\module\basic_plugins.sprx"
+			if {$::patch_cos::options(--patch-RSOD-bypass)} {
+				set search     "\x41\x9E\x00\x10\x2F\x9F\x00\x02\x40\x9E\x00\x20\x48\x00\x00\x10"     
+				set replace    "\x48\x00"
+				set offset 8	
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+			}
 		}
     }
 	# --------------------------------------------------------------------------------------		

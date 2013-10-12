@@ -57,7 +57,7 @@ proc pack_custom_pup {dir pup} {
         incr build
     }
     # create pup
-    log "Packing Modified PUP [file tail ${pup}]"
+    log "Packing Modified PUP \"[file tail ${pup}]\""
     catch_die {pup_create ${dir} ${pup} $build} "Error packing PUP file [file tail ${pup}]"
 }
 
@@ -141,7 +141,7 @@ proc build_mfw {input output tasks} {
 
     # Execute tasks
     foreach task ${::selected_tasks} {
-        log "******** Running task $task **********"
+        log "******** Running task: \"$task.tcl\" **********"
         eval [string map {- _} ${task}::main]
     }
     log "******** Completed tasks **********"
@@ -180,5 +180,5 @@ proc build_mfw {input output tasks} {
 	
 	# finalize the completed PUP
     pack_custom_pup ${::CUSTOM_PUP_DIR} ${final_output}
-	log "CUSTOM FIMWARE  $::OFW_MAJOR_VER.$::OFW_MINOR_VER  BUILD COMPLETE!!!"
+	log "CUSTOM FIMWARE VER:$::OFW_MAJOR_VER.$::OFW_MINOR_VER BUILD COMPLETE!!!"
 }
