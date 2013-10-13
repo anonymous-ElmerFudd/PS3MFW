@@ -11,7 +11,7 @@
 # Priority: 0004
 # Description: PATCH: XMB - Miscellaneous
 
-# Option --patch-act-pkg: Patch the standard  '*Install Package Files'  function back in to the XMB (4.30+) 
+# Option --patch-act-pkg: Patch the standard  '*Install Package Files'  function back in to the XMB (4.00+) 
 # Option --patch-package-files: Add "Install Package Files" icon to the XMB Game Category    
 # Option --patch-app-home: Add "/app_home" icon to the XMB Game Category
 # Option --patch-ren-apphome: Rename /app_home/PS3_GAME/ to Discless
@@ -234,69 +234,104 @@ namespace eval patch_xmb {
     proc patch_elf {elf} {			
 		# if "tv-cat" enabled, find the patch
 		# currently, only good for < 3.60
-		if {$::patch_xmb::options(--tv-cat)} {				
-			if {${::NEWMFW_VER} < "3.60"} {
-				# verified OFW ver. 3.55 - 4.46+
-				# OFW 3.55: 0x (0x)
-				# OFW 3.60: *** NO LONGER AVAILABLE ??  ***
-				log "Patching [file tail $elf] to add tv category"  
-				# ***  this patch is for "xmb_plugin.sprx"  ***
-				# dev_hdd0/game/BCES00275........
-				set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"
-				set replace "\x64\x65\x76\x5f\x66\x6c\x61\x73\x68\x2f\x64\x61\x74\x61\x2f\x63\x65\x72\x74\x00\x00\x00\x00"
-			   
-				catch_die {::patch_elf $elf $search 0 $replace} \
-				"Unable to patch self [file tail $elf]"
-			} else {
-				log "ERROR:  This patch is only available on OFW < 3.60!!"
-				die "ERROR:  This patch is only available on OFW < 3.60!!"
+		# patch for file: "xmb_plugin.sprx"
+		if {$::patch_xmb::options(--tv-cat)} {	
+			if { [string first "xmb_plugin.sprx" $elf 0] != -1 } {
+				if {${::NEWMFW_VER} < "3.60"} {
+					# verified OFW ver. 3.60 - 3.60
+					# OFW 3.55: 0x1E251 (0x1E161)
+					# OFW 3.60: *** NO LONGER AVAILABLE ??  ***
+					log "Patching [file tail $elf] to add tv category"  
+					# ***  this patch is for "xmb_plugin.sprx"  ***
+					# dev_hdd0/game/BCES00275........
+					set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"
+					set replace "\x64\x65\x76\x5f\x66\x6c\x61\x73\x68\x2f\x64\x61\x74\x61\x2f\x63\x65\x72\x74\x00\x00\x00\x00"
+					set offset 0			   
+					# PATCH THE ELF BINARY
+					catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+					
+				} else {
+					log "ERROR:  This patch is only available on OFW < 3.60!!"
+					die "ERROR:  This patch is only available on OFW < 3.60!!"
+				}
 			}
 		}
+		####   *INSTALL PKG FILES*  adding into XMB  ##############################################
+		####
+		####   NOTE:  Unsure of what firmware EXACTLY this patch set became possible????
+		#####         *some* of the patches are found in OFW early as 3.60, but others later???
+		#
 		# if "add install pkg files" back to XMB enabled, patch it
 		if {$::patch_xmb::options(--patch-act-pkg)} {
 		
 			# verified against "Rogero 4.46 - 09/20/2013"
 			# patches are valid for OFW 4.00 - 4.46+
-			if { [string first "nas_plugin.sprx" $elf 0] != -1 } {
-				# verified OFW ver. 3.55 - 4.46+
-				# OFW 3.55: 0x (0x)
-				# OFW 3.70: 0x (0x)
-				# OFW 4.30: 0x (0x)
-				# OFW 4.46: 0x (0x)
-				log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 1/2"     				
-				set search  "\x40\x9E\x00\x3C\x3D\x20\x00\x06\x38\x00\x00\x29"
-				set replace "\x48\x00"
-				set offset  0
-				# go apply the patches
-				catch_die {::patch_elf $elf $search 0 $replace} "Unable to patch self [file tail $elf]"			
+			if { [string first "nas_plugin.sprx" $elf 0] != -1 } {				
+				if {${::NEWMFW_VER} >= "4.00"} {
+					# verified OFW ver. 3.55 - 4.46+
+					# OFW 3.55: *** DOES NOT EXIST IN 3.xx OFW! ***
+					# OFW 3.70: *** DOES NOT EXIST IN 3.xx OFW! ***
+					# OFW 4.00: 0x22CC0 (0x22BD0)
+					# OFW 4.30: 0x242D8 (0x241E8)
+					# OFW 4.46: 0x23B28 (0x23A38)
+					log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 1/2"     				
+					set search  "\x40\x9E\x00\x3C\x3D\x20\x00\x06\x38\x00\x00\x29\x3B\xA0\x00\x00"
+					set replace "\x48\x00"
+					set offset  0
+					# PATCH THE ELF BINARY
+					catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"   		
 				
-				# verified OFW ver. 3.55 - 4.46+
-				# OFW 3.55: 0x (0x)
-				# OFW 3.70: 0x (0x)
-				# OFW 4.30: 0x (0x)
-				# OFW 4.46: 0x (0x)
-				log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 2/2"     				
-				set search  "\x2F\x89\x00\x00\x41\x9E\x00\x4C\x38\x00\x00\x00"
-				set replace "\x40"
-				set offset 4
-				# go apply the patches
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
-				
+					# verified OFW ver. 3.55 - 4.46+
+					# OFW 3.55: 0x3734C (0x3725C)
+					# OFW 3.70: 0x3BF1C (0x3BE2C)
+					# OFW 4.00: 0x2DFD0 (0x3BE2C)
+					# OFW 4.30: 0x2E930 (0x2E840)
+					# OFW 4.46: 0x2EAF0 (0x2EA00)
+					log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 2/2"     				
+					set search  "\x2F\x89\x00\x00\x41\x9E\x00\x4C\x38\x00\x00\x00\x81\x22"
+					set replace "\x40"
+					set offset 4
+					# PATCH THE ELF BINARY
+					catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
+					
+				} else {
+					log "ERROR: Adding *Install Pkg Files to XMB via elf patching only works in 4.xx FIRMWARE!!"
+					die "ERROR: Adding *Install Pkg Files to XMB via elf patching only works in 4.xx FIRMWARE!!"
+				}
 			} else {
-				# verified OFW ver. 3.55 - 4.46+
-				# OFW 3.55: 0x (0x)
-				# OFW 3.70: 0x (0x)
-				# OFW 4.30: 0x (0x)
-				# OFW 4.46: 0x (0x)
-				log "Patching [file tail $elf] to add Install Package Files back to the XMB"         
-				set search  "\xF8\x21\xFE\xD1\x7C\x08\x02\xA6\xFB\x81\x01\x10\x3B\x81\x00\x70"
-				set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
-				set offset  0
-				# go apply the patches
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"			
+				if {${::NEWMFW_VER} >= "4.00"} {
+					# "*INSTALL PKG FILE PATCHES" FOR:  "explore_category_game.sprx" AND  "explore_plugin.sprx"
+					if { ([string first "explore_category_game.sprx" $elf 0] != -1) || ([string first "explore_plugin.sprx" $elf 0] != -1) } {					
+						# verified OFW ver. 3.55 - 4.46+
+						#"explore_category_game.sprx"       "explore_plugin.sprx"
+						# OFW 3.55: ** NOT FOUND **			# OFW 3.55: ** NOT FOUND **		
+						# OFW 3.60: 0xBAF50 (0xBAE60)		# OFW 3.60: 0x1F3ACC (0x1F39DC)
+						# OFW 3.70: 0xBE87C (0xBE78C)		# OFW 3.70: 0x200870 (0x200780)
+						# OFW 4.00: 0xBA564 (0xBA474)		# OFW 4.00: 0x1F6708 (0x1F6618)
+						# OFW 4.30: 0xB64EC (0xB63FC		# OFW 4.30: 0x1FE508 (0x1FE418)
+						# OFW 4.46: 0xB6658 (0xB6568)		# OFW 4.46: 0x1FF014 (0x1FEF24)
+						log "Patching [file tail $elf] to add Install Package Files back to the XMB"         
+						set search  "\xF8\x21\xFE\xD1\x7C\x08\x02\xA6\xFB\x81\x01\x10\x3B\x81\x00\x70"
+						set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
+						set offset  0
+						# PATCH THE ELF BINARY
+						catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+						
+					} else {
+						log "ERROR: *Install Pkg Files patch encountered for unhandled file: [file tail $elf]"
+						die "ERROR: *Install Pkg Files patch encountered for unhandled file: [file tail $elf]"
+					}
+				} else {
+					log "ERROR: Adding *Install Pkg Files to XMB via elf patching only works in 4.xx FIRMWARE!!"
+					die "ERROR: Adding *Install Pkg Files to XMB via elf patching only works in 4.xx FIRMWARE!!"
+				}
 			}					
 		}
+		#
+		#### END "if {$::patch_xmb::options(--patch-act-pkg)} ENABLED ######
     }
+	#
+	#### END "patch_elf{} ######
     
 	### proc for "alphabetical sort"
     proc alpha_sort {path file} {
