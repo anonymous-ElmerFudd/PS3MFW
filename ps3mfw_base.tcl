@@ -9,6 +9,22 @@
 #
 #
 
+# ------ BEGIN GLOBALS --------
+#
+# global array for saving off SELF-SCE Hdr fields
+# for use by unself/makeself routines
+array set SelfHdr_Fields {
+	--KEYREV ""
+	--AUTHID ""
+	--VENDORID ""
+	--SELFTYPE ""
+	--VERSION ""
+	--CTRLFLAGS ""
+	--CAPABFLAGS ""
+	--COMPRESS false
+}
+# 
+# ------- END GLOBALS ---------
 
 
 # PRINT USAGE
@@ -268,11 +284,18 @@ proc catch_die {command message} {
     set catch [string map [list "@command@" "$command" "@message@" "$message"] $catch]
     uplevel 1 $catch
 }
-
+# standard 'shell' to pipe output to log file
 proc shell {args} {
     set fd [get_log_fd]
     debug "Executing shell $args"
     eval exec $args >&@ $fd
+}
+# enhanced 'shellex' to save output to return var
+proc shellex {args} {
+	set outbuffer ""    
+    debug "Executing shellex $args"
+    set outbuffer [eval exec $args]	
+	return $outbuffer
 }
 
 proc hexify { str } {
@@ -698,367 +721,152 @@ proc unself {in out} {
 #
 proc makeself {in out} {
    variable options
-   set fwversiVar ""
-   set versionVar ""
-   set keyRev "00"
-   set authID ""
-   set vendID "ff000000"
-   set ctrlflags     "40000000000000000000000000000000"
-   append ctrlflags  "00000000000000000000000000000000"
-   set capabflags    "00000000000000000000000000000000"
-   append capabflags "000000000000007B0000000100020000"
-   set selfType ""
-   set compress FALSE
-   set skipsection FALSE
+   global SelfHdr_Fields          
+  
+   set MyKeyRev ""	
+   set MyAuthID ""
+   set MyVendorID ""
+   set MySelfType ""
+   set MyVersion ""
+   set MyFwVersion ""
+   set MyCtrlFlags ""   
+   set MyCapabFlags ""      
+   set MyCompressed FALSE
+   set skipsection FALSE   
    
+	
+	# set the local vars for all the SCETOOL fields, from the global vars
+	# populated from the "import_sce_info{}" proc
+	set MyKeyRev $::SelfHdr_Fields(--KEYREV)
+	set MyAuthID $::SelfHdr_Fields(--AUTHID)
+	set MyVendorID $::SelfHdr_Fields(--VENDORID)
+	set MySelfType $::SelfHdr_Fields(--SELFTYPE)
+	set MyVersion $::SelfHdr_Fields(--VERSION)
+	set MyCtrlFlags $::SelfHdr_Fields(--CTRLFLAGS)
+	set MyCapabFlags $::SelfHdr_Fields(--CAPABFLAGS)
+	set MyCompressed $::SelfHdr_Fields(--COMPRESS)
 
-    # Reading the pup suffix var and set up fw/self version var 	
-	# example: "0004004100000000"
-	set versionVar [format "000%d00%d00000000" $::OFW_MAJOR_VER $::OFW_MINOR_VER]
-	set fwversiVar $versionVar	
+	# Reading the SELF version var, and setup in SCETOOL format
+	# example: "0004004100000000"	
+	set MyVersion [format "000%d00%d00000000" [lindex [split $MyVersion "."] 0] [lindex [split $MyVersion "."] 1]]
+	set MyFwVersion $MyVersion	
 	set ::SELF [file tail $in]	
-	#debug "VERSION: $versionVar"	
+	#debug "VERSION: $MyVersion"	
 	
-    # Read the loaded self and set authentication/vendor ID, self type and key revision 
-	#
-    if { ${::SELF} == "lv0" || ${::SELF} == "lv0.elf" } {
-		set compress FALSE
-		set authID "1ff0000001000001"
-		set selfType "LV0"		
-    } elseif { ${::SELF} == "lv1ldr.self" || ${::SELF} == "lv1ldr.self.elf" } {
-		set compress FALSE
-		set authID "1FF0000008000001"
-		set selfType "LDR"		
-    } elseif { ${::SELF} == "lv2ldr.self" || ${::SELF} == "lv2ldr.self.elf"} {
-		set compress FALSE
-		set authID "1FF0000009000001"
-		set selfType "LDR"		
-    } elseif { ${::SELF} == "isoldr.self" || ${::SELF} == "isoldr.self.elf" } {
-		set compress FALSE
-	    set authID "1FF000000A000001"
-		set selfType "LDR"
-	} elseif { ${::SELF} == "appldr.self" || ${::SELF} == "appldr.self.elf"} {
-		set compress FALSE
-	    set authID "1ff000000c000001"
-		set selfType "LDR"
-	} elseif { ${::SELF} == "lv1.self" || ${::SELF} == "lv1.self.elf" } {
-		set compress TRUE
-		set authID "1ff0000002000001"
-		set selfType "LV1"
-    } elseif { ${::SELF} == "lv2_kernel.self" || ${::SELF} == "lv2_kernel.self.elf" } {
-		set compress TRUE
-		set authID "1050000003000001"
-		set vendID "05000002"
-		set selfType "LV2"		
-    } elseif { ${::SELF} == "spu_pkg_rvk_verifier.self" || ${::SELF} == "spu_pkg_rvk_verifier.self.elf" } {
-		set compress FALSE
-		set authID "1070000022000001"
-		set vendID "07000001"
-		set ctrlflags     "00000000000000000000000000000000"
-		append ctrlflags  "00000000000000000000000000000000"
-		set capabflags    "00000000000000000000000000000000"
-		append capabflags "00000000000000780000000000000000"
-		set selfType "ISO"
-		set keyRev "01"
-    } elseif { ${::SELF} == "retail game/update" } {
-		set compress FALSE
-		set authID "1010000001000003"		
-		set selfType "APP"
-		set keyRev "01"    
-	} elseif { ${::SELF} == "ps2emu" } {
-		set compress FALSE
-		set authID "1020000401000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "onicore_child" } {
-		set compress FALSE
-		set authID "1070000001000002"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "mcore" } {
-		set compress FALSE
-		set authID "1070000002000002"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "mgvideo" } {
-		set compress FALSE
-		set authID "1070000003000002"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "swagner" } {
-		set compress FALSE
-		set authID "1070000004000002"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "swreset" } {
-		set compress FALSE
-		set authID "1070000004000002"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "ss_init" } {
-		set compress FALSE
-		set authID "1070000017000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "ss_sc_init_pu" } {
-		set compress FALSE
-		set authID "107000001A000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "updater_frontend" } {
-		set compress FALSE
-		set authID "107000001C000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "sysmgr_ss" } {
-		set compress FALSE
-		set authID "107000001D000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "sb_iso_spu_module.self" || ${::SELF} == "sb_iso_spu_module.self.elf" } {
-		set compress FALSE
-		set authID "107000001F000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "sc_iso.self" || ${::SELF} == "sc_iso.self.elf" } {
-		set compress FALSE
-		set authID "1070000020000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "sc_iso_factory.self" || ${::SELF} == "sc_iso_factory.self.elf" } {
-		set compress FALSE
-		set authID "1070000020000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "spp_verifier.self" || ${::SELF} == "spp_verifier.self.elf" } {
-		set compress FALSE
-		set authID "1070000021000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "spu_pkg_rvk_verifier.self" || ${::SELF} == "spu_pkg_rvk_verifier.self.elf" } {
-		set compress FALSE
-		set authID "1070000022000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "spu_token_processor.self" || ${::SELF} == "spu_token_processor.self.elf" } {
-		set compress FALSE
-		set authID "1070000023000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "sv_iso_spu_module.self" || ${::SELF} == "sv_iso_spu_module.self.elf" } {
-		set compress FALSE
-		set authID "1070000024000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "aim_spu_module.self" || ${::SELF} == "aim_spu_module.self.elf" } {
-		set compress FALSE
-		set authID "1070000025000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "ss_sc_init" } {
-		set compress FALSE
-		set authID "1070000026000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "factory_data_mngr_server" } {
-		set compress FALSE
-		set authID "1070000028000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "fdm_spu_module" } {
-		set compress FALSE
-		set authID "1070000029000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "ss_server1" } {
-		set compress FALSE
-		set authID "1070000032000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "ss_server2" } {
-		set compress FALSE
-		set authID "1070000033000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "ss_server3" } {
-		set compress FALSE
-		set authID "1070000034000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "mc_iso_spu_module.self" || ${::SELF} == "mc_iso_spu_module.self.elf" } {
-		set compress FALSE
-		set authID "1070000037000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "bdp_bdmv" } {
-		set compress FALSE
-		set authID "1070000039000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "bdj" } {
-		set compress FALSE
-		set authID "107000003A000001"		
-		set selfType "APP"
-		set keyRev "01"
-    }  elseif { ${::SELF} == "ps1emu" } {
-		set compress FALSE
-		set authID "1070000041000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "me_iso_spu_module.self" || ${::SELF} == "me_iso_spu_module.self.elf"} {
-		set compress FALSE
-		set authID "1070000043000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "spu_mode_auth" } {
-		set compress FALSE
-		set authID "1070000046000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "spu_utoken_processor.self" || ${::SELF} == "spu_utoken_processor.self.elf" } {
-		set compress FALSE
-		set authID "107000004C000001"		
-		set selfType "APP"
-		set keyRev "01"
-    }  elseif { ${::SELF} == "manu_info_spu_module.self" || ${::SELF} == "manu_info_spu_module.self.elf" } {
-		set compress FALSE
-		set authID "1070000055000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "me_iso_for_ps2emu.self" || ${::SELF} == "me_iso_for_ps2emu.self.elf" } {
-		set compress FALSE
-		set authID "1070000058000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "sv_iso_for_ps2emu.self" || ${::SELF} == "sv_iso_for_ps2emu.self.elf" } {
-		set compress FALSE
-		set authID "1070000059000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "Lv2diag BD Remarry" } {
-		set authID "1070000300000001"		
-		set selfType "APP"
-		set keyRev "01"
-    } elseif { ${::SELF} == "emer_init.self" || ${::SELF} == "emer_init.self.elf" } {
-		set compress TRUE
-	    set authID "10700003FC000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "ps3swu" } {
-		set compress FALSE
-	    set authID "10700003FD000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "Lv2diag FW Stuff" } {
-		set compress FALSE
-	    set authID "10700003FF000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "pspemu" } {
-		set compress FALSE
-	    set authID "1070000409000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "psp_translator" } {
-		set compress FALSE
-	    set authID "107000040A000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "pspemu modules" } {
-		set compress FALSE
-	    set authID "107000040B000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "pspemu drm" } {
-		set compress FALSE
-	    set authID "107000040C000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "cellftp" } {
-		set compress FALSE
-	    set authID "1070000500000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "hdd_copy" } {
-		set compress FALSE
-	    set authID "1070000501000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "sys_audio" } {
-		set compress FALSE
-	    set authID "10700005FC000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "sys_init_osd" } {
-		set compress FALSE
-	    set authID "10700005FD000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "sys_init_osd" } {
-		set compress FALSE
-	    set authID "10700005FD000001"
-		set selfType "APP"
-	} elseif { ${::SELF} == "vsh.self" || ${::SELF} == "vsh.self.elf" } {
-		set compress TRUE
-	    set authID "10700005ff000001"
-		set vendID "01000002"
-		set selfType "APP"
-		set keyRev "1C"
-	## ------------- ALL "DEV_FLASH/xxxx" module checks are below ----------------
-	} elseif { ([string first "dev_flash/sys/external/" $in 0] != -1) } {
-		set compress TRUE
-		set authID "1070000040000001"
-		set vendID "01000002"		
-		set selfType "APP"
-		set keyRev "1C"	
-    } elseif { ([string first "dev_flash/sys/internal/" $in 0] != -1) || ([string first "dev_flash/vsh/module/" $in 0] != -1) } {  
-		set compress TRUE
-		set authID "1070000052000001"
-		set vendID "01000002"			
-		set selfType "APP"
-		set keyRev "1C"
-    }
-	## ------------- DONE "DEV_FLASH/xxxx" module checks  ----------------
-	#
-	#
-	################ END OF AUTH_IDs TABLE ####################
 	
-	# ----- IF WE COULD NOT FIND THE "SELF" MATCH ABOVE, THEN CHECK HERE -----
+	# ----- IF FOR SOME STRANGE REASON, WE ENDED UP HERE WITHOUT THE SCE HEADER INFO READ IN,
+	#       THEN USE DEFAULT VALUES BELOW
 	#
 	# Load the pre-defined application var into a loop and compare it against the loaded self,
 	# search for the "::SELF" filename within the "patchself" string, as it's a full
 	# "dev_flash/xxxx" path
-	if { $authID == "" } {
-		log "AUTHID was not found in lookup list, trying failsafe list..."
-		foreach patchSelf ${::APPSELF} {
-			set tempfile ${patchSelf}.elf
-			if { ([string first ${::SELF} $tempfile 0] != -1) } {
-				# if we found our "dev_flash/xxx" file in the list				
-				set authID "1070000052000001"				
-				set compress TRUE
-				set vendID "01000002"
-				set selfType "APP"					
-				if { ${::SUF} == ${::c} || ${::SUF} == ${::d} } {
-					set keyRev "1C"
-				} elseif { ${::SUF} == ${::a} } {
-					set keyRev "04"
-				} elseif { ${::SUF} == ${::b} } {
-					set keyRev "0A"
-				}
-			}
-		}
+	if { $MyAuthID == "" } {	
+		if { ([string first "dev_flash/sys/external/" $in 0] != -1) } {
+			set MyCompressed TRUE
+			set MyAuthID "1070000040000001"
+			set MyVendorID "01000002"		
+			set MySelfType "APP"
+			set MyKeyRev "1C"
+			set MyCtrlFlags     "00000000000000000000000000000000"
+			append MyCtrlFlags  "00000000000000000000000000000001"
+			set MyCapabFlags    "00000000000000000000000000000000"
+			append MyCapabFlags "000000000000007B0000000100000000"
+		} elseif { ([string first "dev_flash/sys/internal/" $in 0] != -1) || ([string first "dev_flash/vsh/module/" $in 0] != -1) } {  
+			set MyCompressed TRUE
+			set MyAuthID "1070000052000001"
+			set MyVendorID "01000002"			
+			set MySelfType "APP"
+			set MyKeyRev "1C"
+			set MyCtrlFlags     "40000000000000000000000000000000"
+			append MyCtrlFlags  "00000000000000000000000000000002"
+			set MyCapabFlags    "00000000000000000000000000000000"
+			append MyCapabFlags "000000000000007B0000000100020000"
+		} else {			
+			set MyCompressed FALSE
+			set MyAuthID "1ff0000001000001"
+			set MySelfType "LV0"
+			set MyCtrlFlags     "40000000000000000000000000000000"
+			append MyCtrlFlags  "00000000000000000000000000000000"
+			set MyCapabFlags    "00000000000000000000000000000000"
+			append MyCapabFlags "000000000000007B0000000100020000"
+		} 		
 	}
+	##### ---------------------------------------------------------- ###
+	
 	## make sure we have a valid authID, if it's blank, 
-	## then we have an unhandled SELF type that needs to be added!!
-	if { $authID == "" } {
+	## then we have an unhandled SELF type that needs to be added!!	
+	if { $MyAuthID == "" } {
 		#### CURRENTLY UNHANDLED TYPE - if dies here, fix the script to add  #####		
 		die "Unhandled SELF TYPE:\"${::SELF}\", fix script to support it!"
 	}		
 	# run the scetool to resign the elf file
-    shell ${::SCETOOL} -0 SELF -1 $compress -s $skipsection -2 $keyRev -3 $authID -4 $vendID -5 $selfType -A $versionVar -6 $fwversiVar -8 $ctrlflags -9 $capabflags -e $in $out
+    shell ${::SCETOOL} -0 SELF -1 $MyCompressed -s $skipsection -2 $MyKeyRev -3 $MyAuthID -4 $MyVendorID -5 $MySelfType \
+		-A $MyVersion -6 $MyFwVersion -8 $MyCtrlFlags -9 $MyCapabFlags -e $in $out
 }
-
+# stub proc for decrypting self file
 proc decrypt_self {in out} {
     debug "Decrypting self file [file tail $in]"
     catch_die {unself $in $out} "Could not decrypt file [file tail $in]"
 }
+# proc to run the scetool to dump the SELF header info
+proc import_self_info {in} {	
+	
+	log "Importing SELF-HDR info from file: [file tail $in]"	
+	global SelfHdr_Fields
+	# execute the "SCETOOL -w" cmd to dump the needed SCE-HDR info
+    catch_die {set buffer [shellex ${::SCETOOL} -w $in]} "failed to dump SCE header for file: [file tail $in]"	
 
+	# parse out the return buffer, and 
+	# save off the fields into the global array
+	set data [split $buffer "\n"]
+	foreach line $data {
+		if [regexp -- {(^Key-Revision:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--KEYREV) [lindex [split $match ":"] 1]			
+		}
+		if [regexp -- {(^Auth-ID:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--AUTHID) [lindex [split $match ":"] 1]			
+		}
+		if [regexp -- {(^Vendor-ID:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--VENDORID) [lindex [split $match ":"] 1]			
+		}
+		if [regexp -- {(^SELF-Type:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--SELFTYPE) [lindex [split $match ":"] 1]			
+		}
+		if [regexp -- {(^Version:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--VERSION) [lindex [split $match ":"] 1]			
+		}
+		if [regexp -- {(^CtrlFlags:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--CTRLFLAGS) [lindex [split $match ":"] 1]			
+		}
+		if [regexp -- {(^CapabFlags:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--CAPABFLAGS) [lindex [split $match ":"] 1]			
+		}
+		if [regexp -- {(^Compressed:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--COMPRESS) [lindex [split $match ":"] 1]			
+		}
+	}
+	log "SELF-SCE HEADERS IMPORTED:"
+	log "-->KeyRev:$::SelfHdr_Fields(--KEYREV)"
+	log "-->AuthID:$::SelfHdr_Fields(--AUTHID)"
+	log "-->VendorID:$::SelfHdr_Fields(--VENDORID)"
+	log "-->SelfType:$::SelfHdr_Fields(--SELFTYPE)"
+	log "-->Version:$::SelfHdr_Fields(--VERSION)"
+	log "-->CtrlFlags:$::SelfHdr_Fields(--CTRLFLAGS)"
+	log "-->CapabFlags:$::SelfHdr_Fields(--CAPABFLAGS)"
+	log "-->Compressed:$::SelfHdr_Fields(--COMPRESS)"	
+}
+# stub proc for resigning the elf
 proc sign_elf {in out} {
     debug "Rebuilding self file [file tail $out]"
     catch_die {makeself $in $out} "Could not rebuild file [file tail $out]"
 }
-
+# proc for decrypting, modifying, and re-signing a SELF file
 proc modify_self_file {file callback args} {
-    log "Modifying self/sprx file [file tail $file]"
+
+    log "Modifying self/sprx file [file tail $file]"			
+	# read in the SELF hdr info to save off for re-signing
+	import_self_info $file		
+	# decrypt the self file
     decrypt_self $file ${file}.elf
     eval $callback ${file}.elf $args
     sign_elf ${file}.elf ${file}.self
