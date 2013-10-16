@@ -18,7 +18,8 @@ array set SelfHdr_Fields {
 	--AUTHID ""
 	--VENDORID ""
 	--SELFTYPE ""
-	--VERSION ""
+	--APPVERSION ""
+	--FWVERSION ""
 	--CTRLFLAGS ""
 	--CAPABFLAGS ""
 	--COMPRESS false
@@ -727,7 +728,7 @@ proc makeself {in out} {
    set MyAuthID ""
    set MyVendorID ""
    set MySelfType ""
-   set MyVersion ""
+   set MyAppVersion ""
    set MyFwVersion ""
    set MyCtrlFlags ""   
    set MyCapabFlags ""      
@@ -741,15 +742,15 @@ proc makeself {in out} {
 	set MyAuthID $::SelfHdr_Fields(--AUTHID)
 	set MyVendorID $::SelfHdr_Fields(--VENDORID)
 	set MySelfType $::SelfHdr_Fields(--SELFTYPE)
-	set MyVersion $::SelfHdr_Fields(--VERSION)
+	set MyAppVersion $::SelfHdr_Fields(--APPVERSION)
+	set MyFWVersion $::SelfHdr_Fields(--FWVERSION)
 	set MyCtrlFlags $::SelfHdr_Fields(--CTRLFLAGS)
 	set MyCapabFlags $::SelfHdr_Fields(--CAPABFLAGS)
 	set MyCompressed $::SelfHdr_Fields(--COMPRESS)
 
 	# Reading the SELF version var, and setup in SCETOOL format
 	# example: "0004004100000000"	
-	set MyVersion [format "000%d00%d00000000" [lindex [split $MyVersion "."] 0] [lindex [split $MyVersion "."] 1]]
-	set MyFwVersion $MyVersion	
+	set MyAppVersion [format "000%d00%d00000000" [lindex [split $MyVersion "."] 0] [lindex [split $MyVersion "."] 1]]	
 	set ::SELF [file tail $in]	
 	#debug "VERSION: $MyVersion"	
 	
@@ -801,7 +802,7 @@ proc makeself {in out} {
 	}		
 	# run the scetool to resign the elf file
     shell ${::SCETOOL} -0 SELF -1 $MyCompressed -s $skipsection -2 $MyKeyRev -3 $MyAuthID -4 $MyVendorID -5 $MySelfType \
-		-A $MyVersion -6 $MyFwVersion -8 $MyCtrlFlags -9 $MyCapabFlags -e $in $out
+		-A $MyAppVersion -6 $MyFwVersion -8 $MyCtrlFlags -9 $MyCapabFlags -e $in $out
 }
 # stub proc for decrypting self file
 proc decrypt_self {in out} {
@@ -813,47 +814,74 @@ proc import_self_info {in} {
 	
 	log "Importing SELF-HDR info from file: [file tail $in]"	
 	global SelfHdr_Fields
+	set MyArraySize 0
+	
+	### SET TO "TRUE" FOR VERBOSE OUTPUT
+	### OF "SCE HEADER INFO" BEING IMPORTED
+	set MyDisplayVerbose false
+	
 	# execute the "SCETOOL -w" cmd to dump the needed SCE-HDR info
     catch_die {set buffer [shellex ${::SCETOOL} -w $in]} "failed to dump SCE header for file: [file tail $in]"	
-
+	
+	# clear the globals array
+	foreach key [array names SelfHdr_Fields] {
+		set ::SelfHdr_Fields($key) ""
+	}	
 	# parse out the return buffer, and 
 	# save off the fields into the global array
 	set data [split $buffer "\n"]
 	foreach line $data {
 		if [regexp -- {(^Key-Revision:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--KEYREV) [lindex [split $match ":"] 1]			
+			set ::SelfHdr_Fields(--KEYREV) [lindex [split $match ":"] 1]
+			incr MyArraySize 1	
 		}
 		if [regexp -- {(^Auth-ID:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--AUTHID) [lindex [split $match ":"] 1]			
+			set ::SelfHdr_Fields(--AUTHID) [lindex [split $match ":"] 1]
+			incr MyArraySize 1
 		}
 		if [regexp -- {(^Vendor-ID:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--VENDORID) [lindex [split $match ":"] 1]			
+			set ::SelfHdr_Fields(--VENDORID) [lindex [split $match ":"] 1]	
+			incr MyArraySize 1
 		}
 		if [regexp -- {(^SELF-Type:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--SELFTYPE) [lindex [split $match ":"] 1]			
+			set ::SelfHdr_Fields(--SELFTYPE) [lindex [split $match ":"] 1]
+			incr MyArraySize 1
 		}
-		if [regexp -- {(^Version:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--VERSION) [lindex [split $match ":"] 1]			
+		if [regexp -- {(^AppVersion:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--APPVERSION) [lindex [split $match ":"] 1]
+			incr MyArraySize 1
+		}
+		if [regexp -- {(^FWVersion:)(.*)} $line match] {		
+			set ::SelfHdr_Fields(--FWVERSION) [lindex [split $match ":"] 1]
+			incr MyArraySize 1
 		}
 		if [regexp -- {(^CtrlFlags:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--CTRLFLAGS) [lindex [split $match ":"] 1]			
+			set ::SelfHdr_Fields(--CTRLFLAGS) [lindex [split $match ":"] 1]	
+			incr MyArraySize 1
 		}
 		if [regexp -- {(^CapabFlags:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--CAPABFLAGS) [lindex [split $match ":"] 1]			
+			set ::SelfHdr_Fields(--CAPABFLAGS) [lindex [split $match ":"] 1]
+			incr MyArraySize 1
 		}
 		if [regexp -- {(^Compressed:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--COMPRESS) [lindex [split $match ":"] 1]			
+			set ::SelfHdr_Fields(--COMPRESS) [lindex [split $match ":"] 1]	
+			incr MyArraySize 1
 		}
 	}
-	log "SELF-SCE HEADERS IMPORTED:"
-	log "-->KeyRev:$::SelfHdr_Fields(--KEYREV)"
-	log "-->AuthID:$::SelfHdr_Fields(--AUTHID)"
-	log "-->VendorID:$::SelfHdr_Fields(--VENDORID)"
-	log "-->SelfType:$::SelfHdr_Fields(--SELFTYPE)"
-	log "-->Version:$::SelfHdr_Fields(--VERSION)"
-	log "-->CtrlFlags:$::SelfHdr_Fields(--CTRLFLAGS)"
-	log "-->CapabFlags:$::SelfHdr_Fields(--CAPABFLAGS)"
-	log "-->Compressed:$::SelfHdr_Fields(--COMPRESS)"	
+	# if we successfully captured all vars, 
+	# and it matches our array size, success
+	if { $MyArraySize == [array size SelfHdr_Fields] } { 
+		log "SELF-SCE HEADERS IMPORTED SUCCESSFULLY!"
+	} else {
+		log "!!ERROR!!:  FAILED TO IMPORT SELF-SCE HEADERS FROM FILE: [file tail $in]"
+		die "!!ERROR!!:  FAILED TO IMPORT SELF-SCE HEADERS FROM FILE: [file tail $in]"
+	}
+	# display the imported headers if VERBOSE enabled
+	if { $MyDisplayVerbose } {
+		foreach key [lsort [array names SelfHdr_Fields]] {
+			log "-->$key:$::SelfHdr_Fields($key)"
+		}	
+	}		
 }
 # stub proc for resigning the elf
 proc sign_elf {in out} {
