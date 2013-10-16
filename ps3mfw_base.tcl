@@ -750,9 +750,9 @@ proc makeself {in out} {
 
 	# Reading the SELF version var, and setup in SCETOOL format
 	# example: "0004004100000000"	
-	set MyAppVersion [format "000%d00%d00000000" [lindex [split $MyVersion "."] 0] [lindex [split $MyVersion "."] 1]]	
+	set MyAppVersion [format "000%d00%d00000000" [lindex [split $MyAppVersion "."] 0] [lindex [split $MyAppVersion "."] 1]]	
 	set ::SELF [file tail $in]	
-	#debug "VERSION: $MyVersion"	
+	#debug "VERSION: $MyAppVersion"	
 	
 	
 	# ----- IF FOR SOME STRANGE REASON, WE ENDED UP HERE WITHOUT THE SCE HEADER INFO READ IN,
