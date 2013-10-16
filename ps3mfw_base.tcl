@@ -834,36 +834,28 @@ proc import_self_info {in} {
 		if [regexp -- {(^Key-Revision:)(.*)} $line match] {		
 			set ::SelfHdr_Fields(--KEYREV) [lindex [split $match ":"] 1]
 			incr MyArraySize 1	
-		}
-		if [regexp -- {(^Auth-ID:)(.*)} $line match] {		
+		} elseif { [regexp -- {(^Auth-ID:)(.*)} $line match] } {		
 			set ::SelfHdr_Fields(--AUTHID) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
-		}
-		if [regexp -- {(^Vendor-ID:)(.*)} $line match] {		
+		} elseif { [regexp -- {(^Vendor-ID:)(.*)} $line match] } {		
 			set ::SelfHdr_Fields(--VENDORID) [lindex [split $match ":"] 1]	
 			incr MyArraySize 1
-		}
-		if [regexp -- {(^SELF-Type:)(.*)} $line match] {		
+		} elseif { [regexp -- {(^SELF-Type:)(.*)} $line match] } {		
 			set ::SelfHdr_Fields(--SELFTYPE) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
-		}
-		if [regexp -- {(^AppVersion:)(.*)} $line match] {		
+		} elseif { [regexp -- {(^AppVersion:)(.*)} $line match] } {		
 			set ::SelfHdr_Fields(--APPVERSION) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
-		}
-		if [regexp -- {(^FWVersion:)(.*)} $line match] {		
+		} elseif { [regexp -- {(^FWVersion:)(.*)} $line match] } {		
 			set ::SelfHdr_Fields(--FWVERSION) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
-		}
-		if [regexp -- {(^CtrlFlags:)(.*)} $line match] {		
+		} elseif { [regexp -- {(^CtrlFlags:)(.*)} $line match] } {		
 			set ::SelfHdr_Fields(--CTRLFLAGS) [lindex [split $match ":"] 1]	
 			incr MyArraySize 1
-		}
-		if [regexp -- {(^CapabFlags:)(.*)} $line match] {		
+		} elseif { [regexp -- {(^CapabFlags:)(.*)} $line match] } {		
 			set ::SelfHdr_Fields(--CAPABFLAGS) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
-		}
-		if [regexp -- {(^Compressed:)(.*)} $line match] {		
+		} elseif { [regexp -- {(^Compressed:)(.*)} $line match] } {		
 			set ::SelfHdr_Fields(--COMPRESS) [lindex [split $match ":"] 1]	
 			incr MyArraySize 1
 		}
