@@ -670,18 +670,17 @@ namespace eval ::patch_cos {
 		# if "--patch-spkg-ecdsa-check" is enabled, patch in "spu_pkg_rvk_verifier.self"
 		if {$::patch_cos::options(--patch-spkg-ecdsa-check)} {
 			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55: 0x3060 (0x37E0)
-			# OFW 3.60: 0x3060 (0x37E0)
-			# OFW 4.30: 0x3060 (0x37E0)
-			# OFW 4.46: 0x3060 (0x37E0)
+			# OFW 3.55: 0x3150 (0x38D0)
+			# OFW 3.60: 0x3150 (0x38D0)
+			# OFW 4.30: 0x3150 (0x38D0)
+			# OFW 4.46: 0x3150 (0x37E0)
             log "Patching SPKG ECDSA verifier to disable ECDSA check"  
 			set self "spu_pkg_rvk_verifier.self"
 			set file [file join $path $self]			
-			
-            set ::patch_cos::search     "\x40\x80\x0A\x05\x34\x02\xC0\x80\x1C\x28\x00\x81\x3F\xE0\x02\x83"
-            append ::patch_cos::search  "\x34\xFF\xC0\xD0\x34\xFF\x80\xD1\x34\xFF\x40\xD2\x35\x00\x00\x00"
-            set ::patch_cos::replace    "\x40\x80\x00\x03"
-			set ::patch_cos::offset 12			
+          
+		    set ::patch_cos::search  "\x04\x00\x2A\x03\x33\x7F\xD0\x80\x04\x00\x01\x82\x32\x00\x01\x00"
+            set ::patch_cos::replace "\x40\x80\x00\x03"
+			set ::patch_cos::offset 4			
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf	
         }
