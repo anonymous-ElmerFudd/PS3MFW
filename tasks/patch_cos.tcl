@@ -673,7 +673,7 @@ namespace eval ::patch_cos {
 			# OFW 3.55: 0x3150 (0x38D0)
 			# OFW 3.60: 0x3150 (0x38D0)
 			# OFW 4.30: 0x3150 (0x38D0)
-			# OFW 4.46: 0x3150 (0x37E0)
+			# OFW 4.46: 0x3150 (0x38D0)
             log "Patching SPKG ECDSA verifier to disable ECDSA check"  
 			set self "spu_pkg_rvk_verifier.self"
 			set file [file join $path $self]			
