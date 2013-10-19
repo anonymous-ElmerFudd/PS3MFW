@@ -11,16 +11,16 @@
 # Priority: 0005
 # Description: PATCH: Patch VSH - Miscellaneous
 
-# Option --allow-unsigned-app: Patch to allow running of unsigned applications (3.xx/4.xx)
-# Option --patch-vsh-react-psn-v2-4x: Jailbait - Patch to implement ReactPSN v2.0 into VSH (3.xx/4.xx)
-# Option --disable-cinavia-protection-4x: Disable Cinavia Protection (4.xx)
-# Option --allow-retail-pkg-dex: Patch to allow installation of retail packages on DEX (3.xx/4.xx)
-# Option --allow-pseudoretail-pkg: Patch to allow installation of pseudo-retail packages on REX/DEX (3.xx/4.xx)
-# Option --allow-debug-pkg: Patch to allow installation of debug packages (3.xx/4.xx)
-# Option --spoof-psn-passphrase: Jailbait - Patch PSN Passphrase (Not needed to time)
-# Option --spoof-new: Jailbait - Patch SEN/PSN Access (New FW Spoofing)
-# Option --customize-fw-ssl-cer: Change SSL - New SSL CA certificate (source)
-# Option --customize-fw-change-cer: Change SSL - SSL CA public certificate (destination)
+# Option --allow-unsigned-app: [3.xx/4.xx]  -->  Patch to allow running of unsigned applications (3.xx/4.xx)
+# Option --patch-vsh-react-psn-v2-4x: [3.xx/4.xx]  -->  Jailbait - Patch to implement ReactPSN v2.0 into VSH (3.xx/4.xx)
+# Option --disable-cinavia-protection-4x: [3.xx/4.xx]  -->  Disable Cinavia Protection (4.xx)
+# Option --allow-retail-pkg-dex: [3.xx/4.xx]  -->  Patch to allow installation of retail packages on DEX (3.xx/4.xx)
+# Option --allow-pseudoretail-pkg: [3.xx/4.xx]  -->  Patch to allow installation of pseudo-retail packages on REX/DEX (3.xx/4.xx)
+# Option --allow-debug-pkg: [3.xx/4.xx]  -->  Patch to allow installation of debug packages (3.xx/4.xx)
+# Option --spoof-psn-passphrase: [3.xx/4.xx]  -->  Jailbait - Patch PSN Passphrase (Not needed to time)
+# Option --spoof-new: [3.xx/4.xx]  -->  Jailbait - Patch SEN/PSN Access (New FW Spoofing)
+# Option --customize-fw-ssl-cer: [3.xx/4.xx]  -->  Change SSL - New SSL CA certificate (source)
+# Option --customize-fw-change-cer: [3.xx/4.xx]  -->  Change SSL - SSL CA public certificate (destination)
 
 # Type --allow-unsigned-app: boolean
 # Type --disable-cinavia-protection-4x: boolean

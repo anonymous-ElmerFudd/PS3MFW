@@ -11,7 +11,7 @@
 # Priority: 0002
 # Description: PATCH: LV2 - Miscellaneous
 
-# Option --patch-misc-rogero-patches:  Patch LV2 with misc ROGERO patches
+# Option --patch-misc-rogero-patches: [3.xx/4.xx]  -->  Patch LV2 with misc ROGERO patches
 
 # Type --patch-misc-rogero-patches: boolean
 

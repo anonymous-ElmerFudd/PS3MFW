@@ -11,11 +11,11 @@
 # Priority: 0003
 # Description: PATCH: APPLDR - Miscellaneous
 
-# Option --patch-misc-rogero-patches:  Patch Appldr with misc ROGERO patches
-# Option --patch-appldr-fself-340: [3.xx] Patch Appldr to allow Fself (3.40-3.55) set debug true (Experimental!)
-# Option --patch-appldr-fself-330: [3.xx] Patch Appldr to allow Fself (3.10-3.30) set debug true (Experimental!)
-# Option --add-356keys-to-appldr341: [3.xx] Patch Appldr to add the 3.56 keys to appldr 3.41
-# Option --add-360keys-to-appldr355: [3.xx] Patch Appldr to add the 3.60 keys to appldr 3.55
+# Option --patch-misc-rogero-patches: [3.xx/4.xx]  -->  Patch Appldr with misc ROGERO patches
+# Option --patch-appldr-fself-340: [3.xx]  -->  Patch Appldr to allow Fself (3.40-3.55) set debug true (Experimental!)
+# Option --patch-appldr-fself-330: [3.xx]  -->  Patch Appldr to allow Fself (3.10-3.30) set debug true (Experimental!)
+# Option --add-356keys-to-appldr341: [3.xx]  -->  Patch Appldr to add the 3.56 keys to appldr 3.41
+# Option --add-360keys-to-appldr355: [3.xx]  -->  Patch Appldr to add the 3.60 keys to appldr 3.55
 
 # Type --patch-misc-rogero-patches: boolean
 # Type --patch-appldr-340: boolean

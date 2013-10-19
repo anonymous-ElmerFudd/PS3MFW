@@ -11,19 +11,19 @@
 # Priority: 0004
 # Description: PATCH: XMB - Miscellaneous
 
-# Option --patch-act-pkg: Patch the standard  '*Install Package Files'  function back in to the XMB (4.00+) 
-# Option --patch-package-files: Add "Install Package Files" icon to the XMB Game Category    
-# Option --patch-app-home: Add "/app_home" icon to the XMB Game Category
-# Option --patch-ren-apphome: Rename /app_home/PS3_GAME/ to Discless
-# Option --add-install-pkg: Add the standard Install Package Files Segment to the HomeBrew Category in XMB
-# Option --add-pkg-mgr: Add MFW PKG Manager Segment to the HomeBrew Category in XMB
-# Option --add-hb-seg: Add MFW HomeBrew Segment to the HomeBrew Category in XMB
-# Option --add-emu-seg: Add MFW Emulator Segment to the HomeBrew Category in XMB
-# Option --homebrew-cat: Specify new HomeBrew category manually (Do not use with options above!!)
-# Option --patch-alpha-sort: Alphabetical sort Order for Games in the XMB
-# Option --patch-rape-sfo: Rape the SFO Param's X0 (NeoGeo) and X4 (PCEngine) to use with the Homebrew category and custome segments
-# Option --fix-typo-sysconf-Italian: Fix a typo in the Italian localization of the sysconf plugin
-# Option --tv-cat: Show TV category in xmb no matter if your country supports it.
+# Option --patch-act-pkg: [4.xx]  -->  Patch the standard  '*Install Package Files'  function back in to the XMB (4.00+) 
+# Option --patch-package-files: [3.xx/4.xx]  -->  Add "Install Package Files" icon to the XMB Game Category    
+# Option --patch-app-home: [3.xx/4.xx]  -->  Add "/app_home" icon to the XMB Game Category
+# Option --patch-ren-apphome: [3.xx/4.xx]  -->  Rename /app_home/PS3_GAME/ to Discless
+# Option --add-install-pkg: [3.xx/4.xx]  -->  Add the standard Install Package Files Segment to the HomeBrew Category in XMB
+# Option --add-pkg-mgr: [3.xx/4.xx]  -->  Add MFW PKG Manager Segment to the HomeBrew Category in XMB
+# Option --add-hb-seg: [3.xx/4.xx]  -->  Add MFW HomeBrew Segment to the HomeBrew Category in XMB
+# Option --add-emu-seg: [3.xx/4.xx]  -->  Add MFW Emulator Segment to the HomeBrew Category in XMB
+# Option --homebrew-cat: [3.xx/4.xx]  -->  Specify new HomeBrew category manually (Do not use with options above!!)
+# Option --patch-alpha-sort: [3.xx/4.xx]  -->  Alphabetical sort Order for Games in the XMB
+# Option --patch-rape-sfo: [3.xx/4.xx]  -->  Rape the SFO Param's X0 (NeoGeo) and X4 (PCEngine) to use with the Homebrew category and custome segments
+# Option --fix-typo-sysconf-Italian: [3.xx/4.xx]  -->  Fix a typo in the Italian localization of the sysconf plugin
+# Option --tv-cat: [3.xx]  -->  Show TV category in xmb no matter if your country supports it. (3.55 ONLY)
 
 # Type --patch-act-pkg: boolean
 # Type --patch-package-files: boolean

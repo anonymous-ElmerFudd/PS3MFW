@@ -11,14 +11,13 @@
 # Priority: 0006
 # Description: PATCH: GAMEOS - Miscellaneous
 
-# Option --patch-disable-pupsearch-in-game-disc: Disable searching for update packages in GAME disc
-# Option --patch-gameos-hdd-region-size: Create GameOS HDD region smaller than default
-# Option --patch-gameos-hdd-region-size-half: Create GameOS HDD region of size half of installed HDD
-# Option --patch-gameos-hdd-region-size-quarter: Create GameOS HDD region of size quarter of installed HDD
-# Option --patch-gameos-hdd-region-size-eighth: Create GameOS HDD region of size eighth of installed HDD
-# Option --patch-gameos-hdd-region-size-22gb-smaller: Create GameOS HDD region of size 22GB smaller than default
-# Option --patch-disable-pup-search-in-game-disc: Disable searching for update packages in GAME disc.
-# Option --patch-profile-gameos-bootmem-size: Increase boot memory size of GameOS (Needed for OtherOS++) (default.spp)
+# Option --patch-disable-pupsearch-in-game-disc: [3.xx/4.xx]  -->  Disable searching for update packages in GAME disc
+# Option --patch-gameos-hdd-region-size: [3.xx/4.xx]  -->  Create GameOS HDD region smaller than default
+# Option --patch-gameos-hdd-region-size-half: [3.xx/4.xx]  -->  Create GameOS HDD region of size half of installed HDD
+# Option --patch-gameos-hdd-region-size-quarter: [3.xx/4.xx]  -->  Create GameOS HDD region of size quarter of installed HDD
+# Option --patch-gameos-hdd-region-size-eighth: [3.xx/4.xx]  -->  Create GameOS HDD region of size eighth of installed HDD
+# Option --patch-gameos-hdd-region-size-22gb-smaller: [3.xx/4.xx]  -->  Create GameOS HDD region of size 22GB smaller than default
+# Option --patch-profile-gameos-bootmem-size: [3.xx/4.xx]  -->  Increase boot memory size of GameOS (Needed for OtherOS++) (default.spp)
 
 # Type --patch-disable-pupsearch-in-game-disc: boolean
 # Type --patch-gameos-hdd-region-size: combobox {{ -do nothing-} {1/eighth of drive} {1/quarter of drive} {1/half of drive} {22GB} {10GB} {20GB} {30GB} {40GB} {50GB} {60GB} {70GB} {80GB} {90GB} {100GB} {110GB} {120GB} {130GB} {140GB} {150GB} {160GB} {170GB} {180GB} {190GB} {200GB} {210GB} {220GB} {230GB} {240GB} {250GB} {260GB} {270GB} {280GB} {290GB} {300GB} {310GB} {320GB} {330GB} {340GB} {350GB} {360GB} {370GB} {380GB} {390GB} {400GB} {410GB} {420GB} {430GB} {440GB} {450GB} {460GB} {470GB} {480GB} {490GB} {500GB} {510GB} {520GB} {530GB} {540GB} {550GB} {560GB} {570GB} {580GB} {590GB} {600GB} {610GB} {620GB} {630GB} {640GB} {650GB} {660GB} {670GB} {680GB} {690GB} {700GB} {710GB} {720GB} {730GB} {740GB} {750GB} {760GB} {770GB} {780GB} {790GB} {800GB} {810GB} {820GB} {830GB} {840GB} {850GB} {860GB} {870GB} {880GB} {890GB} {900GB} {910GB} {920GB} {930GB} {940GB} {950GB} {960GB} {970GB} {980GB} {990GB} {1000GB}}

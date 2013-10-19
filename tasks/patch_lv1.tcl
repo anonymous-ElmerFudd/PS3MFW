@@ -11,27 +11,27 @@
 # Priority: 0001
 # Description: PATCH: LV1 - Miscellaneous
 
-# Option --patch-lv1-coreos-hash-check: Patch CoreOS Hash check. Product mode always on (downgrader)
-# Option --patch-lv1-sysmgr-disable-integrity-check: Disable integrity check in System Manager (OtherOS++/downgrader)
-# Option --patch-lv1-mmap: Allow mapping of any memory area (Needed for LV2 Poke)
-# Option --patch-lv1-htab-write: Allow mapping of HTAB with write protection
-# Option --patch-lv1-mfc-sr1-mask: Allow to set all bits of SPE register MFC_SR1 with lv1_set_spe_privilege_state_area_1_register
-# Option --patch-lv1-dabr-priv-mask: Allow setting data access breakpoints in hypervisor state with lv1_set_dabr
-# Option --patch-lv1-encdec-ioctl-0x85: Allow ENCDEC IOCTL command 0x85
-# Option --patch-lv1-gpu-4kb-iopage: Allow 4kb IO page size for GPU GART memory
-# Option --patch-lv1-dispmgr-access: Allow access to all SS services (Needed for ps3dm-utils)
-# Option --patch-lv1-iimgr-access: Allow access to all services of Indi Info Manager
-# Option --patch-lv1-um-extract-pkg: Allow extracting for all package types
-# Option --patch-lv1-um-write-eprom-product-mode: Allow enabling product mode by using Update Manager Write EPROM
-# Option --patch-lv1-sm-del-encdec-key: Allow deleting of all ENCDEC keys
-# Option --patch-lv1-repo-node-lpar: Allow creating/modifying/deleting of repository nodes in any LPAR
-# Option --patch-lv1-storage-skip-acl-check: Skip ACL checks for all storage devices (OtherOS++/downgrader)
-# Option --patch-lv1-gameos-sysmgr-ability:  [3.xx] Allow access to all System Manager services of GameOS
-# Option --patch-lv1-gameos-gos-mode-one:  [3.xx] Enable GuestOS mode 1 for GameOS
-# Option --patch-lv1-otheros-plus-plus-cold-boot-fix:  [3.xx] OtherOS++ cold boot fix
-# Option --patch-lv1-revokelist-hash-check:  [3.55] Patch Revoke list Hash check. Product mode always on (downgrader)
-# Option --patch-lv1-patch-productmode-erase:  [3.55] Patch In product mode erase standby bank skipped (downgrader)
-# Option --patch-lv1-otheros-plus-plus:  [3.55] OtherOS++ support
+# Option --patch-lv1-coreos-hash-check: [3.xx/4.xx]  -->  Patch CoreOS Hash check. Product mode always on (downgrader)
+# Option --patch-lv1-sysmgr-disable-integrity-check: [3.xx/4.xx]  -->  Disable integrity check in System Manager (OtherOS++/downgrader)
+# Option --patch-lv1-mmap: [3.xx/4.xx]  -->  Allow mapping of any memory area (Needed for LV2 Poke)
+# Option --patch-lv1-htab-write: [3.xx/4.xx]  -->  Allow mapping of HTAB with write protection
+# Option --patch-lv1-mfc-sr1-mask: [3.xx/4.xx]  -->  Allow to set all bits of SPE register MFC_SR1 with lv1_set_spe_privilege_state_area_1_register
+# Option --patch-lv1-dabr-priv-mask: [3.xx/4.xx]  -->  Allow setting data access breakpoints in hypervisor state with lv1_set_dabr
+# Option --patch-lv1-encdec-ioctl-0x85: [3.xx/4.xx]  -->  Allow ENCDEC IOCTL command 0x85
+# Option --patch-lv1-gpu-4kb-iopage: [3.xx/4.xx]  -->  Allow 4kb IO page size for GPU GART memory
+# Option --patch-lv1-dispmgr-access: [3.xx/4.xx]  -->  Allow access to all SS services (Needed for ps3dm-utils)
+# Option --patch-lv1-iimgr-access: [3.xx/4.xx]  -->  Allow access to all services of Indi Info Manager
+# Option --patch-lv1-um-extract-pkg: [3.xx/4.xx]  -->  Allow extracting for all package types
+# Option --patch-lv1-um-write-eprom-product-mode: [3.xx/4.xx]  -->  Allow enabling product mode by using Update Manager Write EPROM
+# Option --patch-lv1-sm-del-encdec-key: [3.xx/4.xx]  -->  Allow deleting of all ENCDEC keys
+# Option --patch-lv1-repo-node-lpar: [3.xx/4.xx]  -->  Allow creating/modifying/deleting of repository nodes in any LPAR
+# Option --patch-lv1-storage-skip-acl-check: [3.xx/4.xx]  -->  Skip ACL checks for all storage devices (OtherOS++/downgrader)
+# Option --patch-lv1-gameos-sysmgr-ability:  [3.xx]  -->  Allow access to all System Manager services of GameOS
+# Option --patch-lv1-gameos-gos-mode-one:  [3.xx]  -->  Enable GuestOS mode 1 for GameOS
+# Option --patch-lv1-otheros-plus-plus-cold-boot-fix:  [3.xx]  -->  OtherOS++ cold boot fix
+# Option --patch-lv1-revokelist-hash-check:  [3.55]  -->  Patch Revoke list Hash check. Product mode always on (downgrader)
+# Option --patch-lv1-patch-productmode-erase:  [3.55]  -->  Patch In product mode erase standby bank skipped (downgrader)
+# Option --patch-lv1-otheros-plus-plus:  [3.55]  -->  OtherOS++ support
 
 # Type --patch-lv1-coreos-hash-check: boolean
 # Type --patch-lv1-sysmgr-disable-integrity-check: boolean
