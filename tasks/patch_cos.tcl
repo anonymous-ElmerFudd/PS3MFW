@@ -20,7 +20,9 @@
 # Option --patch-lv2-npdrm-ecdsa-check: [3.xx/4.xx]  LV2: --> Patch LV2 to disable NPDRM ECDSA check  (Jailbait) (3.xx/4.xx)
 # Option --patch-lv2-payload-hermes-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to implement hermes payload SC8 /app_home/ redirection & embedded app mount (3.xx/4.xx)
 # Option --patch-lv2-SC36-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to implement SysCall36 (3.xx/4.xx)
-# Option --patch-spkg-ecdsa-check: [3.xx/4.xx]  ALT: --> Patch FW PKG Verifier to disable ECDSA check for spkg files (spu_pkg_rvk_verifier.self) (3.xx/4.xx)
+# Option --patch-spkg-ecdsa-check: [3.xx/4.xx]  ALT: --> Patch SPU PKG Verifier to disable ECDSA check for spkg files (spu_pkg_rvk_verifier.self) (3.xx/4.xx)
+# Option --patch-sppverifier-ecdsa-check: [3.xx/4.xx]  ALT: --> Patch SPP Verifier to disable ECDSA check (spp_verifier.self) (3.xx/4.xx)
+# Option --patch-sputoken-ecdsa-check: [3.xx/4.xx]  ALT: --> Patch SPU Token Processor to disable ECDSA check (spu_token_processor.self) (3.xx/4.xx)
 # Option --patch-RSOD-bypass: [3.xx/4.xx]  ALT: --> Patch to bypass RSOD errors (basic_plugins.sprx) (3.xx/4.xx)
 # Option --patch-lv2-peek-poke-355: [3.55]  LV2: --> Patch LV2 to add Peek&Poke system calls 3.55
 # Option --patch-lv2-lv1-peek-poke-355: [3.55]  LV2: --> Patch LV2 to add LV1 Peek&Poke system calls 3.55 (LV1 peek/poke patch necessary)
@@ -36,6 +38,8 @@
 # Type --patch-lv2-payload-hermes-4x: boolean
 # Type --patch-lv2-SC36-4x: boolean
 # Type --patch-spkg-ecdsa-check: boolean
+# Type --patch-sppverifier-ecdsa-check: boolean
+# Type --patch-sputoken-ecdsa-check: boolean
 # Type --patch-RSOD-bypass: boolean
 # Type --patch-lv1-peek-poke: boolean
 # Type --patch-lv1-remove-lv2-protection: boolean
@@ -63,6 +67,8 @@ namespace eval ::patch_cos {
         --patch-lv2-payload-hermes-4x true
 		--patch-lv2-SC36-4x true
 		--patch-spkg-ecdsa-check true
+		--patch-sppverifier-ecdsa-check true
+		--patch-sputoken-ecdsa-check true
 		--patch-RSOD-bypass true        
         --patch-lv2-peek-poke-355 false
         --patch-lv2-lv1-peek-poke-355 false
@@ -674,13 +680,53 @@ namespace eval ::patch_cos {
 			# OFW 3.60: 0x3150 (0x38D0)
 			# OFW 4.30: 0x3150 (0x38D0)
 			# OFW 4.46: 0x3150 (0x38D0)
-            log "Patching SPKG ECDSA verifier to disable ECDSA check"  
+            log "Patching SPU_PKG_RVK verifier to disable ECDSA check"  
 			set self "spu_pkg_rvk_verifier.self"
 			set file [file join $path $self]			
           
 		    set ::patch_cos::search  "\x04\x00\x2A\x03\x33\x7F\xD0\x80\x04\x00\x01\x82\x32\x00\x01\x00"
             set ::patch_cos::replace "\x40\x80\x00\x03"
 			set ::patch_cos::offset 4			
+			# base function to decrypt the "self" to "elf" for patching
+			::modify_self_file $file ::patch_cos::patch_elf	
+        }		
+		# if "--patch-sppverifier-ecdsa-check" is enabled, patch in "spp_verifier.self"
+		if {$::patch_cos::options(--patch-sppverifier-ecdsa-check)} {
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x129C (0x199C)
+			# OFW 3.60: 0x129C (0x199C)
+			# OFW 4.30: 0x129C (0x199C)
+			# OFW 4.46: 0x129C (0x199C)
+            log "Patching SPP_VERIFIER to disable ECDSA check"  
+			set self "spp_verifier.self"
+			set file [file join $path $self]			          
+			
+			set ::patch_cos::search    "\x3F\xE0\x29\x04\x42\x54\xE8\x05\x40\xFF\xFF\x53\x33\x07\x95\x00"			
+			set ::patch_cos::replace   "\x40\x80\x00\x03"
+			set ::patch_cos::offset 16	
+			
+			# base function to decrypt the "self" to "elf" for patching
+			::modify_self_file $file ::patch_cos::patch_elf	
+        }
+		# if "--patch-sputoken-ecdsa-check" is enabled, patch in "spu_token_processor.self"
+		if {$::patch_cos::options(--patch-sputoken-ecdsa-check)} {
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: *** does not exist in this version ***
+			# OFW 3.60: 0x29C (0xA1C)
+			# OFW 4.30: 0x29C (0xA1C)
+			# OFW 4.46: 0x29C (0xA1C)
+            log "Patching SPU_TOKEN_PROCESSOR to disable ECDSA check"  
+			set self "spu_token_processor.self"
+			set file [file join $path $self]			
+          
+			if {${::NEWMFW_VER} > "3.55"} {
+				set ::patch_cos::search    "\x40\x80\03\x02\x1C\x08\x00\x81\x80\x60\xC1\x04\x35\x00\x00\x00"
+				append ::patch_cos::search "\x12\x03\x42\x0B"
+				set ::patch_cos::replace   "\x40\x80\x00\x03\x35\x00\x00\x00"
+				set ::patch_cos::offset 16	
+			} else {
+				log "Skipping SPU_TOKEN ECDSA PATCH, not needed in this version!"
+			}
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf	
         }
