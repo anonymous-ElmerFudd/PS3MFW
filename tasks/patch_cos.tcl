@@ -703,7 +703,7 @@ namespace eval ::patch_cos {
 			
 			set ::patch_cos::search    "\x3F\xE0\x29\x04\x42\x54\xE8\x05\x40\xFF\xFF\x53\x33\x07\x95\x00"			
 			set ::patch_cos::replace   "\x40\x80\x00\x03"
-			set ::patch_cos::offset 16	
+			set ::patch_cos::offset 12	
 			
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf	
