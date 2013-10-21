@@ -117,10 +117,16 @@ proc build_mfw {input output tasks} {
 	# save off the "OFW MAJOR.MINOR" into a global for usage throughout
 	debug "checking pup version"
     set ::SUF [::get_pup_version]	
-	set ::OFW_MAJOR_VER [lindex [split $::SUF "."] 0]
-    set ::OFW_MINOR_VER [lindex [split $::SUF "."] 1]
-	set ::NEWMFW_VER [format "%.1d.%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
-	debug "Getting pup version OK! var = ${::SUF}"
+	if { [regexp "(^\[0-9]{1,2})\.(\[0-9]{1,2})(.*)" $::SUF all ::OFW_MAJOR_VER ::OFW_MINOR_VER SubVerInfo] } {		
+		set ::NEWMFW_VER [format "%.1d.%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
+		if { $SubVerInfo != "" } {
+			log "Getting pup version OK! var = ${::NEWMFW_VER} (subversion:$SubVerInfo)"
+		} else { 
+			log "Getting pup version OK! var = ${::NEWMFW_VER}"
+		}		
+	} else {
+		die "Getting pup version FAILED! Exiting!"
+	}
 	
 	# extract "custom_update.tar
     extract_tar ${::CUSTOM_UPDATE_TAR} ${::CUSTOM_UPDATE_DIR}
