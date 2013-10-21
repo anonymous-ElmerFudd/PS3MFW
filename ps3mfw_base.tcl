@@ -60,23 +60,17 @@ proc usage {{msg ""}} {
 }
 
 # new routine for extracting LV0 for 3.60+ OFW (using lv0tool.exe)
-# default:  crypt/decrypt "lv1ldr", unless we are under
-# FW version 3.65
+# default:  (lv1ldr is NOT crypted at FW below 3.65)
+#
+# "lv0tool.exe" will automatically decrypt the "lv1ldr"
+# if it's crypted in LV0
 proc extract_lv0 {path file} {   
 
 	log "Extracting 3.60+ LV0 and loaders...."
-	set fullpath [file join $path $file]
-	set lv1ldr_crypt no
+	set fullpath [file join $path $file]	
 	
 	# if firmware is >= 3.65, LV1LDR is crypted, otherwise it's
-	# not crypted.  Also, check if we "override" this setting
-	# by the flag in the "patch_coreos" task	
-	if {${::NEWMFW_VER} >= "3.65"} {
-		set lv1ldr_crypt yes
-		if {$::FLAG_NO_LV1LDR_CRYPT != 0} {	
-			set lv1ldr_crypt no
-		}
-	}	
+	# not crypted. 
 	# decrypt LV0 to "LV0.elf", and
 	# delete the original "lv0"
 	decrypt_self $fullpath ${fullpath}.elf
@@ -84,7 +78,7 @@ proc extract_lv0 {path file} {
 	
 	# export LV0 contents.....
 	append fullpath ".elf"	
-	shell ${::LV0TOOL} -option export -lv1crypt $lv1ldr_crypt -filename ${file}.elf -filepath $path	
+	shell ${::LV0TOOL} -option export -filename ${file}.elf -filepath $path	
 }
 
 # new routine for re-packing LV0 for 3.60+ OFW (using lv0tool.exe)
