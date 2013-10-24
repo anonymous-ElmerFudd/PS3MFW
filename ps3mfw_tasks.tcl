@@ -63,7 +63,20 @@ proc pack_custom_pup {dir pup} {
 
 proc build_mfw {input output tasks} {
     global options
-
+	 # array for saving off SELF-SCE Hdr fields
+	 # for "LV0" for use by unself/makeself routines
+	array set LV0_SCE_HDRS {
+		--KEYREV ""
+		--AUTHID ""
+		--VENDORID ""
+		--SELFTYPE ""
+		--APPVERSION ""
+		--FWVERSION ""
+		--CTRLFLAGS ""
+		--CAPABFLAGS ""
+		--COMPRESS ""
+	}
+	# setup the tasks list
     set ::selected_tasks [sort_tasks ${tasks}]
 
     # print out ego info
@@ -136,14 +149,18 @@ proc build_mfw {input output tasks} {
 	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
 		extract_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} }	
 
-    # copy original PUP to working dir
-    copy_file ${::CUSTOM_PUP_DIR} ${::ORIGINAL_PUP_DIR}   
-
+	# unpack devflash files	
+	# (do this before the copy, so we have the unpacked
+	#  flash files in the PS3OFW directory)
     log "Unpacking all dev_flash files"
-    unpkg_devflash_all ${::CUSTOM_DEVFLASH_DIR}
+    unpkg_devflash_all ${::CUSTOM_DEVFLASH_DIR}	
 	
-	#unpack the CORE_OS files here
-	::unpack_coreos_files
+    # copy original PUP to working dir
+    copy_file ${::CUSTOM_PUP_DIR} ${::ORIGINAL_PUP_DIR}   	
+	
+	# unpack the CORE_OS files here, pass the 
+	# SELF-SCE Headers array
+	::unpack_coreos_files LV0_SCE_HDRS
 
     # Execute tasks
     foreach task ${::selected_tasks} {
@@ -152,8 +169,9 @@ proc build_mfw {input output tasks} {
     }
     log "******** Completed tasks **********"
 	
-	#repack the CORE_OS files here
-	::repack_coreos_files
+	#repack the CORE_OS files here, pass the 
+	# SELF-SCE Headers array
+	::repack_coreos_files LV0_SCE_HDRS
 
     # RECREATE PS3UPDAT.PUP
     file delete -force ${::CUSTOM_DEVFLASH_DIR}
@@ -161,7 +179,7 @@ proc build_mfw {input output tasks} {
 	
 	# if firmware is >= 3.56, we need to repack spkg files	
 	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
-		set filesSPKG [lsort [glob -directory ${::CUSTOM_SPKG_DIR} *.1]]
+		set filesSPKG [lsort [glob -nocomplain -tails -directory ${::CUSTOM_SPKG_DIR} *.1]]
 		debug "spkg's added to list"
 	}
     set files [lsort [glob -nocomplain -tails -directory ${::CUSTOM_UPDATE_DIR} *.pkg]]

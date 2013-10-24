@@ -9,25 +9,6 @@
 #
 #
 
-# ------ BEGIN GLOBALS --------
-#
-# global array for saving off SELF-SCE Hdr fields
-# for use by unself/makeself routines
-array set SelfHdr_Fields {
-	--KEYREV ""
-	--AUTHID ""
-	--VENDORID ""
-	--SELFTYPE ""
-	--APPVERSION ""
-	--FWVERSION ""
-	--CTRLFLAGS ""
-	--CAPABFLAGS ""
-	--COMPRESS false
-}
-# 
-# ------- END GLOBALS ---------
-
-
 # PRINT USAGE
 proc usage {{msg ""}} {
     global options
@@ -64,15 +45,17 @@ proc usage {{msg ""}} {
 #
 # "lv0tool.exe" will automatically decrypt the "lv1ldr"
 # if it's crypted in LV0
-proc extract_lv0 {path file} {   
+proc extract_lv0 {path file array} {   
 
 	log "Extracting 3.60+ LV0 and loaders...."
-	set fullpath [file join $path $file]	
+	upvar $array MyLV0Hdrs
+	set fullpath [file join $path $file]			
 	
-	# if firmware is >= 3.65, LV1LDR is crypted, otherwise it's
-	# not crypted. 
+	# read in the SELF hdr info for LV0
+	import_self_info $fullpath MyLV0Hdrs
+	
 	# decrypt LV0 to "LV0.elf", and
-	# delete the original "lv0"
+	# delete the original "lv0"	
 	decrypt_self $fullpath ${fullpath}.elf
 	file delete ${fullpath}
 	
@@ -84,9 +67,10 @@ proc extract_lv0 {path file} {
 # new routine for re-packing LV0 for 3.60+ OFW (using lv0tool.exe)
 # default:  crypt/decrypt "lv1ldr", unless we are under
 # FW version 3.65
-proc import_lv0 {path file} {   
+proc import_lv0 {path file array} {   
 
-	log "Importing 3.60+ loaders into LV0...."	
+	log "Importing 3.60+ loaders into LV0...."
+	upvar $array MySelfHdrs
 	set fullpath [file join $path $file]
 	set lv1ldr_crypt no
 	
@@ -104,7 +88,7 @@ proc import_lv0 {path file} {
 	shell ${::LV0TOOL} -option import -lv1crypt $lv1ldr_crypt -cleanup yes -filename ${file}.elf -filepath $path	
 	
 	# resign "lv0.elf" "lv0.self"
-	sign_elf ${fullpath}.elf ${fullpath}.self
+	sign_elf ${fullpath}.elf ${fullpath}.self MySelfHdrs
 	
 	file delete ${fullpath}.elf
 	file rename -force ${fullpath}.self $fullpath		
@@ -440,26 +424,115 @@ proc pup_get_build {pup} {
 	
     return $build_ver
 }
+# proc for importing original TAR "HEADER" data
+# from the tar file
+proc import_tar_headers {tar array} {			
+	upvar $array MyTarHdrs
 
+	# substitute the "PS3MFW-MFW" with the "PS3MFW-OFW" dir, 
+	# so we grab headers from the ORIGINAL file
+	if { [regsub ($::CUSTOM_PUP_DIR) $tar $::ORIGINAL_PUP_DIR tar] } {	
+		log "Importing TAR headers from file:$tar"		
+	} else {
+		log "ERROR: Failed to setup path for TAR file to import tar headers..."
+		die "ERROR: Failed to setup path for TAR file to import tar headers..."
+	}
+	# initialize the incoming array to NULL
+	foreach key [array names MyTarHdrs] {	
+		set MyTarHdrs($key) ""
+	}
+	
+	# setup the vars for the file opening/etc
+	set fd [open $tar r]
+    fconfigure $fd -translation binary
+	set myfile $tar	
+	
+	# tar header data is of this format:
+	#  offset: 100:  a8 A8 A8 A12 A12 A8 a1 = 57 bytes
+	# +offset: 100:  A6 a2 a32 a32 a8 a8    = 88 bytes
+	# +offset: 155:  a12	
+	# read in the first tar header block (at offset 0x64)
+    seek $fd 100
+    set headers1 [read $fd 80]
+	# read in the next block (ustar, uname, gname == at offset 0x101)
+	seek $fd 257
+	set headers2 [read $fd 88]	
+    close $fd
+	
+	# # assign the first block of TAR headers 
+	#    -------------- mode ------ uid  -------- gid  ---- size --- modtime --
+	if { [regexp "(^.{8,8})(.{8,8})(.{8,8}).{12,12}(.{12,12})(.*)" $headers1 all mode uid gid modtime] } {
+		set MyTarHdrs(--TAR_MODE) $mode
+		set MyTarHdrs(--TAR_UID) $uid
+		set MyTarHdrs(--TAR_GID) $gid		
+		set MyTarHdrs(--TAR_MODTIME) $modtime		
+	} else {
+		log "ERROR!! Failed to import TAR-headers, block1"
+		die "ERROR!! Failed to import TAR-headers, block1"		
+	}		
+	# assign the second block of TAR headers		
+	if { [regexp "(^.{6,6}).{2,2}(.{32,32})(.{32,32})(.*)" $headers2 all ustar uname gname] } {
+		set MyTarHdrs(--TAR_USTAR) $ustar
+		set MyTarHdrs(--TAR_UNAME) $uname
+		set MyTarHdrs(--TAR_GNAME) $gname
+	} else {
+		log "ERROR!! Failed to import TAR-headers, block2"
+		die "ERROR!! Failed to import TAR-headers, block2"
+	}	
+	# iterate the array, and make sure NO elements
+	# are still empty
+	foreach key [array names MyTarHdrs] {		
+		# if VERBOSE output enabled, display the contents
+		if { $::options(--task-verbose) } {
+			log "-->$key:$MyTarHdrs($key)"
+		}
+		if { $MyTarHdrs($key) == "" } {
+			log "ERROR: TARHDR element:$key was empty!!!"
+			die "ERROR: TARHDR element:$key was empty!!!"
+		}		
+	}	
+}
+# proc for extracting tar files
 proc extract_tar {tar dest} {
-
-    file mkdir $dest
-    debug "Extracting tar file [file tail $tar] into [file tail $dest]"
+	
+	debug "Extracting tar file [file tail $tar] into [file tail $dest]"	
+	# now go untar the file
+    file mkdir $dest    
     catch_die {::tar::untar $tar -dir $dest} "Could not untar file $tar"
 }
-
+# create_tar proc, for creating custom tar files
+# updated:  to set the tar hdr fields based on original file
 proc create_tar {tar directory files} {
-    set debug [file tail $tar]
+
+	debug "Creating tar file:$tar, from directory:$directory"
+	# setup the local array for the TAR_HEADERS
+	array set TAR_HDRS {
+		--TAR_MODE ""
+		--TAR_UID ""
+		--TAR_GID ""
+		--TAR_MODTIME ""
+		--TAR_USTAR ""
+		--TAR_UNAME ""
+		--TAR_GNAME ""	
+	}
+	set debug [file tail $tar]
+	set myfile $tar
     if {$debug == "content" } {
         set debug [file tail [file dirname $tar]]
-    }
+    }	
+	
+	# go grab the headers from the original file, pass
+	# the local array, which will be populated with the TARHDR values
+	catch_die {import_tar_headers $tar TAR_HDRS} "Could not import tar headers from:[file tail $tar]"							
+	
+    # now go and create the tar file (tar.tcl procs)
     debug "Creating tar file $debug"
     set pwd [pwd]
     cd $directory
-    catch_die {::tar::create $tar $files} "Could not create tar file $tar"
-    cd $pwd
+    catch_die {::tar::create $tar $files TAR_HDRS} "Could not create tar file $tar"
+    cd $pwd	
 }
-
+# proc for finding the file in devflash tars
 proc find_devflash_archive {dir find} {
 
     foreach file [glob -nocomplain [file join $dir * content]] {
@@ -605,18 +678,20 @@ proc modify_coreos_files { files callback args } {
 }
 
 # proc for "unpackaging" the "CORE_OS" files
-proc unpack_coreos_files { args } {
+proc unpack_coreos_files { array } {
 	#::CUSTOM_PKG_DIR == $pkg
 	#::CUSTOM_UNPKG_DIR == $unpkg
 	#::CUSTOM_COSUNPKG_DIR == $cosunpkg
     log "UN-PACKAGING CORE_OS files..."   
-   
+	upvar $array MyLV0Hdrs
+	
+	# unpkg and cosunpkg the "COREOS.pkg"
     ::unpkg_archive $::CUSTOM_PKG_DIR $::CUSTOM_UNPKG_DIR
     ::cosunpkg_package [file join $::CUSTOM_UNPKG_DIR content] $::CUSTOM_COSUNPKG_DIR	
 	
 	# if firmware is >= 3.60, we need to extract LV0 contents	
 	if {${::NEWMFW_VER} >= "3.60"} {
-		catch_die {extract_lv0 $::CUSTOM_COSUNPKG_DIR "lv0"} "ERROR: Could not extract LV0"
+		catch_die {extract_lv0 $::CUSTOM_COSUNPKG_DIR "lv0" MyLV0Hdrs} "ERROR: Could not extract LV0"
 	}
 	
 	# set the global flag that "CORE_OS" is unpacked
@@ -625,15 +700,16 @@ proc unpack_coreos_files { args } {
 }
 
 # proc for "packaging" up the "CORE_OS" files
-proc repack_coreos_files { args } {
+proc repack_coreos_files { array } {
 	#::CUSTOM_PKG_DIR == $pkg
 	#::CUSTOM_UNPKG_DIR == $unpkg
 	#::CUSTOM_COSUNPKG_DIR == $cosunpkg
     log "RE-PACKAGING CORE_OS files..." 
+	upvar $array MyLV0Hdrs
 
 	# if firmware is >= 3.60, we need to import LV0 contents	
 	if {${::NEWMFW_VER} >= "3.60"} {
-		catch_die {import_lv0 $::CUSTOM_COSUNPKG_DIR "lv0"} "ERROR: Could not import LV0"
+		catch_die {import_lv0 $::CUSTOM_COSUNPKG_DIR "lv0" MyLV0Hdrs} "ERROR: Could not import LV0"
 	}	
     
 	# re-package up the files
@@ -710,13 +786,11 @@ proc unself {in out} {
     shell ${::SCETOOL} -d $FIN $FOUT
 }
 
+# ------------- new makeself routine using scetool  ---------------------------#
 #
-# new makeself routine using scetool
-#
-#
-proc makeself {in out} {
+proc makeself {in out array} {
    variable options
-   global SelfHdr_Fields          
+   upvar $array MySelfHdrs   
   
    set MyKeyRev ""	
    set MyAuthID ""
@@ -732,15 +806,15 @@ proc makeself {in out} {
 	
 	# set the local vars for all the SCETOOL fields, from the global vars
 	# populated from the "import_sce_info{}" proc
-	set MyKeyRev $::SelfHdr_Fields(--KEYREV)
-	set MyAuthID $::SelfHdr_Fields(--AUTHID)
-	set MyVendorID $::SelfHdr_Fields(--VENDORID)
-	set MySelfType $::SelfHdr_Fields(--SELFTYPE)
-	set MyAppVersion $::SelfHdr_Fields(--APPVERSION)
-	set MyFWVersion $::SelfHdr_Fields(--FWVERSION)
-	set MyCtrlFlags $::SelfHdr_Fields(--CTRLFLAGS)
-	set MyCapabFlags $::SelfHdr_Fields(--CAPABFLAGS)
-	set MyCompressed $::SelfHdr_Fields(--COMPRESS)
+	set MyKeyRev $MySelfHdrs(--KEYREV)
+	set MyAuthID $MySelfHdrs(--AUTHID)
+	set MyVendorID $MySelfHdrs(--VENDORID)
+	set MySelfType $MySelfHdrs(--SELFTYPE)
+	set MyAppVersion $MySelfHdrs(--APPVERSION)
+	set MyFWVersion $MySelfHdrs(--FWVERSION)
+	set MyCtrlFlags $MySelfHdrs(--CTRLFLAGS)
+	set MyCapabFlags $MySelfHdrs(--CAPABFLAGS)
+	set MyCompressed $MySelfHdrs(--COMPRESS)
 
 	# Reading the SELF version var, and setup in SCETOOL format
 	# example: "0004004100000000"	
@@ -804,86 +878,103 @@ proc decrypt_self {in out} {
     catch_die {unself $in $out} "Could not decrypt file [file tail $in]"
 }
 # proc to run the scetool to dump the SELF header info
-proc import_self_info {in} {	
+proc import_self_info {in array} {	
 	
-	log "Importing SELF-HDR info from file: [file tail $in]"	
-	global SelfHdr_Fields
-	set MyArraySize 0
+	log "Importing SELF-HDR info from file: [file tail $in]"		
+	upvar $array MySelfHdrs
+	set MyArraySize 0	
 	
-	### SET TO "TRUE" FOR VERBOSE OUTPUT
-	### OF "SCE HEADER INFO" BEING IMPORTED
-	set MyDisplayVerbose false
+	# clear the incoming array
+	foreach key [array names MySelfHdrs] {
+		set MySelfHdrs($key) ""
+	}
 	
 	# execute the "SCETOOL -w" cmd to dump the needed SCE-HDR info
-    catch_die {set buffer [shellex ${::SCETOOL} -w $in]} "failed to dump SCE header for file: [file tail $in]"	
-	
-	# clear the globals array
-	foreach key [array names SelfHdr_Fields] {
-		set ::SelfHdr_Fields($key) ""
-	}	
+    catch_die {set buffer [shellex ${::SCETOOL} -w $in]} "failed to dump SCE header for file: [file tail $in]"		
+		
 	# parse out the return buffer, and 
 	# save off the fields into the global array
 	set data [split $buffer "\n"]
 	foreach line $data {
 		if [regexp -- {(^Key-Revision:)(.*)} $line match] {		
-			set ::SelfHdr_Fields(--KEYREV) [lindex [split $match ":"] 1]
+			set MySelfHdrs(--KEYREV) [lindex [split $match ":"] 1]
 			incr MyArraySize 1	
 		} elseif { [regexp -- {(^Auth-ID:)(.*)} $line match] } {		
-			set ::SelfHdr_Fields(--AUTHID) [lindex [split $match ":"] 1]
+			set MySelfHdrs(--AUTHID) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
 		} elseif { [regexp -- {(^Vendor-ID:)(.*)} $line match] } {		
-			set ::SelfHdr_Fields(--VENDORID) [lindex [split $match ":"] 1]	
+			set MySelfHdrs(--VENDORID) [lindex [split $match ":"] 1]	
 			incr MyArraySize 1
 		} elseif { [regexp -- {(^SELF-Type:)(.*)} $line match] } {		
-			set ::SelfHdr_Fields(--SELFTYPE) [lindex [split $match ":"] 1]
+			set MySelfHdrs(--SELFTYPE) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
 		} elseif { [regexp -- {(^AppVersion:)(.*)} $line match] } {		
-			set ::SelfHdr_Fields(--APPVERSION) [lindex [split $match ":"] 1]
+			set MySelfHdrs(--APPVERSION) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
 		} elseif { [regexp -- {(^FWVersion:)(.*)} $line match] } {		
-			set ::SelfHdr_Fields(--FWVERSION) [lindex [split $match ":"] 1]
+			set MySelfHdrs(--FWVERSION) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
 		} elseif { [regexp -- {(^CtrlFlags:)(.*)} $line match] } {		
-			set ::SelfHdr_Fields(--CTRLFLAGS) [lindex [split $match ":"] 1]	
+			set MySelfHdrs(--CTRLFLAGS) [lindex [split $match ":"] 1]	
 			incr MyArraySize 1
 		} elseif { [regexp -- {(^CapabFlags:)(.*)} $line match] } {		
-			set ::SelfHdr_Fields(--CAPABFLAGS) [lindex [split $match ":"] 1]
+			set MySelfHdrs(--CAPABFLAGS) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
 		} elseif { [regexp -- {(^Compressed:)(.*)} $line match] } {		
-			set ::SelfHdr_Fields(--COMPRESS) [lindex [split $match ":"] 1]	
+			set MySelfHdrs(--COMPRESS) [lindex [split $match ":"] 1]	
 			incr MyArraySize 1
 		}
 	}
 	# if we successfully captured all vars, 
 	# and it matches our array size, success
-	if { $MyArraySize == [array size SelfHdr_Fields] } { 
+	if { $MyArraySize == [array size MySelfHdrs] } { 
 		log "SELF-SCE HEADERS IMPORTED SUCCESSFULLY!"
 	} else {
 		log "!!ERROR!!:  FAILED TO IMPORT SELF-SCE HEADERS FROM FILE: [file tail $in]"
 		die "!!ERROR!!:  FAILED TO IMPORT SELF-SCE HEADERS FROM FILE: [file tail $in]"
 	}
 	# display the imported headers if VERBOSE enabled
-	if { $MyDisplayVerbose } {
-		foreach key [lsort [array names SelfHdr_Fields]] {
-			log "-->$key:$::SelfHdr_Fields($key)"
+	if { $::options(--task-verbose) } {
+		foreach key [lsort [array names MySelfHdrs]] {
+			log "-->$key:$MySelfHdrs($key)"
 		}	
 	}		
 }
 # stub proc for resigning the elf
-proc sign_elf {in out} {
+proc sign_elf {in out array} {
+
     debug "Rebuilding self file [file tail $out]"
-    catch_die {makeself $in $out} "Could not rebuild file [file tail $out]"
+	upvar $array MySelfHdrs
+	
+	# go dispatch the "makeself" routine
+    catch_die {makeself $in $out MySelfHdrs} "Could not rebuild file [file tail $out]"
 }
 # proc for decrypting, modifying, and re-signing a SELF file
 proc modify_self_file {file callback args} {
 
-    log "Modifying self/sprx file [file tail $file]"			
+    log "Modifying self/sprx file [file tail $file]"
+	array set MySelfHdrs {
+		--KEYREV ""
+		--AUTHID ""
+		--VENDORID ""
+		--SELFTYPE ""
+		--APPVERSION ""
+		--FWVERSION ""
+		--CTRLFLAGS ""
+		--CAPABFLAGS ""
+		--COMPRESS false
+	}
+	
 	# read in the SELF hdr info to save off for re-signing
-	import_self_info $file		
+	import_self_info $file MySelfHdrs	
 	# decrypt the self file
     decrypt_self $file ${file}.elf
+	
+	# call the "callback" function to do patching/etc
     eval $callback ${file}.elf $args
-    sign_elf ${file}.elf ${file}.self
+	
+	# now re-sign the SELF file for final output
+    sign_elf ${file}.elf ${file}.self MySelfHdrs	
 	#file copy -force ${file}.self ${::BUILD_DIR}    # used for debugging to copy the patched elf and new re-signed self to MFW build dir without the need to unpup the whole fw or even a single file
     file rename -force ${file}.self $file
 	#file copy -force ${file}.elf ${::BUILD_DIR}     # same as above

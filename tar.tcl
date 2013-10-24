@@ -173,7 +173,8 @@ proc ::tar::untar {tar args} {
     return $ret
 }
 
-proc ::tar::createHeader {name followlinks} {
+proc ::tar::createHeader {name followlinks array} {
+	upvar $array MyTarHdrs
     foreach x {linkname prefix devmajor devminor} {set $x ""}
     
     if {$followlinks} {
@@ -182,19 +183,23 @@ proc ::tar::createHeader {name followlinks} {
         file lstat $name stat
     }
     
-    set type [string map {file 0 directory 5 characterSpecial 3 blockSpecial 4 fifo 6 link 2 socket A} $stat(type)]
-    set gid "0001274"
-    set uid "0001752"
-    set mtime [format %.11o $stat(mtime)]
-    
-    set uname "pup_tool"
-    set gname "psnes"
+    set type [string map {file 0 directory 5 characterSpecial 3 blockSpecial 4 fifo 6 link 2 socket A} $stat(type)]    
+    #set mtime [format %.11o $stat(mtime)]
+	# setup our global settings	
+	set mymode $MyTarHdrs(--TAR_MODE)
+	set uid $MyTarHdrs(--TAR_UID)
+	set gid $MyTarHdrs(--TAR_GID)
+	set mtime $MyTarHdrs(--TAR_MODTIME)
+	set ustar $MyTarHdrs(--TAR_USTAR)
+	set uname $MyTarHdrs(--TAR_UNAME)
+    set gname $MyTarHdrs(--TAR_GNAME)	
+	
     if {$::tcl_platform(platform) == "unix"} {
         set mode 00[file attributes $name -permissions]
         if {$stat(type) == "link"} {set linkname [file link $name]}
     } else {
-        set mode 0000644
-        if {$stat(type) == "directory"} {set mode 0000755}
+        set mode $mymode
+        if {$stat(type) == "directory"} {set mode $mymode}
     }
     
     set size 0
@@ -212,7 +217,7 @@ proc ::tar::createHeader {name followlinks} {
 
     set header [binary format a100a8A8A8A12A12A8a1a100A6a2a32a32a8a8a155a12 \
                               $name $mode $uid\x00 $gid\x00 $size\x00 $mtime\x00 {} $type \
-                              $linkname ustar " " $uname $gname $devmajor $devminor $prefix {}]
+                              $linkname $ustar " " $uname $gname $devmajor $devminor $prefix {}]
 
     binary scan $header c* tmp
     set cksum 0
@@ -234,8 +239,9 @@ proc ::tar::recurseDirs {files followlinks} {
     return $files
 }
 
-proc ::tar::writefile {in out followlinks} {
-     puts -nonewline $out [createHeader $in $followlinks]
+proc ::tar::writefile {in out followlinks array} {
+	 upvar $array MyTarHdrs
+     puts -nonewline $out [createHeader $in $followlinks MyTarHdrs]
      set size 0
      if {[file type $in] == "file" || ($followlinks && [file type $in] == "link")} {
          set in [::open $in]
@@ -246,14 +252,15 @@ proc ::tar::writefile {in out followlinks} {
      puts -nonewline $out [string repeat \x00 [pad $size]]
 }
 
-proc ::tar::create {tar files args} {
+proc ::tar::create {tar files array args} {
     set dereference 0
     parseOpts {dereference 0} $args
+	upvar $array MyTarHdrs
     
     set fh [::open $tar w+]
     fconfigure $fh -encoding binary -translation lf -eofchar {}
     foreach x [recurseDirs $files $dereference] {
-        writefile $x $fh $dereference
+        writefile $x $fh $dereference MyTarHdrs
     }
     puts -nonewline $fh [string repeat \x00 6656]; # For some reason, normal tar puts 13 EOBs instead of 2
 
@@ -261,16 +268,17 @@ proc ::tar::create {tar files args} {
     return $tar
 }
 
-proc ::tar::add {tar files args} {
+proc ::tar::add {tar files array args} {
     set dereference 0
     parseOpts {dereference 0} $args
+	upvar $array MyTarHdrs
     
     set fh [::open $tar r+]
     fconfigure $fh -encoding binary -translation lf -eofchar {}
     seek $fh -1024 end
 
     foreach x [recurseDirs $files $dereference] {
-        writefile $x $fh $dereference
+        writefile $x $fh $dereference MyTarHdrs 
     }
     puts -nonewline $fh [string repeat \x00 1024]
 
