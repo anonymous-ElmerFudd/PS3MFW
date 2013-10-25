@@ -185,7 +185,9 @@ proc ::tar::createHeader {name followlinks array} {
     
     set type [string map {file 0 directory 5 characterSpecial 3 blockSpecial 4 fifo 6 link 2 socket A} $stat(type)]    
     #set mtime [format %.11o $stat(mtime)]
-	# setup our global settings	
+	# setup our global settings
+	set mode_file $MyTarHdrs(--TAR_MODE_FILE)
+	set mode_dir $MyTarHdrs(--TAR_MODE_DIR)
 	set mymode $MyTarHdrs(--TAR_MODE)
 	set uid $MyTarHdrs(--TAR_UID)
 	set gid $MyTarHdrs(--TAR_GID)
@@ -198,8 +200,8 @@ proc ::tar::createHeader {name followlinks array} {
         set mode 00[file attributes $name -permissions]
         if {$stat(type) == "link"} {set linkname [file link $name]}
     } else {
-        set mode $mymode
-        if {$stat(type) == "directory"} {set mode $mymode}
+        set mode $mode_file
+        if {$stat(type) == "directory"} {set mode $mode_dir}
     }
     
     set size 0
@@ -214,7 +216,7 @@ proc ::tar::createHeader {name followlinks array} {
         set prefix [string range $name 0 end-100]
         set name [string range $name end-99 end]
     }
-
+	# setup the string format for the entire TAR header field
     set header [binary format a100a8A8A8A12A12A8a1a100A6a2a32a32a8a8a155a12 \
                               $name $mode $uid\x00 $gid\x00 $size\x00 $mtime\x00 {} $type \
                               $linkname $ustar " " $uname $gname $devmajor $devminor $prefix {}]

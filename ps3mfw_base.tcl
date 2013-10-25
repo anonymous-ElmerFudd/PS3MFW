@@ -428,7 +428,10 @@ proc pup_get_build {pup} {
 # from the tar file
 proc import_tar_headers {tar array} {			
 	upvar $array MyTarHdrs
-
+	# initialize the incoming array to NULL
+	foreach key [array names MyTarHdrs] {	
+		set MyTarHdrs($key) ""
+	}
 	# substitute the "PS3MFW-MFW" with the "PS3MFW-OFW" dir, 
 	# so we grab headers from the ORIGINAL file
 	if { [regsub ($::CUSTOM_PUP_DIR) $tar $::ORIGINAL_PUP_DIR tar] } {	
@@ -437,9 +440,17 @@ proc import_tar_headers {tar array} {
 		log "ERROR: Failed to setup path for TAR file to import tar headers..."
 		die "ERROR: Failed to setup path for TAR file to import tar headers..."
 	}
-	# initialize the incoming array to NULL
-	foreach key [array names MyTarHdrs] {	
-		set MyTarHdrs($key) ""
+	
+	# set the "stock" numbers for TYPE=DIR & FILE, which are 
+	# always "755" & "644"
+	# MODE#s are changed slightly for DIRS/FILES 
+	# at 3.56 OFW and above
+	if {${::NEWMFW_VER} >= "3.56"} {
+		set MyTarHdrs(--TAR_MODE_FILE) 0100644
+		set MyTarHdrs(--TAR_MODE_DIR) 0040755
+	} else {
+		set MyTarHdrs(--TAR_MODE_FILE) 0000644
+		set MyTarHdrs(--TAR_MODE_DIR) 0000755
 	}
 	
 	# setup the vars for the file opening/etc
@@ -505,8 +516,10 @@ proc extract_tar {tar dest} {
 proc create_tar {tar directory files} {
 
 	debug "Creating tar file:$tar, from directory:$directory"
-	# setup the local array for the TAR_HEADERS
+	# setup the local array for the TAR_HEADERS	
 	array set TAR_HDRS {
+		--TAR_MODE_FILE ""
+		--TAR_MODE_DIR  ""
 		--TAR_MODE ""
 		--TAR_UID ""
 		--TAR_GID ""
@@ -514,7 +527,8 @@ proc create_tar {tar directory files} {
 		--TAR_USTAR ""
 		--TAR_UNAME ""
 		--TAR_GNAME ""	
-	}
+	}	
+	# setup the rest of the vars
 	set debug [file tail $tar]
 	set myfile $tar
     if {$debug == "content" } {
