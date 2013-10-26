@@ -48,19 +48,25 @@ proc unpack_source_pup {pup dest} {
         set ::CUSTOM_LICENSE_XML ${license_txt}
     }
 }
-
+# --------------------------------------------- #
+# proc for packing the CFW pup
+# Why was the original build num. incremented???
+# (this is now fixed, the increment was removed)
 proc pack_custom_pup {dir pup} {
     set build ${::PUP_BUILD}
     set obuild [get_pup_build]
+	log "PUP original build:$obuild"
     if {${build} == "" || ![string is integer ${build}] || ${build} == ${obuild}} {
-        set build ${obuild}
-        incr build
+        set build ${obuild}        
     }
     # create pup
-    log "Packing Modified PUP \"[file tail ${pup}]\""
+    log "Packing Modified PUP:\"[file tail ${pup}]\", BUILD:$build"
     catch_die {pup_create ${dir} ${pup} $build} "Error packing PUP file [file tail ${pup}]"
 }
+# -------------------------------------------- #
 
+# ----------------------------------------------------------------------------------- #
+# ----------------------------- MAIN CFW BUILD TASK --------------------------------- #
 proc build_mfw {input output tasks} {
     global options
 	 # array for saving off SELF-SCE Hdr fields

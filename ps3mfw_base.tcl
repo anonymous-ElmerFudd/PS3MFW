@@ -800,10 +800,10 @@ proc unself {in out} {
     shell ${::SCETOOL} -d $FIN $FOUT
 }
 
-# ------------- new makeself routine using scetool  ---------------------------#
+# -------------------------------------------------------------------------------------------------------------------------------------- #
+# -------------------------------------------- MAKESELF - USING SCETOOL ---------------------------------------------------------------- #
 #
-proc makeself {in out array} {
-   variable options
+proc makeself {in out array} {   
    upvar $array MySelfHdrs   
   
    set MyKeyRev ""	
@@ -824,12 +824,13 @@ proc makeself {in out array} {
 	set MyAuthID $MySelfHdrs(--AUTHID)
 	set MyVendorID $MySelfHdrs(--VENDORID)
 	set MySelfType $MySelfHdrs(--SELFTYPE)
-	set MyAppVersion $MySelfHdrs(--APPVERSION)
-	set MyFWVersion $MySelfHdrs(--FWVERSION)
+	set MyFirmVersion $MySelfHdrs(--FWVERSION)
+	set MyAppVersion $MySelfHdrs(--APPVERSION)	
 	set MyCtrlFlags $MySelfHdrs(--CTRLFLAGS)
 	set MyCapabFlags $MySelfHdrs(--CAPABFLAGS)
-	set MyCompressed $MySelfHdrs(--COMPRESS)
-
+	set MyCompressed $MySelfHdrs(--COMPRESS)	
+	
+	
 	# Reading the SELF version var, and setup in SCETOOL format
 	# example: "0004004100000000"	
 	set MyAppVersion [format "000%d00%d00000000" [lindex [split $MyAppVersion "."] 0] [lindex [split $MyAppVersion "."] 1]]	
@@ -881,11 +882,13 @@ proc makeself {in out array} {
 	if { $MyAuthID == "" } {
 		#### CURRENTLY UNHANDLED TYPE - if dies here, fix the script to add  #####		
 		die "Unhandled SELF TYPE:\"${::SELF}\", fix script to support it!"
-	}		
+	}
 	# run the scetool to resign the elf file
-    shell ${::SCETOOL} -0 SELF -1 $MyCompressed -s $skipsection -2 $MyKeyRev -3 $MyAuthID -4 $MyVendorID -5 $MySelfType \
-		-A $MyAppVersion -6 $MyFwVersion -8 $MyCtrlFlags -9 $MyCapabFlags -e $in $out
+    catch_die {shell ${::SCETOOL} -0 SELF -1 $MyCompressed -s $skipsection -2 $MyKeyRev -3 $MyAuthID -4 $MyVendorID -5 $MySelfType \
+		-A $MyAppVersion -6 $MyFirmVersion -8 $MyCtrlFlags -9 $MyCapabFlags -e $in $out} "SCETOOL execution failed!"		
 }
+# --------------------------------------------------------------------------------------------------------------------------------------- #
+
 # stub proc for decrypting self file
 proc decrypt_self {in out} {
     debug "Decrypting self file [file tail $in]"
@@ -956,10 +959,9 @@ proc import_self_info {in array} {
 }
 # stub proc for resigning the elf
 proc sign_elf {in out array} {
-
-    debug "Rebuilding self file [file tail $out]"
 	upvar $array MySelfHdrs
 	
+    debug "Rebuilding self file [file tail $out]"		
 	# go dispatch the "makeself" routine
     catch_die {makeself $in $out MySelfHdrs} "Could not rebuild file [file tail $out]"
 }
@@ -976,7 +978,7 @@ proc modify_self_file {file callback args} {
 		--FWVERSION ""
 		--CTRLFLAGS ""
 		--CAPABFLAGS ""
-		--COMPRESS false
+		--COMPRESS ""
 	}
 	
 	# read in the SELF hdr info to save off for re-signing
