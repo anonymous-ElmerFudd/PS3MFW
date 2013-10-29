@@ -244,16 +244,16 @@ namespace eval ::patch_cos {
 			if {${::NEWMFW_VER} >= "3.65"} {
 			
 				log "Patching Lv0 to disable LV1LDR descramble"
-				set self "lv0"
+				set self "lv0.elf"
 				set file [file join $path $self]			
 				set ::FLAG_NO_LV1LDR_CRYPT 1			
 			
-				set ::patch_cos::search    "\x64\x84\xB0\x00\x48\x00\x00\xFC\xE8\x61\x00\x70\x80\x81\x00\x7C"
-				append ::patch_cos::search "\x48\x00"
-				set ::patch_cos::replace   "\x60\x00\x00\x00"
-				set ::patch_cos::offset 16						
-				# base function to decrypt the "self" to "elf" for patching
-				::modify_self_file $file ::patch_cos::patch_elf	
+				set search    "\x64\x84\xB0\x00\x48\x00\x00\xFC\xE8\x61\x00\x70\x80\x81\x00\x7C"
+				append search "\x48\x00"
+				set replace   "\x60\x00\x00\x00"
+				set offset 16						
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $file $search $offset $replace} "Unable to patch self [file tail $file]"     
 				
 			} else {	
 				log "SKIPPING LV0-DESCRAMBLE PATCH, LV0 is NOT scrambled in FW below 3.65...."				
