@@ -39,6 +39,7 @@ array set ::options {
 set ::PUP "pup"
 set ::PUPPACK "puppack"
 set ::PUPUNPACK "pupunpack"
+set ::PKGTOOL "pkgtool.exe"
 set ::COSPKG "cospkg"
 set ::COSUNPKG "cosunpkg"
 set ::PKG "pkg"

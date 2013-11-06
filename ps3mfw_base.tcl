@@ -563,16 +563,19 @@ proc spkg {pkg} {
 # proc for building the "new" pkg with spkg headers
 proc new_pkg {pkg dest} {
 	log "Building NEW SPKG retail package"
-    shell ${::NEWPKG} retail [file nativename $pkg] [file nativename $dest]
+    #shell ${::NEWPKG} retail [file nativename $pkg] [file nativename $dest]
+	shell ${::PKGTOOL} -option pkg -type spkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 proc unpkg {pkg dest} {
-    shell ${::UNPKG} [file nativename $pkg] [file nativename $dest]
+    #shell ${::UNPKG} [file nativename $pkg] [file nativename $dest]
+	shell ${::PKGTOOL} -option unpkg -type pkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
 }
 # proc for building the normal 'pkg' package
 proc pkg {pkg dest} {
 	log "Building ORIGINAL PKG retail package"
-    shell ${::PKG} retail [file nativename $pkg] [file nativename $dest]
+    #shell ${::PKG} retail [file nativename $pkg] [file nativename $dest]
+	shell ${::PKGTOOL} -option pkg -type pkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 proc unpkg_archive {pkg dest} {
@@ -603,11 +606,13 @@ proc unpkg_devflash_all {dir} {
 }
 
 proc cosunpkg { pkg dest } {
-    shell ${::COSUNPKG} [file nativename $pkg] [file nativename $dest]
+    #shell ${::COSUNPKG} [file nativename $pkg] [file nativename $dest]
+	shell ${::PKGTOOL} -option unpack -type cos -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]	
 }
 
 proc cospkg { dir pkg } {
-    shell ${::COSPKG} [file nativename $pkg] [file nativename $dir]
+    #shell ${::COSPKG} [file nativename $pkg] [file nativename $dir]
+	shell ${::PKGTOOL} -option pack -type cos -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dir]
 }
 
 proc cosunpkg_package { pkg dest } {
