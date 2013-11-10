@@ -119,7 +119,7 @@ proc log {msg {force 0}} {
 }
 
 proc debug {msg} {
-    if {$::options(--debug)} {
+    if {$::options(--debug-log)} {
         log $msg 1
     }
 }
@@ -402,13 +402,21 @@ proc callback_ps3_game_standart { file } {
 }
 
 proc pup_extract {pup dest} {
-#    shell ${::PUP} x $pup $dest
-    shell ${::PUPUNPACK} [file nativename $pup] [file nativename $dest]
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}
+#   shell ${::PUP} x $pup $dest
+	shell ${::PKGTOOL} -debug $debugmode -action unpack -type pup -in [file nativename $pup] -out [file nativename $dest]
 }
 
 proc pup_create {dir pup build} {
-#    shell ${::PUP} c $dir $pup $build
-    shell ${::PUPPACK} $pup [file nativename $dir] [file nativename $build]
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}
+#   shell ${::PUP} c $dir $pup $build   
+	shell ${::PKGTOOL} -debug $debugmode -action pack -type pup -in [file nativename $dir] -out $pup -buildnum $build
 }
 
 proc pup_get_build {pup} {
@@ -561,21 +569,30 @@ proc spkg {pkg} {
     shell ${::SPKG} [file nativename $pkg]
 }
 # proc for building the "new" pkg with spkg headers
-proc new_pkg {pkg dest} {
-	log "Building NEW SPKG retail package"
-    #shell ${::NEWPKG} retail [file nativename $pkg] [file nativename $dest]
-	shell ${::PKGTOOL} -option pkg -type spkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
+proc pkg_spkg {pkg dest} {
+	log "Building NEW PKG & SPKG retail package(s)"
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}    
+	shell ${::PKGTOOL} -debug $debugmode -action pkg -type spkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
 }
 
-proc unpkg {pkg dest} {
-    #shell ${::UNPKG} [file nativename $pkg] [file nativename $dest]
-	shell ${::PKGTOOL} -option unpkg -type pkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
+proc unpkg {pkg dest} {	
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}    
+	shell ${::PKGTOOL} -debug $debugmode -action unpkg -type pkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
 }
 # proc for building the normal 'pkg' package
 proc pkg {pkg dest} {
 	log "Building ORIGINAL PKG retail package"
-    #shell ${::PKG} retail [file nativename $pkg] [file nativename $dest]
-	shell ${::PKGTOOL} -option pkg -type pkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}    
+	shell ${::PKGTOOL} -debug $debugmode -action pkg -type pkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 proc unpkg_archive {pkg dest} {
@@ -588,9 +605,9 @@ proc pkg_archive {dir pkg} {
     catch_die {pkg $dir $pkg} "Could not pkg file [file tail $pkg]"
 }
 
-proc new_pkg_archive {dir pkg} {
+proc pkg_spkg_archive {dir pkg} {
     debug "pkg-ing / spkg-ing file [file tail $pkg]"
-    catch_die {new_pkg $dir $pkg} "Could not pkg / spkg file [file tail $pkg]"
+    catch_die {pkg_spkg $dir $pkg} "Could not pkg / spkg file [file tail $pkg]"
 }
 
 proc spkg_archive {pkg} {
@@ -606,13 +623,19 @@ proc unpkg_devflash_all {dir} {
 }
 
 proc cosunpkg { pkg dest } {
-    #shell ${::COSUNPKG} [file nativename $pkg] [file nativename $dest]
-	shell ${::PKGTOOL} -option unpack -type cos -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]	
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}    
+	shell ${::PKGTOOL} -debug $debugmode -action unpack -type cos -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]	
 }
 
 proc cospkg { dir pkg } {
-    #shell ${::COSPKG} [file nativename $pkg] [file nativename $dir]
-	shell ${::PKGTOOL} -option pack -type cos -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dir]
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}   
+	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -key pkg-key-retail -in [file nativename $dir] -out [file nativename $pkg]
 }
 
 proc cosunpkg_package { pkg dest } {
@@ -652,7 +675,7 @@ proc modify_coreos_file { file callback args } {
 	# if we are >= 3.56 FW, we need to build the new
 	# "spkg" headers, otherwise use normal pkg build
 	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
-		::new_pkg_archive $unpkgdir $pkg
+		::pkg_spkg_archive $unpkgdir $pkg
         ::copy_spkg
     } else {
         ::pkg_archive $unpkgdir $pkg
@@ -689,7 +712,7 @@ proc modify_coreos_files { files callback args } {
     # if we are >= 3.56 FW, we need to build the new
 	# "spkg" headers, otherwise use normal pkg build
 	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
-		::new_pkg_archive $unpkgdir $pkg
+		::pkg_spkg_archive $unpkgdir $pkg
         ::copy_spkg
     } else {
         ::pkg_archive $unpkgdir $pkg
@@ -739,7 +762,7 @@ proc repack_coreos_files { array } {
 	set pkg $::CUSTOM_PKG_DIR
     set unpkgdir $::CUSTOM_UNPKG_DIR
 	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
-		::new_pkg_archive $unpkgdir $pkg
+		::pkg_spkg_archive $unpkgdir $pkg
         ::copy_spkg
     } else {
         ::pkg_archive $unpkgdir $pkg
@@ -821,6 +844,7 @@ proc makeself {in out array} {
    set MyCapabFlags ""      
    set MyCompressed FALSE
    set skipsection FALSE   
+   set ZlibCompressLevel -1
    
 	
 	# set the local vars for all the SCETOOL fields, from the global vars
@@ -890,7 +914,7 @@ proc makeself {in out array} {
 	}
 	# run the scetool to resign the elf file
     catch_die {shell ${::SCETOOL} -0 SELF -1 $MyCompressed -s $skipsection -2 $MyKeyRev -3 $MyAuthID -4 $MyVendorID -5 $MySelfType \
-		-A $MyAppVersion -6 $MyFirmVersion -8 $MyCtrlFlags -9 $MyCapabFlags -e $in $out} "SCETOOL execution failed!"		
+		-A $MyAppVersion -6 $MyFirmVersion -8 $MyCtrlFlags -9 $MyCapabFlags -z $ZlibCompressLevel -e $in $out} "SCETOOL execution failed!"		
 }
 # --------------------------------------------------------------------------------------------------------------------------------------- #
 
@@ -1156,7 +1180,7 @@ proc modify_devflash_file {file callback args} {
 	# if we are >= 3.56 FW, we need to build the new
 	# "spkg" headers, otherwise use normal pkg build
 	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
-		::new_pkg_archive $unpkgdir $pkg
+		::pkg_spkg_archive $unpkgdir $pkg
         ::copy_spkg
     } else {
         ::pkg_archive $unpkgdir $pkg
@@ -1201,7 +1225,7 @@ proc modify_devflash_files {path files callback args} {
 		# if we are >= 3.56 FW, we need to build the new
 		# "spkg" headers, otherwise use normal pkg build
 		if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
-			::new_pkg_archive $unpkgdir $pkg
+			::pkg_spkg_archive $unpkgdir $pkg
 			::copy_spkg
 		} else {
 			::pkg_archive $unpkgdir $pkg
@@ -1229,7 +1253,7 @@ proc modify_upl_file {callback args} {
 	# if we are >= 3.56 FW, we need to build the new
 	# "spkg" headers, otherwise use normal pkg build
 	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
-		::new_pkg_archive $unpkgdir $pkg
+		::pkg_spkg_archive $unpkgdir $pkg
         ::copy_spkg
     } else {
         ::pkg_archive $unpkgdir $pkg

@@ -10,7 +10,8 @@
 
 set ::PS3MFW_VERSION "1.0.0.0"
 
-# Option --debug: Show verbose debugging information
+# Option --debug-log: Show verbose debugging information
+# Option --tool-debug: enable TOOL DEBUG mode
 # Option --task-verbose: Show VERBOSE TASK outputs
 # Option --silent: Disable log output
 # Option --no-sha1-check: Disable SHA1 Check on Input PUP
@@ -19,8 +20,9 @@ set ::PS3MFW_VERSION "1.0.0.0"
 # Option --gui: Launch the Graphical User Interface
 
 array set ::options {
-	--debug true
-	--task-verbose false
+	--debug-log true
+	--tool-debug false
+	--task-verbose false			
 	--silent false
 	--no-sha1-check false
     
@@ -37,24 +39,13 @@ array set ::options {
 #
 
 set ::PUP "pup"
-set ::PUPPACK "puppack"
-set ::PUPUNPACK "pupunpack"
+set ::LV0TOOL "lv0tool.exe"
 set ::PKGTOOL "pkgtool.exe"
-set ::COSPKG "cospkg"
-set ::COSUNPKG "cosunpkg"
-set ::PKG "pkg"
-set ::NEWPKG "new_pkg"
-set ::SPKG "spkg"
-set ::UNPKG "unpkg"
-set ::UNSELF "unself"
-set ::UNSELFNEW "unself2"
 set ::SCETOOL "scetool"
 set ::fciv "fciv"
-set ::MAKESELF "self_rebuilder"
 set ::RCOMAGE "rcomage"
-set ::UNSPP "unspp"
 set ::SPP "spp"
-set ::LV0TOOL "lv0tool.exe"
+set ::UNSPP "unspp"
 set ::OFW_2NDGEN_BASE "3.56"
 set ::NEWMFW_VER "000"
 set ::SHCHK "true"
@@ -249,7 +240,7 @@ if {$options(--gui)} {
 		source [file join ${::PS3MFW_DIR} console.tcl]
 		console hide
 	}
-	if {$::options(--debug)} {
+	if {$::options(--debug-log)} {
 		console show
 	}
 	if {$::options(--no-sha1-check)} {

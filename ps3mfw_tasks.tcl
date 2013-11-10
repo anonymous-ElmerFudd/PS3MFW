@@ -184,7 +184,7 @@ proc build_mfw {input output tasks} {
 	debug "custom dev_flash deleted"
 	
 	# if firmware is >= 3.56, we need to repack spkg files	
-	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
+	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {		
 		set filesSPKG [lsort [glob -nocomplain -tails -directory ${::CUSTOM_SPKG_DIR} *.1]]
 		debug "spkg's added to list"
 	}
@@ -200,7 +200,7 @@ proc build_mfw {input output tasks} {
 	debug "PKG TAR created"	
 	
 	# if firmware is >= 3.56, we need to repack spkg files	
-	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
+	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {		
 		create_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} ${filesSPKG}
 		debug "SPKG TAR created"
 	}
