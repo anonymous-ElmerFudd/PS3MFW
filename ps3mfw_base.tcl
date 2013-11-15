@@ -575,7 +575,7 @@ proc pkg_spkg {pkg dest} {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}    
-	shell ${::PKGTOOL} -debug $debugmode -action pkg -type spkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
+	shell ${::PKGTOOL} -debug $debugmode -action pkg -type spkg -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 proc unpkg {pkg dest} {	
@@ -583,7 +583,7 @@ proc unpkg {pkg dest} {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}    
-	shell ${::PKGTOOL} -debug $debugmode -action unpkg -type pkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
+	shell ${::PKGTOOL} -debug $debugmode -action unpkg -type pkg -in [file nativename $pkg] -out [file nativename $dest]
 }
 # proc for building the normal 'pkg' package
 proc pkg {pkg dest} {
@@ -592,7 +592,7 @@ proc pkg {pkg dest} {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}    
-	shell ${::PKGTOOL} -debug $debugmode -action pkg -type pkg -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]
+	shell ${::PKGTOOL} -debug $debugmode -action pkg -type pkg -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 proc unpkg_archive {pkg dest} {
@@ -627,7 +627,7 @@ proc cosunpkg { pkg dest } {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}    
-	shell ${::PKGTOOL} -debug $debugmode -action unpack -type cos -key pkg-key-retail -in [file nativename $pkg] -out [file nativename $dest]	
+	shell ${::PKGTOOL} -debug $debugmode -action unpack -type cos -in [file nativename $pkg] -out [file nativename $dest]	
 }
 
 proc cospkg { dir pkg } {
@@ -635,7 +635,7 @@ proc cospkg { dir pkg } {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}   
-	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -key pkg-key-retail -in [file nativename $dir] -out [file nativename $pkg]
+	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -in [file nativename $dir] -out [file nativename $pkg]
 }
 
 proc cosunpkg_package { pkg dest } {
