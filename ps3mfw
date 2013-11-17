@@ -184,12 +184,25 @@ if {$::options(--build-dir) != ""} {
 unset ::options(--build-dir)
 
 set ::ORIGINAL_PUP_DIR [file join ${::BUILD_DIR} PS3MFW-OFW]
-set ::ORIGINAL_UPDATE_DIR [file join ${::ORIGINAL_PUP_DIR} update_files]
-set ::ORIGINAL_DEVFLASH_DIR [file join ${::ORIGINAL_UPDATE_DIR} dev_flash]
 set ::CUSTOM_PUP_DIR [file join ${::BUILD_DIR} PS3MFW-MFW]
 set ::LOG_FILE [file join ${::BUILD_DIR} "[file rootname [file tail ${::argv0}]].log"]
 
-# update base files
+# ORIGINAL (OFW) base files
+set ::ORIGINAL_VERSION_TXT [file join ${::ORIGINAL_PUP_DIR} version.txt]
+set ::ORIGINAL_LICENSE_XML [file join ${::ORIGINAL_PUP_DIR} license.xml]
+set ::ORIGINAL_PROMO_FLAGS_TXT [file join ${::ORIGINAL_PUP_DIR} promo_flags.txt]
+set ::ORIGINAL_UPDATE_FLAGS_TXT [file join ${::ORIGINAL_PUP_DIR} update_flags.txt]
+set ::ORIGINAL_PS3SWU_SELF [file join ${::ORIGINAL_PUP_DIR} ps3swu.self]
+set ::ORIGINAL_PS3SWU2_SELF [file join ${::ORIGINAL_PUP_DIR} ps3swu2.self]
+set ::ORIGINAL_SPKG_TAR [file join ${::ORIGINAL_PUP_DIR} spkg_hdr.tar]
+set ::ORIGINAL_UPDATE_TAR [file join ${::ORIGINAL_PUP_DIR} update_files.tar]
+set ::ORIGINAL_SPKG_DIR [file join ${::ORIGINAL_PUP_DIR} spkg_hdr]
+set ::ORIGINAL_UPDATE_DIR [file join ${::ORIGINAL_PUP_DIR} update_files]
+set ::ORIGINAL_PKG_DIR [file join ${::ORIGINAL_UPDATE_DIR} CORE_OS_PACKAGE.pkg]
+set ::ORIGINAL_UNPKG_DIR [file join ${::ORIGINAL_UPDATE_DIR} CORE_OS_PACKAGE.unpkg]
+set ::ORIGINAL_COSUNPKG_DIR [file join ${::ORIGINAL_UPDATE_DIR} CORE_OS_PACKAGE]
+
+# update (MFW) base files
 set ::CUSTOM_VERSION_TXT [file join ${::CUSTOM_PUP_DIR} version.txt]
 set ::CUSTOM_LICENSE_XML [file join ${::CUSTOM_PUP_DIR} license.xml]
 set ::CUSTOM_PROMO_FLAGS_TXT [file join ${::CUSTOM_PUP_DIR} promo_flags.txt]
@@ -204,8 +217,9 @@ set ::CUSTOM_PKG_DIR [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.pkg]
 set ::CUSTOM_UNPKG_DIR [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.unpkg]
 set ::CUSTOM_COSUNPKG_DIR [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE]
 
-# update_files.tar pkg files
+# update_files.tar pkg files (OFW & MFW)
 set ::CUSTOM_DEVFLASH_DIR [file join ${::CUSTOM_UPDATE_DIR} dev_flash]
+set ::ORIGINAL_DEVFLASH_DIR [file join ${::ORIGINAL_UPDATE_DIR} dev_flash]
 set ::CUSTOM_UPLXML_DIR [file join ${::CUSTOM_UPDATE_DIR} UPL.xml]
 
 # custom dirs

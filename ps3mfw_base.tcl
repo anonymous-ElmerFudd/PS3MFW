@@ -299,28 +299,33 @@ proc tail {filename {n 10}} {
     close $fd
     return [join $lines "\n"]
 }
-
+# func to create a 'directory'
 proc create_mfw_dir {args} {   
     catch_die {file mkdir $args} "Could not create dir $args"
 }
-
-
+# func. to copy a file
 proc copy_file {args} {
     catch_die {file copy {*}$args} "Unable to copy $args"
 }
+# func. to copy src directory/files to dst
+proc copy_dir {src dst } {   
 
+	debug "Copying source dir:$src to target directory:$dst"
+    copy_file -force $src $dst
+}
+# func. to sha1 check a hash
 proc sha1_check {file} {
     shell ${::fciv} -add [file nativename $file] -wp -sha1 -xml db.xml
 }
-
+# func. to sha1 verify a hash
 proc sha1_verify {file} {
     shell ${::fciv} [file nativename $file] -v -sha1 -xml db.xml
 }
-
+# func. to delete a file
 proc delete_file {args} {
     catch_die {file delete {*}$args} "Unable to delete $args"
 }
-
+# func. to rename a file
 proc rename_file {src dst} {
     catch_die {file rename {*}$src $dst} "Unable to rename and/or move $src $dst"
 }
@@ -328,7 +333,7 @@ proc rename_file {src dst} {
 proc delete_promo { } {
     delete_file -force ${::CUSTOM_PROMO_FLAGS_TXT}
 }
-
+# func. to copy over any 'spkg_hdr.1" files
 proc copy_spkg { } {
     debug "searching for spkg"
     set spkg [glob -directory ${::CUSTOM_UPDATE_DIR} *.1]
@@ -340,7 +345,7 @@ proc copy_spkg { } {
 	delete_file -force $spkg
 	}
 } 
-
+# func. to copy the 'MFW_DIR' dirs/files
 proc copy_mfw_imgs { } {
     create_mfw_dir ${::CUSTOM_MFW_DIR}
     copy_file -force ${::CUSTOM_IMG_DIR} ${::CUSTOM_MFW_DIR}
@@ -521,9 +526,10 @@ proc extract_tar {tar dest} {
 }
 # create_tar proc, for creating custom tar files
 # updated:  to set the tar hdr fields based on original file
-proc create_tar {tar directory files} {
+proc create_tar {tar directory files flags} {
 
 	debug "Creating tar file:$tar, from directory:$directory"
+	set myflags ""
 	# setup the local array for the TAR_HEADERS	
 	array set TAR_HDRS {
 		--TAR_MODE_FILE ""
@@ -543,16 +549,30 @@ proc create_tar {tar directory files} {
         set debug [file tail [file dirname $tar]]
     }	
 	
+	# ----------------------------- #
+	# setup any specific flags
+	if {$flags ne ""} {
+		set myflags "-nodirs"
+	}
+	# ----------------------------- #
+	
 	# go grab the headers from the original file, pass
 	# the local array, which will be populated with the TARHDR values
 	catch_die {import_tar_headers $tar TAR_HDRS} "Could not import tar headers from:[file tail $tar]"							
 	
     # now go and create the tar file (tar.tcl procs)
-    debug "Creating tar file $debug"
+    debug "Creating tar file $debug"	
     set pwd [pwd]
     cd $directory
-    catch_die {::tar::create $tar $files TAR_HDRS} "Could not create tar file $tar"
+    catch_die {::tar::create $tar $files TAR_HDRS $myflags} "Could not create tar file $tar"
     cd $pwd	
+}
+# proc for 'unpackaging' dev_flash files
+proc unpkg_devflash_all {updatedir outdir} {
+    file mkdir $outdir
+    foreach file [lsort [glob -nocomplain [file join $updatedir dev_flash_*]]] {
+        unpkg_archive $file [file join $outdir [file tail $file]]
+    }
 }
 # proc for finding the file in devflash tars
 proc find_devflash_archive {dir find} {
@@ -564,20 +584,29 @@ proc find_devflash_archive {dir find} {
     }
     return ""
 }
+
+# ---------------------------------------------------------------------------------------------------------------------- #
+# -------------------------------- PKG/SPKG functions (pkg/unpkg/spkg -------------------------------------------------- #
 # proc for building the 'spkg' package
+# --- no longer supported - SPKG is built as part of the 
+# --- "PKG" build process!
+proc spkg_archive {pkg} {
+	die "This function is NO LONGER SUPPORTED!!!"
+    debug "spkg-ing file [file tail $pkg]"
+    catch_die {spkg $pkg} "Could not spkg file [file tail $pkg]"
+}
 proc spkg {pkg} {
+	die "This function is NO LONGER SUPPORTED!!!"
     shell ${::SPKG} [file nativename $pkg]
 }
-# proc for building the "new" pkg with spkg headers
-proc pkg_spkg {pkg dest} {
-	log "Building NEW PKG & SPKG retail package(s)"
-	set debugmode no
-	if { $::options(--tool-debug) } {
-		set debugmode yes
-	}    
-	shell ${::PKGTOOL} -debug $debugmode -action pkg -type spkg -in [file nativename $pkg] -out [file nativename $dest]
-}
 
+# 'wrapper' function for calling "unpkg" function
+proc unpkg_archive {pkg dest} {
+    debug "unpkg-ing file [file tail $pkg]"
+    catch_die {unpkg $pkg $dest} "Could not unpkg file [file tail $pkg]"
+}
+# function for 'unpackaging' a PKG file
+# (outputs the 'content' file)
 proc unpkg {pkg dest} {	
 	set debugmode no
 	if { $::options(--tool-debug) } {
@@ -585,43 +614,101 @@ proc unpkg {pkg dest} {
 	}    
 	shell ${::PKGTOOL} -debug $debugmode -action unpkg -type pkg -in [file nativename $pkg] -out [file nativename $dest]
 }
-# proc for building the normal 'pkg' package
-proc pkg {pkg dest} {
-	log "Building ORIGINAL PKG retail package"
-	set debugmode no
-	if { $::options(--tool-debug) } {
-		set debugmode yes
-	}    
-	shell ${::PKGTOOL} -debug $debugmode -action pkg -type pkg -in [file nativename $pkg] -out [file nativename $dest]
-}
 
-proc unpkg_archive {pkg dest} {
-    debug "unpkg-ing file [file tail $pkg]"
-    catch_die {unpkg $pkg $dest} "Could not unpkg file [file tail $pkg]"
-}
-
+# 'wrapper' function for calling "pkg" 
 proc pkg_archive {dir pkg} {
     debug "pkg-ing file [file tail $pkg]"
     catch_die {pkg $dir $pkg} "Could not pkg file [file tail $pkg]"
 }
+# proc for building the normal 'pkg' package
+# (outputs the ".pkg" file
+proc pkg {pkg dest} {
+	log "Building ORIGINAL PKG retail package"
+	set orgfilepath [file join $pkg "content"]
+	set orgfilesize ""
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}
+ 	
+	# setup path to ORIGINAL 'content' file in PS3MFW-OFW
+	if { [regsub ($::CUSTOM_PUP_DIR) $orgfilepath $::ORIGINAL_PUP_DIR orgfilepath] } {	
+		set orgfilesize [file size $orgfilepath]	
+		log "Imported ORG 'content' size: 0x[format %x $orgfilesize], from file: \"$orgfilepath\""
+	} else {
+		log "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
+		die "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
+	}
+	# now go build the pkg/spkg output	
+	shell ${::PKGTOOL} -debug $debugmode -action pkg -type pkg -setpkgsize $orgfilesize -in [file nativename $pkg] -out [file nativename $dest]	
+}
 
+# 'wrapper' function for calling "pkg_spkg"
 proc pkg_spkg_archive {dir pkg} {
     debug "pkg-ing / spkg-ing file [file tail $pkg]"
     catch_die {pkg_spkg $dir $pkg} "Could not pkg / spkg file [file tail $pkg]"
 }
-
-proc spkg_archive {pkg} {
-    debug "spkg-ing file [file tail $pkg]"
-    catch_die {spkg $pkg} "Could not spkg file [file tail $pkg]"
+# proc for building the "new" pkg with spkg headers
+proc pkg_spkg {pkg dest} {
+	log "Building NEW PKG & SPKG retail package(s)"	
+	set orgfilepath [file join $pkg "content"]
+	set orgfilesize ""
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	} 
+	
+	# setup path to ORIGINAL 'content' file in PS3MFW-OFW
+	if { [regsub ($::CUSTOM_PUP_DIR) $orgfilepath $::ORIGINAL_PUP_DIR orgfilepath] } {	
+		set orgfilesize [file size $orgfilepath]	
+		log "Imported ORG 'content' size: 0x[format %x $orgfilesize], from file: \"$orgfilepath\""
+	} else {
+		log "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
+		die "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
+	}
+	# now go build the pkg/spkg output	
+	shell ${::PKGTOOL} -debug $debugmode -action pkg -type spkg -setpkgsize $orgfilesize -in [file nativename $pkg] -out [file nativename $dest]
 }
 
-proc unpkg_devflash_all {dir} {
-    file mkdir $dir
-    foreach file [lsort [glob -nocomplain [file join ${::CUSTOM_UPDATE_DIR} dev_flash_*]]] {
-        unpkg_archive $file [file join $dir [file tail $file]]
-    }
-}
+# ---------------------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------------------- #
 
+
+# ---------------------------------------------------------------------------------------------------------------------- #
+# -------------------------------- CORE_OS functions (cospkg/cosunpkg) ------------------------------------------------- #
+# 'wrapper' function for calling "cospkg"
+proc cospkg_package { dir pkg } {
+    debug "cospkg-ing file [file tail $dir]"
+    catch_die { cospkg $dir $pkg } "Could not cospkg file [file tail $pkg]"
+}
+# func for "packaging up" COS files
+# (creates the 'content' file)
+proc cospkg { dir pkg } {
+	set orgfilepath $pkg
+	set orgfilesize ""	
+	set debugmode no	
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	} 
+	
+	# setup path to ORIGINAL 'content' file in PS3MFW-OFW
+	if { [regsub ($::CUSTOM_PUP_DIR) $orgfilepath $::ORIGINAL_PUP_DIR orgfilepath] } {	
+		set orgfilesize [file size $orgfilepath]	
+		log "Imported ORG 'content' size: 0x[format %x $orgfilesize], from file: \"$orgfilepath\""
+	} else {
+		log "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
+		die "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
+	}			
+	# now go build the pkg/spkg output	
+	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -setpkgsize $orgfilesize -in [file nativename $dir] -out [file nativename $pkg]		
+}
+# 'wrapper' function for calling "cosunpkg"
+proc cosunpkg_package { pkg dest } {
+    debug "cosunpkg-ing file [file tail $pkg]"
+    catch_die { cosunpkg $pkg $dest } "Could not cosunpkg file [file tail $pkg]"
+}
+# function for "unpacking" CORE_COS files
+# (unpacks the 'content' file
 proc cosunpkg { pkg dest } {
 	set debugmode no
 	if { $::options(--tool-debug) } {
@@ -629,24 +716,8 @@ proc cosunpkg { pkg dest } {
 	}    
 	shell ${::PKGTOOL} -debug $debugmode -action unpack -type cos -in [file nativename $pkg] -out [file nativename $dest]	
 }
-
-proc cospkg { dir pkg } {
-	set debugmode no
-	if { $::options(--tool-debug) } {
-		set debugmode yes
-	}   
-	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -in [file nativename $dir] -out [file nativename $pkg]
-}
-
-proc cosunpkg_package { pkg dest } {
-    debug "cosunpkg-ing file [file tail $pkg]"
-    catch_die { cosunpkg $pkg $dest } "Could not cosunpkg file [file tail $pkg]"
-}
-
-proc cospkg_package { dir pkg } {
-    debug "cospkg-ing file [file tail $dir]"
-    catch_die { cospkg $dir $pkg } "Could not cospkg file [file tail $pkg]"
-}
+# -------------------------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------------------------------------------- #
 
 proc modify_coreos_file { file callback args } {
 	## core os files are now automaticallly unpacked/repacked
@@ -720,20 +791,24 @@ proc modify_coreos_files { files callback args } {
 }
 
 # proc for "unpackaging" the "CORE_OS" files
-proc unpack_coreos_files { array } {
-	#::CUSTOM_PKG_DIR == $pkg
-	#::CUSTOM_UNPKG_DIR == $unpkg
-	#::CUSTOM_COSUNPKG_DIR == $cosunpkg
-    log "UN-PACKAGING CORE_OS files..."   
+# 'pupdir' is directory path of PUPDIR being used
+# (ie 'PS3MFW-MFW' or 'PS3MFW-OFW')
+proc unpack_coreos_files { pupdir array } {
+	
+    log "UN-PACKAGING CORE_OS files..."  	
 	upvar $array MyLV0Hdrs
+	set updatedir [file join $pupdir update_files]
+	set pkgfile [file join $updatedir CORE_OS_PACKAGE.pkg]
+	set unpkgdir [file join $updatedir CORE_OS_PACKAGE.unpkg]
+	set cosunpkgdir [file join $updatedir CORE_OS_PACKAGE]	
 	
 	# unpkg and cosunpkg the "COREOS.pkg"
-    ::unpkg_archive $::CUSTOM_PKG_DIR $::CUSTOM_UNPKG_DIR
-    ::cosunpkg_package [file join $::CUSTOM_UNPKG_DIR content] $::CUSTOM_COSUNPKG_DIR	
+    ::unpkg_archive $pkgfile $unpkgdir
+    ::cosunpkg_package [file join $unpkgdir content] $cosunpkgdir	
 	
 	# if firmware is >= 3.60, we need to extract LV0 contents	
 	if {${::NEWMFW_VER} >= "3.60"} {
-		catch_die {extract_lv0 $::CUSTOM_COSUNPKG_DIR "lv0" MyLV0Hdrs} "ERROR: Could not extract LV0"
+		catch_die {extract_lv0 $cosunpkgdir "lv0" MyLV0Hdrs} "ERROR: Could not extract LV0"
 	}
 	
 	# set the global flag that "CORE_OS" is unpacked
@@ -741,7 +816,13 @@ proc unpack_coreos_files { array } {
 	log "CORE_OS UNPACKED..." 	
 }
 
+# -------------------------------------------------------- #
 # proc for "packaging" up the "CORE_OS" files
+#
+# 'ALWAYS' repack/rebuild from the 'PS3MFW-MFW' directory
+# (so no need to pass a path, always always use the 
+# 'CUSTOM....' paths!!
+#
 proc repack_coreos_files { array } {
 	#::CUSTOM_PKG_DIR == $pkg
 	#::CUSTOM_UNPKG_DIR == $unpkg
@@ -772,38 +853,40 @@ proc repack_coreos_files { array } {
 	set ::FLAG_COREOS_UNPACKED 0
 	log "CORE_OS REPACKED..." 	
 }
+# -------------------------------------------------------- #
 
+# proc for reading in the pup 'build' number
 proc get_pup_build {} {
     debug "Getting PUP build from [file tail ${::IN_FILE}]"
     catch_die {pup_get_build ${::IN_FILE}} "Could not get the PUP build information"
     return [pup_get_build ${::IN_FILE}]
 }
-
+# proc for 'setting' the pup 'build' number
 proc set_pup_build {build} {
     debug "PUP build: $build"
     set ::PUP_BUILD $build
 }
-
-proc get_pup_version {} {
-    debug "Getting PUP version from [file tail ${::CUSTOM_VERSION_TXT}]"
-    set fd [open [file join ${::CUSTOM_VERSION_TXT}] r]
+# proc for getting the pup 'version' number
+proc get_pup_version {dir} {
+    debug "Getting PUP version from [file tail $dir]"
+    set fd [open [file join $dir] r]
     set version [string trim [read $fd]]
     close $fd
     return $version
 }
-
+# proc for setting the pup 'version' number
 proc set_pup_version {version} {
     debug "Setting PUP version in [file tail ${::CUSTOM_VERSION_TXT}]"
     set fd [open [file join ${::CUSTOM_VERSION_TXT}] w]
     puts $fd "${version}"
     close $fd
 }
-
-proc modify_pup_version_file {prefix suffix {clear 0}} {
+# wrapper function for calling 'set_pup_version'
+proc modify_pup_version_file {prefix suffix {clear 0} dir} {
     if {$clear} {
       set version ""
     } else {
-      set version [::get_pup_version]
+      set version [::get_pup_version $dir]
     }
     debug "PUP version: ${prefix}${version}${suffix}"
     set_pup_version "${prefix}${version}${suffix}"
@@ -1170,9 +1253,10 @@ proc modify_devflash_file {file callback args} {
     } else {
         die "File $file is not writable in ${::CUSTOM_DEVFLASH_DIR}"
     }
-
+	# creat the tar file, with "NODIRS" specified, so we do NOT
+	# tar up 'directory names', only files
     file delete -force $tar_file
-    create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash	
+    create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash	nodirs
     
     set pkg [file join ${::CUSTOM_UPDATE_DIR} $pkg_file]
     set unpkgdir [file join ${::CUSTOM_DEVFLASH_DIR} $pkg_file]
@@ -1214,10 +1298,11 @@ proc modify_devflash_files {path files callback args} {
             debug "Could not find $file in ${::CUSTOM_DEVFLASH_DIR}"
         } else {
             die "File $file is not writable in ${::CUSTOM_DEVFLASH_DIR}"
-        }
-        
-        file delete -force $tar_file        
-        create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash		
+        }        
+       	# creat the tar file, with "NODIRS" specified, so we do NOT
+		# tar up 'directory names', only files
+		file delete -force $tar_file      
+        create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash	nodirs
         
         set pkg [file join ${::CUSTOM_UPDATE_DIR} $pkg_file]
         set unpkgdir [file join ${::CUSTOM_DEVFLASH_DIR} $pkg_file]		

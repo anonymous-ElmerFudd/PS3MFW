@@ -200,7 +200,7 @@ proc ::tar::createHeader {name followlinks array} {
         set mode 00[file attributes $name -permissions]
         if {$stat(type) == "link"} {set linkname [file link $name]}
     } else {
-        set mode $mode_file
+        set mode $mymode
         if {$stat(type) == "directory"} {set mode $mode_dir}
     }
     
@@ -254,15 +254,23 @@ proc ::tar::writefile {in out followlinks array} {
      puts -nonewline $out [string repeat \x00 [pad $size]]
 }
 
+# proc to create the 'tar' file
+# option1 = 'dereference'
+# option2 = 'nodirs'  (if specified, do NOT tar up the dir names!)
 proc ::tar::create {tar files array args} {
     set dereference 0
-    parseOpts {dereference 0} $args
+	set nodirs 0
+    parseOpts {dereference 0 nodirs 0} $args		
 	upvar $array MyTarHdrs
     
     set fh [::open $tar w+]
     fconfigure $fh -encoding binary -translation lf -eofchar {}
     foreach x [recurseDirs $files $dereference] {
-        writefile $x $fh $dereference MyTarHdrs
+		if {([file type $x] == "directory") && $nodirs} {			
+			continue
+		} else {
+			writefile $x $fh $dereference MyTarHdrs
+		}
     }
     puts -nonewline $fh [string repeat \x00 6656]; # For some reason, normal tar puts 13 EOBs instead of 2
 

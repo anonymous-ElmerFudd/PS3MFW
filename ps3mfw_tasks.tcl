@@ -129,13 +129,19 @@ proc build_mfw {input output tasks} {
 		unset catch
 	}
 
+	## ----------------------------------------------------------------------------------------- ##
+	## --------------- UNPACK ALL FILES 'FIRST' IN THE 'ORIGINAL_PUP' DIR ---------------------- ##
+	##
+	#
     # PREPARE PS3UPDAT.PUP for modification
-    unpack_source_pup ${input} ${::CUSTOM_PUP_DIR}
+	# create the 'PS3MFW-OFW' dir in the 'BUILD' path
+	create_mfw_dir ${::ORIGINAL_PUP_DIR}	
+    unpack_source_pup ${input} ${::ORIGINAL_PUP_DIR}
 	
 	# set the pup version into a variable so commands later can check it and do fw specific thingy's
 	# save off the "OFW MAJOR.MINOR" into a global for usage throughout
 	debug "checking pup version"
-    set ::SUF [::get_pup_version]	
+    set ::SUF [::get_pup_version ${::ORIGINAL_VERSION_TXT}]	
 	if { [regexp "(^\[0-9]{1,2})\.(\[0-9]{1,2})(.*)" $::SUF all ::OFW_MAJOR_VER ::OFW_MINOR_VER SubVerInfo] } {		
 		set ::NEWMFW_VER [format "%.1d.%.2d" $::OFW_MAJOR_VER $::OFW_MINOR_VER]	
 		if { $SubVerInfo != "" } {
@@ -148,32 +154,44 @@ proc build_mfw {input output tasks} {
 	}
 	
 	# extract "custom_update.tar
-    extract_tar ${::CUSTOM_UPDATE_TAR} ${::CUSTOM_UPDATE_DIR}
+    extract_tar ${::ORIGINAL_UPDATE_TAR} ${::ORIGINAL_UPDATE_DIR}
 	
 	# if firmware is >= 3.56 we need to extract
 	# spkg_hdr.tar	
 	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
-		extract_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} }	
+		extract_tar ${::ORIGINAL_SPKG_TAR} ${::ORIGINAL_SPKG_DIR} }	
 
 	# unpack devflash files	
 	# (do this before the copy, so we have the unpacked
 	#  flash files in the PS3OFW directory)
     log "Unpacking all dev_flash files"
-    unpkg_devflash_all ${::CUSTOM_DEVFLASH_DIR}	
-	
-    # copy original PUP to working dir
-    copy_file ${::CUSTOM_PUP_DIR} ${::ORIGINAL_PUP_DIR}   	
-	
+    unpkg_devflash_all ${::ORIGINAL_UPDATE_DIR} ${::ORIGINAL_DEVFLASH_DIR}	
+
 	# unpack the CORE_OS files here, pass the 
 	# SELF-SCE Headers array
-	::unpack_coreos_files LV0_SCE_HDRS
+	::unpack_coreos_files ${::ORIGINAL_PUP_DIR} LV0_SCE_HDRS			
+	
+	### DO THE COPY HERE, SO WE HAVE A MIRROR OF ALL REQ'D
+	### files in the 'PS3MFW-OFW' directory.
+	# copy original UNPACKED PUP/assoc. files to working dir
+	log "Please WAIT.....copying unpacked OFW to MFW dirs....."	
+    copy_dir ${::ORIGINAL_PUP_DIR} ${::CUSTOM_PUP_DIR}
+	
+	#
+	### --------------------- END OF PRE-EXECUTION PREP-WORK ------------------- ###
+	
+	
 
+	### ----------  !!! BEGIN EXECUTION OF MAIN TASKS !!!! --------------------- ###
+	
     # Execute tasks
     foreach task ${::selected_tasks} {
         log "******** Running task: \"$task.tcl\" **********"
         eval [string map {- _} ${task}::main]
     }
     log "******** Completed tasks **********"
+	
+	### ----------  !!!! DONE EXEUCTION OF TASKS !!! --------------------------- ###
 	
 	#repack the CORE_OS files here, pass the 
 	# SELF-SCE Headers array
@@ -196,12 +214,17 @@ proc build_mfw {input output tasks} {
 	debug "dev_flash 3 added to list"
     eval lappend files [lsort [glob -nocomplain -tails -directory ${::CUSTOM_UPDATE_DIR} dev_flash_*]]
 	debug "dev_flash added to list"
-    create_tar ${::CUSTOM_UPDATE_TAR} ${::CUSTOM_UPDATE_DIR} ${files}
+	
+	# create the tar with the 'nodirs' flag, to assure 'directories' are NOT
+	# included in the tar
+    create_tar ${::CUSTOM_UPDATE_TAR} ${::CUSTOM_UPDATE_DIR} ${files} nodirs
 	debug "PKG TAR created"	
 	
 	# if firmware is >= 3.56, we need to repack spkg files	
-	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {		
-		create_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} ${filesSPKG}
+	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
+		# create the tar with the 'nodirs' flag, to assure 'directories' are NOT
+		# included in the tar
+		create_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} ${filesSPKG} nodirs
 		debug "SPKG TAR created"
 	}
 	# cleanup any previous output builds
