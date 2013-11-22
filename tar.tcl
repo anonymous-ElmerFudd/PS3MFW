@@ -34,20 +34,149 @@ proc ::tar::parseOpts {acc opts} {
         incr i
     }
 }
+## 
+ # ::tar::statFile
+ # 
+ # Returns stat info about a filesystem object, in the form of an info 
+ # dictionary like that returned by ::tar::readHeader.
+ # 
+ # The mode, uid, gid, mtime, and type entries are always present. 
+ # The size and linkname entries are present if relevant for this type 
+ # of object. The uname and gname entries are present if the OS supports 
+ # them. No devmajor or devminor entry is present.
+ ##
 
+proc ::tar::statFile {name followlinks} {
+    if {$followlinks} {
+        file stat $name stat
+    } else {
+        file lstat $name stat
+    }
+    
+    set ret {}
+    
+    if {$::tcl_platform(platform) == "unix"} {
+        lappend ret mode 1[file attributes $name -permissions]
+        lappend ret uname [file attributes $name -owner]
+        lappend ret gname [file attributes $name -group]
+        if {$stat(type) == "link"} {
+            lappend ret linkname [file link $name]
+        }
+    } else {
+        lappend ret mode [lindex {100644 100755} [expr {$stat(type) == "directory"}]]
+    }
+    
+    lappend ret  uid $stat(uid)  gid $stat(gid)  mtime $stat(mtime) \
+      type $stat(type)
+    
+    if {$stat(type) == "file"} {lappend ret size $stat(size)}
+    
+    return $ret
+}
+proc ::tar::seekorskip {ch off wh} {
+    if {[tell $ch] < 0} {
+	if {$wh!="current"} {
+	    error "WHENCE=$wh not supported on non-seekable channel $ch"
+	}
+	skip $ch $off
+	return
+    }
+    seek $ch $off $wh
+    return
+}
+proc ::tar::skip {ch len} {
+    while {$len>0} {
+	set buf $len
+	if {$buf>65536} {set buf 65536}
+	set n [read $ch $buf]
+	if {$n<$buf} break
+	incr len -$buf
+    }
+    return
+}
 proc ::tar::pad {size} {
     set pad [expr {512 - ($size % 512)}]
     if {$pad == 512} {return 0}
     return $pad
 }
+# 'custom' formatheader function for PS3MFW
+proc ::tar::formatHeader_ps3mfw {name info fileheaders} {	
+    array set A {
+        linkname ""
+        uname ""
+        gname ""
+        size 0
+        gid  0
+        uid  0
+    }   
+    array set A $info    	
+	# name mode uid gid mtime type linkname magic version uname gname devmajor devminor prefix
+	set fields [split $fileheaders "~"]
+	lassign $fields name mode uid gid mtime type linkname magic version uname gname devmajor devminor prefix
+	
+    #set type [string map {file 0 directory 5 characterSpecial 3 \
+    #  blockSpecial 4 fifo 6 link 2 socket A} $A(type)]    
+    set osize  [format %.11o $A(size)]    
+    set header [binary format a100A8A8A8A12A12A8a1a100A6a2a32a32a8a8a155a12 \
+                              $name\x00 $mode\x00 $uid\x00 $gid\x00\
+                              $osize\x00 $mtime\x00 {} $type\x00\
+                              $linkname\x00 $magic $version $uname\x00 $gname\x00\
+                              $devmajor\x00 $devminor\x00 $prefix\x00 {}]
 
+    binary scan $header c* tmp
+    set cksum 0
+    foreach x $tmp {incr cksum $x}
+	# return the header with 'corrected' checksum (set to min. 6 width)
+    return [string replace $header 148 155 [binary format A8 [format %.6o $cksum]\x00]]
+}
+# func for 'reading header' specific to PS3MFW setup
+proc ::tar::readHeader_ps3mfw {data} {
+	set name ""
+	set mode ""
+	set uid ""
+	set gid ""
+	set size ""
+	set mtime ""
+	set cksum ""
+	set type ""
+	set linkname ""
+	set magic ""
+	set version ""
+	set uname ""
+	set gname ""
+	set devmajor ""
+	set devminor ""
+	set prefix ""
+	
+    binary scan $data a100a8a8a8a12a12a8a1a100a6a2a32a32a8a8a155 \
+                      name mode uid gid size mtime cksum type \
+                      linkname magic version uname gname devmajor devminor prefix
+
+	# omit 'magic' & 'version' from the trimright, as the OFW 'tar' files don't truncate the
+	# 'magic' & 'version' fields
+	foreach x {name mode uid gid size mtime type linkname uname gname devmajor devminor prefix} {
+		set $x [string trimright [set $x] " \x00"]
+    } 
+	# convert the 'size' to decimal
+    foreach x {size type} {
+		set $x [format %d 0[string trimright [set $x] " \x00"]]
+    } 	
+	
+    return [list name $name mode $mode uid $uid gid $gid size $size mtime $mtime \
+                 cksum $cksum type $type linkname $linkname magic $magic \
+                 version $version uname $uname gname $gname devmajor $devmajor \
+                 devminor $devminor prefix $prefix]
+}
+# 'original' readheader function
 proc ::tar::readHeader {data} {
     binary scan $data a100a8a8a8a12a12a8a1a100a6a2a32a32a8a8a155 \
                       name mode uid gid size mtime cksum type \
                       linkname magic version uname gname devmajor devminor prefix
                                
-    foreach x {name mode type linkname magic uname gname prefix mode uid gid size mtime cksum version devmajor devminor} {
-        set $x [string trim [set $x] "\x00"]
+	# omit 'magic' from the trimright, as the OFW 'tar' files don't truncate the
+	# 'magic' field, so leave it as is!
+    foreach x {name mode type linkname uname gname prefix mode uid gid size mtime cksum version devmajor devminor} {
+        set $x [string trimright [set $x] " \x00"]
     }
     set mode [string trim $mode " \x00"]
     foreach x {uid gid size mtime cksum version devmajor devminor} {
@@ -59,7 +188,26 @@ proc ::tar::readHeader {data} {
                  version $version uname $uname gname $gname devmajor $devmajor \
                  devminor $devminor prefix $prefix]
 }
-
+# func. for dumping the tar file 'headers' for ALL files
+proc ::tar::contents_ps3mfw {file args} {
+    set chan 0
+    parseOpts {chan 0} $args
+    
+	set fh [::open $file]
+	fconfigure $fh -encoding binary -translation lf -eofchar {}   
+    set ret {}
+    while {![eof $fh]} {
+        array set header [readHeader_ps3mfw [read $fh 512]]
+        if {$header(name) == ""} break 
+		# name mode uid gid mtime type linkname magic version uname gname devmajor devminor prefix
+		lappend ret $header(name)~$header(mode)~$header(uid)~$header(gid)~$header(mtime)~$header(type)~$header(linkname)~$header(magic)~$header(version)~$header(uname)~$header(gname)~$header(devmajor)~$header(devminor)~$header(prefix)
+        seekorskip $fh [expr {$header(size) + [pad $header(size)]}] current
+    }
+    
+	close $fh    
+    return $ret
+}
+# 'original' contents function
 proc ::tar::contents {file} {
     set fh [::open $file]
     while {![eof $fh]} {
@@ -240,7 +388,19 @@ proc ::tar::recurseDirs {files followlinks} {
     }
     return $files
 }
-
+# func. for doing 'writefile' specific to PS3MFW
+proc ::tar::writefile_ps3mfw {in out followlinks name fileheader} {	 
+     puts -nonewline $out [formatHeader_ps3mfw $name [statFile $in $followlinks] $fileheader]
+     set size 0
+     if {[file type $in] == "file" || ($followlinks && [file type $in] == "link")} {
+         set in [::open $in]
+         fconfigure $in -encoding binary -translation lf -eofchar {}
+         set size [fcopy $in $out]
+         close $in
+     }
+     puts -nonewline $out [string repeat \x00 [pad $size]]
+}
+# 'original' writefile function
 proc ::tar::writefile {in out followlinks array} {
 	 upvar $array MyTarHdrs
      puts -nonewline $out [createHeader $in $followlinks MyTarHdrs]
@@ -254,9 +414,54 @@ proc ::tar::writefile {in out followlinks array} {
      puts -nonewline $out [string repeat \x00 [pad $size]]
 }
 
-# proc to create the 'tar' file
-# option1 = 'dereference'
-# option2 = 'nodirs'  (if specified, do NOT tar up the dir names!)
+# func. for creating the 'tar' file, specific to PS3MFW
+proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	} 
+	upvar $totaladded mytotal
+    set dereference 0    
+	set fileheader ""
+	set index 0
+	set mytotal 0	
+	set nofinalpad 0
+	set nodirs 0
+    parseOpts {dereference 0 nodirs 0 nofinalpad 0} $args		
+    
+	set fh [::open $tar w+]
+	fconfigure $fh -encoding binary -translation lf -eofchar {}   
+    foreach x [recurseDirs $files $dereference] {
+		if {([file type $x] == "directory") && $nodirs} {
+			if {$debugmode == "yes"} {
+				log "skipping directory:$x"
+			}
+			continue
+		} else {				
+			set file_header ""
+			set index [lsearch -regexp $headerslist (^$x/{0,1}~.*)]				
+			if {$index != -1} {					
+				if {$debugmode == "yes"} {
+					log "found it:$x"
+				}			
+				set file_header [lindex $headerslist $index]
+				# found the file header, so write the file
+				writefile_ps3mfw $x $fh $dereference $x $file_header
+				incr mytotal				
+			} else { die "file not found:$x" }
+		}
+    }
+	# -- skip padding the file (if -nopad) ---
+	if {! $nofinalpad} {
+		puts -nonewline $fh [string repeat \x00 1024]
+	} else {
+		log "skipping file padding!"
+	}
+    
+	close $fh    
+    return $tar
+}
+# 'original' tar create
 proc ::tar::create {tar files array args} {
     set dereference 0
 	set nodirs 0

@@ -68,7 +68,7 @@ proc pack_custom_pup {dir pup} {
 # ----------------------------------------------------------------------------------- #
 # ----------------------------- MAIN CFW BUILD TASK --------------------------------- #
 proc build_mfw {input output tasks} {
-    global options
+    global options	
 	 # array for saving off SELF-SCE Hdr fields
 	 # for "LV0" for use by unself/makeself routines
 	array set LV0_SCE_HDRS {
@@ -214,17 +214,21 @@ proc build_mfw {input output tasks} {
 	debug "dev_flash 3 added to list"
     eval lappend files [lsort [glob -nocomplain -tails -directory ${::CUSTOM_UPDATE_DIR} dev_flash_*]]
 	debug "dev_flash added to list"
+		
 	
 	# create the tar with the 'nodirs' flag, to assure 'directories' are NOT
 	# included in the tar
-    create_tar ${::CUSTOM_UPDATE_TAR} ${::CUSTOM_UPDATE_DIR} ${files} nodirs
+	# '-nodirs' = do NOT include directories in tar file
+	# do NOT specify 'nofinalpad', as we want the final .tar padded!
+    create_tar ${::CUSTOM_UPDATE_TAR} ${::CUSTOM_UPDATE_DIR} ${files} -nodirs
 	debug "PKG TAR created"	
 	
 	# if firmware is >= 3.56, we need to repack spkg files	
-	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {
-		# create the tar with the 'nodirs' flag, to assure 'directories' are NOT
-		# included in the tar
-		create_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} ${filesSPKG} nodirs
+	# do NOT specify 'nofinalpad', as we want the final .tar padded!
+	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {				
+		# create the SPKG tar
+		# '-nodirs' = do NOT include directories in tar file
+		create_tar ${::CUSTOM_SPKG_TAR} ${::CUSTOM_SPKG_DIR} ${filesSPKG} -nodirs
 		debug "SPKG TAR created"
 	}
 	# cleanup any previous output builds

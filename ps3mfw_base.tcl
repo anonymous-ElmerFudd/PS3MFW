@@ -424,6 +424,7 @@ proc pup_create {dir pup build} {
 	shell ${::PKGTOOL} -debug $debugmode -action pack -type pup -in [file nativename $dir] -out $pup -buildnum $build
 }
 
+# proc for extracting pup 'build' info
 proc pup_get_build {pup} {
     set fd [open $pup r]
     fconfigure $fd -translation binary
@@ -437,85 +438,7 @@ proc pup_get_build {pup} {
 	
     return $build_ver
 }
-# proc for importing original TAR "HEADER" data
-# from the tar file
-proc import_tar_headers {tar array} {			
-	upvar $array MyTarHdrs
-	# initialize the incoming array to NULL
-	foreach key [array names MyTarHdrs] {	
-		set MyTarHdrs($key) ""
-	}
-	# substitute the "PS3MFW-MFW" with the "PS3MFW-OFW" dir, 
-	# so we grab headers from the ORIGINAL file
-	if { [regsub ($::CUSTOM_PUP_DIR) $tar $::ORIGINAL_PUP_DIR tar] } {	
-		log "Importing TAR headers from file:$tar"		
-	} else {
-		log "ERROR: Failed to setup path for TAR file to import tar headers..."
-		die "ERROR: Failed to setup path for TAR file to import tar headers..."
-	}
-	
-	# set the "stock" numbers for TYPE=DIR & FILE, which are 
-	# always "755" & "644"
-	# MODE#s are changed slightly for DIRS/FILES 
-	# at 3.56 OFW and above
-	if {${::NEWMFW_VER} >= "3.56"} {
-		set MyTarHdrs(--TAR_MODE_FILE) 0100644
-		set MyTarHdrs(--TAR_MODE_DIR) 0040755
-	} else {
-		set MyTarHdrs(--TAR_MODE_FILE) 0000644
-		set MyTarHdrs(--TAR_MODE_DIR) 0000755
-	}
-	
-	# setup the vars for the file opening/etc
-	set fd [open $tar r]
-    fconfigure $fd -translation binary
-	set myfile $tar	
-	
-	# tar header data is of this format:
-	#  offset: 100:  a8 A8 A8 A12 A12 A8 a1 = 57 bytes
-	# +offset: 100:  A6 a2 a32 a32 a8 a8    = 88 bytes
-	# +offset: 155:  a12	
-	# read in the first tar header block (at offset 0x64)
-    seek $fd 100
-    set headers1 [read $fd 80]
-	# read in the next block (ustar, uname, gname == at offset 0x101)
-	seek $fd 257
-	set headers2 [read $fd 88]	
-    close $fd
-	
-	# # assign the first block of TAR headers 
-	#    -------------- mode ------ uid  -------- gid  ---- size --- modtime --
-	if { [regexp "(^.{8,8})(.{8,8})(.{8,8}).{12,12}(.{12,12})(.*)" $headers1 all mode uid gid modtime] } {
-		set MyTarHdrs(--TAR_MODE) $mode
-		set MyTarHdrs(--TAR_UID) $uid
-		set MyTarHdrs(--TAR_GID) $gid		
-		set MyTarHdrs(--TAR_MODTIME) $modtime		
-	} else {
-		log "ERROR!! Failed to import TAR-headers, block1"
-		die "ERROR!! Failed to import TAR-headers, block1"		
-	}		
-	# assign the second block of TAR headers		
-	if { [regexp "(^.{6,6}).{2,2}(.{32,32})(.{32,32})(.*)" $headers2 all ustar uname gname] } {
-		set MyTarHdrs(--TAR_USTAR) $ustar
-		set MyTarHdrs(--TAR_UNAME) $uname
-		set MyTarHdrs(--TAR_GNAME) $gname
-	} else {
-		log "ERROR!! Failed to import TAR-headers, block2"
-		die "ERROR!! Failed to import TAR-headers, block2"
-	}	
-	# iterate the array, and make sure NO elements
-	# are still empty
-	foreach key [array names MyTarHdrs] {		
-		# if VERBOSE output enabled, display the contents
-		if { $::options(--task-verbose) } {
-			log "-->$key:$MyTarHdrs($key)"
-		}
-		if { $MyTarHdrs($key) == "" } {
-			log "ERROR: TARHDR element:$key was empty!!!"
-			die "ERROR: TARHDR element:$key was empty!!!"
-		}		
-	}	
-}
+
 # proc for extracting tar files
 proc extract_tar {tar dest} {
 	
@@ -524,48 +447,103 @@ proc extract_tar {tar dest} {
     file mkdir $dest    
     catch_die {::tar::untar $tar -dir $dest} "Could not untar file $tar"
 }
+
 # create_tar proc, for creating custom tar files
 # updated:  to set the tar hdr fields based on original file
-proc create_tar {tar directory files flags} {
+proc create_tar {tar directory files args} {
 
-	debug "Creating tar file:$tar, from directory:$directory"
-	set myflags ""
-	# setup the local array for the TAR_HEADERS	
-	array set TAR_HDRS {
-		--TAR_MODE_FILE ""
-		--TAR_MODE_DIR  ""
-		--TAR_MODE ""
-		--TAR_UID ""
-		--TAR_GID ""
-		--TAR_MODTIME ""
-		--TAR_USTAR ""
-		--TAR_UNAME ""
-		--TAR_GNAME ""	
-	}	
+	debug "Creating tar file:$tar, from directory:$directory\n"	
+	set orgcount 0
+	set buildcount 0
+	set founddir 0
+	set orgtar $tar
+	set full_headers_list ""
+	set inflags [split $args " "]
+	set outflags ""
+	set debugmode no	
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	} 		
+		
 	# setup the rest of the vars
 	set debug [file tail $tar]
 	set myfile $tar
     if {$debug == "content" } {
         set debug [file tail [file dirname $tar]]
-    }	
+    }		
+		
+	# -------------------------------- TAR HEADERS IMPORTING ------------------------------ #
+	# go read in the full 'tar' headers for the entire file, for 
+	# every file in the tar	
 	
-	# ----------------------------- #
-	# setup any specific flags
-	if {$flags ne ""} {
-		set myflags "-nodirs"
+	# substitute the "PS3MFW-MFW" with the "PS3MFW-OFW" dir, 
+	# so we grab headers from the ORIGINAL file
+	if { [regsub ($::CUSTOM_PUP_DIR) $orgtar $::ORIGINAL_PUP_DIR orgtar] } {	
+		log "Importing TAR headers from file:$orgtar"		
+	} else {
+		log "ERROR: Failed to setup path for TAR file to import tar headers..."
+		die "ERROR: Failed to setup path for TAR file to import tar headers..."
 	}
-	# ----------------------------- #
+	# import tar headers for all tar files
+	set full_headers_list [::tar::contents_ps3mfw $orgtar]				
+	set orgcount [llength $full_headers_list]	
+
+	# -----------------------------------------
+	# parse the full ORIGINAL TAR 'headers list',
+	# and check if we have any DIRECTORY entries.  
+	# default setup for this tar creation is to
+	# create the tar with "-nodirs" specified....
+	#
+	# if dirs exist in original tar, then we MUST
+	# build the tar the same (otherwise, we don't want
+	# the dir entries in there!
+	#
+	foreach entry $full_headers_list {
+		set fields [split $entry "~"]
+		lassign $fields name mode uid gid mtime type
+		if {$type == 5} {
+			set founddir 1
+			log "\n!! WARNING !!...there are DIRECTORIES in the tar:[file tail $tar]..."
+			log "TAR will be built INCLUDING directory entries...."
+			die "test"
+			break
+		}
+	}
+	# ----------------------------------------------- #
+	# parse the "inflags(args)", and if we have 
+	# 'directories' in our original tar, then we
+	# CANNOT specify the "-nodirs" option, or we 
+	# will be missing tar contents	
+	foreach x $inflags {		
+		if {[regexp "(^-nodirs).*" $x]} {
+			if {$founddir == 1} { continue }
+			append outflags "$x "
+		}
+	}		
+	# -------------------------- DONE TAR HEADERS IMPORTING ----------------------------- #	
+	# ----------------------------------------------------------------------------------- #		
 	
-	# go grab the headers from the original file, pass
-	# the local array, which will be populated with the TARHDR values
-	catch_die {import_tar_headers $tar TAR_HDRS} "Could not import tar headers from:[file tail $tar]"							
 	
     # now go and create the tar file (tar.tcl procs)
-    debug "Creating tar file $debug"	
+    log "Creating tar file $debug, flags:$outflags"	
+	# forcibly delete the current 'tar' file
+	file delete -force $tar	
     set pwd [pwd]
     cd $directory
-    catch_die {::tar::create $tar $files TAR_HDRS $myflags} "Could not create tar file $tar"
+	catch_die {::tar::create_ps3mfw $tar $files $full_headers_list buildcount {*}$outflags} "Could not create tar file $tar"
     cd $pwd	
+	
+	# --- VERIFY TAR FILE BUILD SUCCESSFULLY! --- #
+	if {$debugmode == yes} {
+		log "Original tar count:$orgcount, Build file count:$buildcount"	
+	}	
+	if {$orgcount == $buildcount} {
+		log "$tar file build SUCCESSFUL!\n"
+	} else {
+		log "Original tar count:$orgcount, Build file count:$buildcount"	
+		die "Error rebuilding $tar file, terminating build"
+	}	
+	# ------------------------------- END TAR CREATION ---------------------------------------- #
 }
 # proc for 'unpackaging' dev_flash files
 proc unpkg_devflash_all {updatedir outdir} {
@@ -1252,12 +1230,13 @@ proc modify_devflash_file {file callback args} {
         die "Could not find $file in ${::CUSTOM_DEVFLASH_DIR}"
     } else {
         die "File $file is not writable in ${::CUSTOM_DEVFLASH_DIR}"
-    }
-	# creat the tar file, with "NODIRS" specified, so we do NOT
-	# tar up 'directory names', only files
-    file delete -force $tar_file
-    create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash	nodirs
-    
+    }	
+		
+	# create the tar file
+	# '-nodirs' = do NOT include directories in tar file
+	# '-nofinalpad'  === NO ZERO PADDING appended to file at end
+    create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash -nodirs
+			    
     set pkg [file join ${::CUSTOM_UPDATE_DIR} $pkg_file]
     set unpkgdir [file join ${::CUSTOM_DEVFLASH_DIR} $pkg_file]
 	
@@ -1275,7 +1254,7 @@ proc modify_devflash_files {path files callback args} {
 	
     foreach file $files {
 	
-        set file [file join $path $file]
+        set file [file join $path $file]			
         log "Modifying dev_flash file [file tail $file] in devflash file"
         
         set tar_file [find_devflash_archive ${::CUSTOM_DEVFLASH_DIR} $file]        
@@ -1298,12 +1277,13 @@ proc modify_devflash_files {path files callback args} {
             debug "Could not find $file in ${::CUSTOM_DEVFLASH_DIR}"
         } else {
             die "File $file is not writable in ${::CUSTOM_DEVFLASH_DIR}"
-        }        
-       	# creat the tar file, with "NODIRS" specified, so we do NOT
-		# tar up 'directory names', only files
-		file delete -force $tar_file      
-        create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash	nodirs
-        
+        }     
+      							
+		# create the tar file
+		# '-nodirs' = do NOT include directories in tar file
+		# '-nofinalpad'  === NO ZERO PADDING appended to file at end				
+        create_tar $tar_file ${::CUSTOM_DEVFLASH_DIR} dev_flash	-nodirs
+		        
         set pkg [file join ${::CUSTOM_UPDATE_DIR} $pkg_file]
         set unpkgdir [file join ${::CUSTOM_DEVFLASH_DIR} $pkg_file]		
 		
