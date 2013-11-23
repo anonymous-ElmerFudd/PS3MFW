@@ -406,6 +406,7 @@ proc callback_ps3_game_standart { file } {
 	}
 }
 
+# func. for 'extracting' the input PUP file
 proc pup_extract {pup dest} {
 	set debugmode no
 	if { $::options(--tool-debug) } {
@@ -415,6 +416,7 @@ proc pup_extract {pup dest} {
 	shell ${::PKGTOOL} -debug $debugmode -action unpack -type pup -in [file nativename $pup] -out [file nativename $dest]
 }
 
+# func. for 'creating' the final PUP output
 proc pup_create {dir pup build} {
 	set debugmode no
 	if { $::options(--tool-debug) } {
@@ -583,14 +585,14 @@ proc unpkg_archive {pkg dest} {
     debug "unpkg-ing file [file tail $pkg]"
     catch_die {unpkg $pkg $dest} "Could not unpkg file [file tail $pkg]"
 }
-# function for 'unpackaging' a PKG file
+# function for 'unpackaging'(decrypt) a PKG file
 # (outputs the 'content' file)
 proc unpkg {pkg dest} {	
 	set debugmode no
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}    
-	shell ${::PKGTOOL} -debug $debugmode -action unpkg -type pkg -in [file nativename $pkg] -out [file nativename $dest]
+	shell ${::PKGTOOL} -debug $debugmode -action decrypt -type pkg -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 # 'wrapper' function for calling "pkg" 
@@ -598,7 +600,7 @@ proc pkg_archive {dir pkg} {
     debug "pkg-ing file [file tail $pkg]"
     catch_die {pkg $dir $pkg} "Could not pkg file [file tail $pkg]"
 }
-# proc for building the normal 'pkg' package
+# proc for building the normal 'pkg' (encrypt) package
 # (outputs the ".pkg" file
 proc pkg {pkg dest} {
 	log "Building ORIGINAL PKG retail package"
@@ -618,7 +620,7 @@ proc pkg {pkg dest} {
 		die "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
 	}
 	# now go build the pkg/spkg output	
-	shell ${::PKGTOOL} -debug $debugmode -action pkg -type pkg -setpkgsize $orgfilesize -in [file nativename $pkg] -out [file nativename $dest]	
+	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type pkg -setpkgsize $orgfilesize -in [file nativename $pkg] -out [file nativename $dest]	
 }
 
 # 'wrapper' function for calling "pkg_spkg"
@@ -627,6 +629,7 @@ proc pkg_spkg_archive {dir pkg} {
     catch_die {pkg_spkg $dir $pkg} "Could not pkg / spkg file [file tail $pkg]"
 }
 # proc for building the "new" pkg with spkg headers
+# (encrypt) into the pkg/spkg output files
 proc pkg_spkg {pkg dest} {
 	log "Building NEW PKG & SPKG retail package(s)"	
 	set orgfilepath [file join $pkg "content"]
@@ -645,7 +648,7 @@ proc pkg_spkg {pkg dest} {
 		die "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
 	}
 	# now go build the pkg/spkg output	
-	shell ${::PKGTOOL} -debug $debugmode -action pkg -type spkg -setpkgsize $orgfilesize -in [file nativename $pkg] -out [file nativename $dest]
+	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spkg -setpkgsize $orgfilesize -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 # ---------------------------------------------------------------------------------------------------------------------- #
@@ -1463,12 +1466,24 @@ proc set_header_key_upl_xml { file key replace message } {
     return ""
 }
 
+# func. for 'decrypting' an SPP file
 proc unspp {in out} {
-    shell ${::UNSPP} [file nativename $in] [file nativename $out]
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}	
+#   shell ${::UNSPP} [file nativename $in] [file nativename $out]
+	shell ${::PKGTOOL} -debug $debugmode -action decrypt -type spp -in [file nativename $in] -out [file nativename $out]
 }
 
+# func. for 'encrypting' an SPP file
 proc spp {in out} {
-    shell ${::SPP} 355 [file nativename $in] [file nativename $out]
+	set debugmode no
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}	
+#   shell ${::SPP} 355 [file nativename $in] [file nativename $out]
+	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spp -in [file nativename $in] -out [file nativename $out]   
 }
 
 proc decrypt_spp {in out} {
