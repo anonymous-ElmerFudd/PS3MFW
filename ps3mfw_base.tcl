@@ -506,8 +506,7 @@ proc create_tar {tar directory files args} {
 		if {$type == 5} {
 			set founddir 1
 			log "\n!! WARNING !!...there are DIRECTORIES in the tar:[file tail $tar]..."
-			log "TAR will be built INCLUDING directory entries...."
-			die "test"
+			log "TAR will be built INCLUDING directory entries...."			
 			break
 		}
 	}

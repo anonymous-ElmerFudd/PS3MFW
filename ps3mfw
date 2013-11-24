@@ -68,8 +68,10 @@ set ::xmlang ""
 
 set ::env(PS3_KEYS) ""
 set ::BUILD_DIR ""
+set ::IN_DIR ""
 set ::IN_FILE ""
 set ::OUT_DIR ""
+set ::OUT_FILE ""
 
 ## ----------------------------------------------------- ##
 
@@ -110,26 +112,28 @@ source [file join ${::PS3MFW_DIR} ps3mfw_tasks.tcl]
 set ::xmlang [::xml::LoadFile [file join $::PS3MFW_DIR Settings.xml]]
 if {[file exists [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]]} {
 
-	set ::env(PS3_KEYS) [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]]	
-	puts "env:${env(PS3_KEYS)}"
-	set ::BUILD_DIR [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]]
-	set ::IN_FILE [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:IN_FILE" 0]]
+	set ::env(PS3_KEYS) [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]]		
+	set ::BUILD_DIR [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]]		
+	set ::IN_DIR [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:IN_DIR" 0]]
+	set ::IN_FILE [file join ${::IN_DIR} [::xml::GetData ${::xmlang} "Settings:IN_FILE" 0]]	
 	set ::OUT_DIR [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:OUT_DIR" 0]]
+	set ::OUT_FILE [file join ${::OUT_DIR} [::xml::GetData ${::xmlang} "Settings:OUT_FILE" 0]]		
 	if {[catch {file mkdir ${::BUILD_DIR}}]} {
-		die "error creating build directory:${::BUILD_DIR}"
+		error "error creating build directory:${::BUILD_DIR}"
+	}
+	if {[catch {file mkdir ${::IN_DIR}}]} {
+		error "error creating in directory:${::IN_DIR}"
 	}
 	if {[catch {file mkdir ${::OUT_DIR}}]} {
-		die "error creating output directory:${::OUT_DIR}"
+		error "error creating output directory:${::OUT_DIR}"
 	}
 } else {
 	set ::env(PS3_KEYS) " "
 }
+
 ## 															 ##
 ## --------------------------------------------------------- ##
 ## --------------------------------------------------------- ##
-
-
-
 
 set ::taskfiles [get_sorted_task_files]
 set ::tasks [list]
@@ -295,8 +299,7 @@ if {$options(--gui)} {
 	}
 
 	set ::IN_FILE [lindex ${::arguments} 0]
-	set ::OUT_FILE [lindex ${::arguments} 1]
-	set ::OUT_FILE [file join ${::OUT_DIR} ${::OUT_FILE}]
+	set ::OUT_FILE [lindex ${::arguments} 1]	
 
 	build_mfw ${::IN_FILE} ${::OUT_FILE} ${::tasks}
 	exit
