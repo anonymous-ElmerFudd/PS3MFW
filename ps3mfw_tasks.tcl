@@ -107,6 +107,7 @@ proc build_mfw {input output tasks} {
         debug "PATH=$::env(PATH)"
     }
 	# remove all previous files, etc
+	set ::OUT_FILE [file join ${::OUT_DIR} ${::OUT_FILE}]	
     clean_up
 	
 	# Add the input OFW SHA1 to the DB
