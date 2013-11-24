@@ -14,10 +14,10 @@ set ::PS3MFW_VERSION "1.0.0.0"
 # Option --tool-debug: enable TOOL DEBUG mode
 # Option --task-verbose: Show VERBOSE TASK outputs
 # Option --silent: Disable log output
-# Option --no-sha1-check: Disable SHA1 Check on Input PUP
+## Option --no-sha1-check: Disable SHA1 Check on Input PUP
+## Option --build-dir: Build directory for temporary files
 ## Option --add-sha1: Add SHA1 off Input PUP to DB
-# Option --build-dir: Build directory for temporary files
-# Option --gui: Launch the Graphical User Interface
+## Option --gui: Launch the Graphical User Interface
 
 array set ::options {
 	--debug-log true
@@ -86,11 +86,22 @@ source [file join ${::PS3MFW_DIR} ps3mfw_tasks.tcl]
 
 set ::xmlang [::xml::LoadFile [file join $::PS3MFW_DIR Settings.xml]]
 
+## --------------------------------------------------------- ##
+## ----- setup the vars from the 'settings.xml' ------------ ##
+
 if {[file exists [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]]} {
 	set ::env(PS3_KEYS) [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]
+	set ::BUILD_DIR [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]
+	if {[catch {file mkdir ${::BUILD_DIR}}]} {
+		die "error creating build directory:${::BUILD_DIR}"
+	}
 } else {
 	set ::env(PS3_KEYS) " "
 }
+
+## --------------------------------------------------------- ##
+## --------------------------------------------------------- ##
+
 
 set ::TASKS_DIR [file join ${::PS3MFW_DIR} tasks]
 
@@ -154,33 +165,39 @@ if {[llength ${::tasks}] == 0 } {
 	}
 }
 
-if {$::options(--build-dir) != ""} {
-	set ::BUILD_DIR $::options(--build-dir)
-} else {
-	if { $::tcl_platform(platform) == "windows" && [info exists ::env(TEMP)]} {
-		if {[file exists [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]]} {
-			set ::BUILD_DIR [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]
-		} else {
-			set ::BUILD_DIR [file join $::env(TEMP) PS3MFW]
-		}
-		if {[catch {file mkdir ${::BUILD_DIR}}]} {
-			set ::BUILD_DIR [pwd]
-		}
-	} elseif {$::tcl_platform(platform) == "unix"} {
-		if {[file exists [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]]} {
-			set ::BUILD_DIR [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]
-		} else {
-			set ::BUILD_DIR [file join /tmp PS3MFW]
-		}
-		if {[catch {file mkdir ${::BUILD_DIR}}]} {
-			set ::BUILD_DIR [pwd]
-		}
-	} else {
-		set ::BUILD_DIR [pwd]
-	}
-}
-unset ::options(--build-dir)
+## ---------------------------------------------------------------------- ##
+##
+##  ?? makes more sense to just 'set' the BUILD-DIR, versus trying to
+##     derive it from Temp paths, etc.
+#if {$::options(--build-dir) != ""} {
+#	set ::BUILD_DIR $::options(--build-dir)
+#} else {
+#	if { $::tcl_platform(platform) == "windows" && [info exists ::env(TEMP)]} {
+#		if {[file exists [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]]} {
+#			set ::BUILD_DIR [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]
+#		} else {
+#			set ::BUILD_DIR [file join $::env(TEMP) PS3MFW]
+#		}
+#		if {[catch {file mkdir ${::BUILD_DIR}}]} {
+#			set ::BUILD_DIR [pwd]
+#		}
+#	} elseif {$::tcl_platform(platform) == "unix"} {
+#		if {[file exists [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]]} {
+#			set ::BUILD_DIR [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]
+#		} else {
+#			set ::BUILD_DIR [file join /tmp PS3MFW]
+#		}
+#		if {[catch {file mkdir ${::BUILD_DIR}}]} {
+#			set ::BUILD_DIR [pwd]
+#		}
+#	} else {
+#		set ::BUILD_DIR [pwd]
+#	}
+#}
+## ------------------------------------------------------------------ ##
+## ------------------------------------------------------------------ ##
 
+unset ::options(--build-dir)
 set ::ORIGINAL_PUP_DIR [file join ${::BUILD_DIR} PS3MFW-OFW]
 set ::CUSTOM_PUP_DIR [file join ${::BUILD_DIR} PS3MFW-MFW]
 set ::LOG_FILE [file join ${::BUILD_DIR} "[file rootname [file tail ${::argv0}]].log"]

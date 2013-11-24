@@ -134,9 +134,15 @@ proc build_mfw {input output tasks} {
 	##
 	#
     # PREPARE PS3UPDAT.PUP for modification
-	# create the 'PS3MFW-OFW' dir in the 'BUILD' path
-	create_mfw_dir ${::ORIGINAL_PUP_DIR}	
-    unpack_source_pup ${input} ${::ORIGINAL_PUP_DIR}
+	# -- create the 'BUILD-DIR' path first, then
+	# -- create the 'PS3MFW-OFW' dir
+	log "Creating initial build directories....."	
+	create_mfw_dir ${::BUILD_DIR}	
+	create_mfw_dir ${::ORIGINAL_PUP_DIR}		
+	
+	## -- unpack the OFW PUP file.....
+	log "Directory creation and PUP unpacking complete!\n"	
+    unpack_source_pup ${input} ${::ORIGINAL_PUP_DIR}	
 	
 	# set the pup version into a variable so commands later can check it and do fw specific thingy's
 	# save off the "OFW MAJOR.MINOR" into a global for usage throughout
