@@ -1,10 +1,10 @@
 <Settings>
-    <language>English</language>
-<BUILD_DIR>C:/_tools/PS3/PS3MFW/BUILD</BUILD_DIR>
- <OUT_DIR>C:/_tools/PS3/PS3MFW/OUT</OUT_DIR>
-<PS3_KEYS>C:/_tools/PS3/PS3MFW/.ps3/data</PS3_KEYS>
+	<language>English</language>
+	<BUILD_DIR>BUILD</BUILD_DIR>
+	<OUT_DIR>OUT</OUT_DIR>
+	<PS3_KEYS>.ps3/data</PS3_KEYS>
     <Theme>xpnative</Theme>
-    <IN_FILE>C:/_tools/PS3/PS3MFW/IN/PS3UPDAT_4.50.PUP</IN_FILE>
+    <IN_FILE>IN/PS3UPDAT_4.50.PUP</IN_FILE>
     <OUT_FILE>MFW_TEST</OUT_FILE>
-<tasks>patch_cos patch_lv1 patch_lv2 patch_appldr patch_xmb patch_vsh patch_gameos</tasks>
+	<tasks>patch_cos patch_lv1 patch_lv2 patch_appldr patch_xmb patch_vsh patch_gameos</tasks>
 </Settings>

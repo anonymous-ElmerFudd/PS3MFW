@@ -15,7 +15,6 @@ set ::PS3MFW_VERSION "1.0.0.0"
 # Option --task-verbose: Show VERBOSE TASK outputs
 # Option --silent: Disable log output
 # Option --no-sha1-check: Disable SHA1 Check on Input PUP
-## Option --build-dir: Build directory for temporary files
 ## Option --add-sha1: Add SHA1 off Input PUP to DB
 ## Option --gui: Launch the Graphical User Interface
 
@@ -24,10 +23,8 @@ array set ::options {
 	--tool-debug false
 	--task-verbose false			
 	--silent false
-	--no-sha1-check false
-    
-	--build-dir ""
-	--gui true
+	--no-sha1-check false    	
+	--gui true	
 }
 ## this is an hidden developer option
 ## line 16, 239, 240, 241 remove the #
@@ -59,7 +56,25 @@ set ::FLAG_COREOS_UNPACKED 0
 set ::FLAG_4xx_LV0_UNPACKED 0
 set ::APPSELF "dev_flash/vsh/module/vsh.self dev_flash/vsh/module/explore_category_game.sprx dev_flash/vsh/module/explore_plugin.sprx dev_flash/vsh/module/netconf_plugin.sprx dev_flash/vsh/module/sysconf_plugin.sprx dev_flash/vsh/module/libad_core.sprx dev_flash/vsh/module/libmedi.sprx dev_flash/vsh/module/libsysutil_np_clans.sprx dev_flash/vsh/module/libsysutil_np_commerce2.sprx dev_flash/vsh/module/libsysutil_np_util.sprx dev_flash/vsh/module/autodownload_plugin.sprx dev_flash/vsh/module/download_plugin.sprx dev_flash/vsh/module/esehttp.sprx dev_flash/vsh/module/eula_cddb_plugin.sprx dev_flash/vsh/module/eula_hcopy_plugin.sprx dev_flash/vsh/module/eula_net_plugin.sprx dev_flash/vsh/module/explore_category_friend.sprx dev_flash/vsh/module/explore_category_music.sprx dev_flash/vsh/module/explore_category_network.sprx dev_flash/vsh/module/explore_category_photo.sprx dev_flash/vsh/module/explore_category_psn.sprx dev_flash/vsh/module/explore_category_sysconf.sprx dev_flash/vsh/module/explore_category_tv.sprx dev_flash/vsh/module/explore_category_user.sprx dev_flash/vsh/module/explore_category_video.sprx dev_flash/vsh/module/explore_plugin_ft.sprx dev_flash/vsh/module/explore_plugin_np.sprx dev_flash/vsh/module/friendtrophy_plugin.sprx dev_flash/vsh/module/game_ext_plugin.sprx dev_flash/vsh/module/hknw_plugin.sprx dev_flash/vsh/module/nas_plugin.sprx dev_flash/vsh/module/newstore_plugin.sprx dev_flash/vsh/module/np_eula_plugin.sprx dev_flash/vsh/module/np_trophy_plugin.sprx dev_flash/vsh/module/np_trophy_util.sprx dev_flash/vsh/module/photo_network_sharing_plugin.sprx dev_flash/vsh/module/profile_plugin.sprx dev_flash/vsh/module/regcam_plugin.sprx dev_flash/vsh/module/sysconf_plugin.sprx dev_flash/vsh/module/videoeditor_plugin.sprx dev_flash/vsh/module/videoplayer_plugin.sprx dev_flash/vsh/module/videoplayer_util.sprx dev_flash/vsh/module/vsh.self dev_flash/vsh/module/x3_mdimp11.sprx x3_mdimp7.sprx dev_flash/vsh/module/netconf_plugin.sprx dev_flash/vsh/module/sysconf_plugin.sprx dev_flash/vsh/module/eula_net_plugin.sprx dev_flash/vsh/module/mintx_client.sprx dev_flash/vsh/module/videodownloader_plugin.sprx"
 
+
+## ----------------------------------------------------- ##
+## initialize all 'setup' variables initially, 
+## so we don't blow up upon failure to read in errors
+
+set ::PS3MFW_DIR ""
+set ::program ""
+set ::auto_path ""
+set ::xmlang ""
+
+set ::env(PS3_KEYS) ""
+set ::BUILD_DIR ""
+set ::IN_FILE ""
+set ::OUT_DIR ""
+
+## ----------------------------------------------------- ##
+
 set ::PS3MFW_DIR [file dirname [info script]]
+set ::TASKS_DIR [file join ${::PS3MFW_DIR} tasks]
 set ::program [file tail [info script]]
 
 while {[catch {file readlink [file join ${::PS3MFW_DIR} ${::program}]} program] == 0} {
@@ -87,13 +102,19 @@ source [file join ${::PS3MFW_DIR} ps3mfw_tasks.tcl]
 
 ## --------------------------------------------------------- ##
 ## ----- setup the vars from the 'settings.xml' ------------ ##
+##															 ##
+## --- 'USE the current 'script' directory as the base dir   ##
+## ---  for the root directory of all 'settings' options     ##
+## ---  (just append any settings to the current script dir  ##
 
 set ::xmlang [::xml::LoadFile [file join $::PS3MFW_DIR Settings.xml]]
 if {[file exists [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]]} {
 
-	set ::env(PS3_KEYS) [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]
-	set ::BUILD_DIR [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]
-	set ::OUT_DIR [::xml::GetData ${::xmlang} "Settings:OUT_DIR" 0]
+	set ::env(PS3_KEYS) [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]]	
+	puts "env:${env(PS3_KEYS)}"
+	set ::BUILD_DIR [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:BUILD_DIR" 0]]
+	set ::IN_FILE [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:IN_FILE" 0]]
+	set ::OUT_DIR [file join ${::PS3MFW_DIR} [::xml::GetData ${::xmlang} "Settings:OUT_DIR" 0]]
 	if {[catch {file mkdir ${::BUILD_DIR}}]} {
 		die "error creating build directory:${::BUILD_DIR}"
 	}
@@ -103,12 +124,12 @@ if {[file exists [::xml::GetData ${::xmlang} "Settings:PS3_KEYS" 0]]} {
 } else {
 	set ::env(PS3_KEYS) " "
 }
-
+## 															 ##
 ## --------------------------------------------------------- ##
 ## --------------------------------------------------------- ##
 
 
-set ::TASKS_DIR [file join ${::PS3MFW_DIR} tasks]
+
 
 set ::taskfiles [get_sorted_task_files]
 set ::tasks [list]
@@ -117,6 +138,9 @@ set ::arguments [list]
 set ::current_opt ""
 set ::current_task_opt ""
 
+# ---------------------------------------
+# go and read in each task .tcl file
+# ---------------------------------------
 foreach taskfile ${::taskfiles} {
 	source ${::taskfile}
 }
@@ -170,7 +194,10 @@ if {[llength ${::tasks}] == 0 } {
 	}
 }
 
-unset ::options(--build-dir)
+#### ----------------------------------------------------------------------------- ####
+####		**** SETUP ALL THE MAIN VARIABLES FOR MFW CREATION ****				   ####
+#### ----------------------------------------------------------------------------- ####
+
 set ::ORIGINAL_PUP_DIR [file join ${::BUILD_DIR} PS3MFW-OFW]
 set ::CUSTOM_PUP_DIR [file join ${::BUILD_DIR} PS3MFW-MFW]
 set ::LOG_FILE [file join ${::BUILD_DIR} "[file rootname [file tail ${::argv0}]].log"]
@@ -233,6 +260,11 @@ set ::CUSTOM_UPL_XML [file join ${::CUSTOM_UPLXML_DIR} UPL.xml]
 # version info
 set ::PUP_BUILD ""
 
+
+#### ----------------------------------------------------------------------------- ####
+####		**** BEGIN THE MFW CREATION PROCESS ****				   			   ####
+#### ----------------------------------------------------------------------------- ####
+
 if {$options(--gui)} {
 	package require Tk 8.5
 	foreach font [font names] {
@@ -269,3 +301,7 @@ if {$options(--gui)} {
 	build_mfw ${::IN_FILE} ${::OUT_FILE} ${::tasks}
 	exit
 }
+
+#### ----------------------------------------------------------------------------- ####
+####		**** MFW CREATION PROCESS COMPLETE!!! ****				   			   ####
+#### ----------------------------------------------------------------------------- ####
