@@ -1306,9 +1306,14 @@ proc modify_upl_file {callback args} {
     
     set pkg [file join ${::CUSTOM_UPDATE_DIR} UPL.xml.pkg]
     set unpkgdir [file join ${::CUSTOM_UPDATE_DIR} UPL.xml.unpkg]
+	set orgunpkgdir [file join ${::ORIGINAL_UPDATE_DIR} UPL.xml.unpkg]
 
+	# unpkg the archive in the 'MFW' dir
     ::unpkg_archive $pkg $unpkgdir
+	# unpkg the archive in the 'OFW' dir (for importing content info)
+    ::unpkg_archive $pkg $orgunpkgdir	
 
+	# verify 'file' is writable/etc before it's patched
     if {[file writable [file join $unpkgdir $file]] } {
         eval $callback [file join $unpkgdir $file] $args
     } elseif { ![file exists [file join $unpkgdir $file]] } {
@@ -1499,10 +1504,17 @@ proc sign_pp {in out} {
     catch_die {spp $in $out} "Could not rebuild file [file tail $out]"
 }
 
+# main proc for modifying 'spp' files
 proc modify_spp_file {file callback args} {
+
     log "Modifying spp file [file tail $file]"
+	
+	# decrypt the '.spp' file to a '.spp.pp' file
     decrypt_spp $file ${file}.pp
     eval $callback ${file}.pp $args
+	# re-encrypt the '.spp.pp' file back to '.spp' file
     sign_pp ${file}.pp $file
     file delete ${file}.pp
 }
+# ------------------------------ END OF THIS SCRIPT --------------------------------------------- ##
+# ----------------------------------------------------------------------------------------------- ##
