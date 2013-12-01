@@ -416,10 +416,11 @@ proc ::tar::writefile {in out followlinks array} {
 
 # func. for creating the 'tar' file, specific to PS3MFW
 proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
-	set debugmode no
-	if { $::options(--tool-debug) } {
-		set debugmode yes
-	} 
+	set verbosemode no
+	# if verbose mode enabled
+	if { $::options(--task-verbose) } {
+		set verbosemode yes
+	}  
 	upvar $totaladded mytotal
     set dereference 0    
 	set fileheader ""
@@ -433,7 +434,7 @@ proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
 	fconfigure $fh -encoding binary -translation lf -eofchar {}   
     foreach x [recurseDirs $files $dereference] {
 		if {([file type $x] == "directory") && $nodirs} {
-			if {$debugmode == "yes"} {
+			if {$verbosemode == "yes"} {
 				log "skipping directory:$x"
 			}
 			continue
@@ -441,7 +442,7 @@ proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
 			set file_header ""
 			set index [lsearch -regexp $headerslist (^$x/{0,1}~.*)]				
 			if {$index != -1} {					
-				if {$debugmode == "yes"} {
+				if {$verbosemode == "yes"} {
 					log "found it:$x"
 				}			
 				set file_header [lindex $headerslist $index]

@@ -461,10 +461,11 @@ proc create_tar {tar directory files args} {
 	set orgtar $tar
 	set full_headers_list ""
 	set inflags [split $args " "]
-	set outflags ""
-	set debugmode no	
-	if { $::options(--tool-debug) } {
-		set debugmode yes
+	set outflags ""	
+	set verbosemode no
+	# if verbose mode enabled
+	if { $::options(--task-verbose) } {
+		set verbosemode yes
 	} 		
 		
 	# setup the rest of the vars
@@ -535,7 +536,7 @@ proc create_tar {tar directory files args} {
     cd $pwd	
 	
 	# --- VERIFY TAR FILE BUILD SUCCESSFULLY! --- #
-	if {$debugmode == yes} {
+	if {$verbosemode == yes} {
 		log "Original tar count:$orgcount, Build file count:$buildcount"	
 	}	
 	if {$orgcount == $buildcount} {
