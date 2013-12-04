@@ -1006,7 +1006,7 @@ proc import_self_info {in array} {
 	# save off the fields into the global array
 	set data [split $buffer "\n"]
 	foreach line $data {
-		if [regexp -- {(^Key-Revision:)(.*)} $line match] {		
+		if { [regexp -- {(^Key-Revision:)(.*)} $line match] } {		
 			set MySelfHdrs(--KEYREV) [lindex [split $match ":"] 1]
 			incr MyArraySize 1	
 		} elseif { [regexp -- {(^Auth-ID:)(.*)} $line match] } {		
@@ -1211,7 +1211,7 @@ proc patch_file_multi {file search replace_offset replace {ignore_bytes {}}} {
     }
     close $fd
 }
-
+# func. for modifying single dev_flash file
 proc modify_devflash_file {file callback args} {
 
     log "Modifying dev_flash file [file tail $file]"		
@@ -1252,7 +1252,7 @@ proc modify_devflash_file {file callback args} {
         ::pkg_archive $unpkgdir $pkg
     }
 }
-
+# func. for modifying multiple dev_flash files
 proc modify_devflash_files {path files callback args} {	
 	
     foreach file $files {
@@ -1300,8 +1300,9 @@ proc modify_devflash_files {path files callback args} {
 		}
     }	
 }
-
-proc modify_upl_file {callback args} {
+# func for modifying the "UPL.xml.pkg" file
+proc modify_upl_file {callback args} {	
+	
     log "Modifying UPL.xml file"	
     set file "content"
     
@@ -1436,22 +1437,31 @@ proc modify_rco_file {rco_file callback args} {
 proc modify_rco_files {path rco_files callback args} {
     modify_devflash_files $path $rco_files callback_modify_rco $callback $args
 }
-
+# func. to retrieve xml tagged data from file
 proc get_header_key_upl_xml { file key message } {
-    debug "Getting \"$message\" information from UPL.xml"
 
+    debug "Getting \"$message\" information from UPL.xml"	
+	set verbosemode no
+	# if verbose mode enabled
+	if { $::options(--task-verbose) } {
+		set verbosemode yes
+	} 
+
+	# load xml file
     set xml [::xml::LoadFile $file]
     set data [::xml::GetData $xml "UpdatePackageList:Header:$key"]
     if {$data != ""} {
-        debug "$key: $data"
+		if {$verbosemode == yes} {
+			log "$key:$data"
+		}
         return $data
     }
     return ""
 }
-
+# func. to replace the xml tagged data in file
 proc set_header_key_upl_xml { file key replace message } {
-    log "Setting \"$message\" information in UPL.xml" 1
 
+    log "Setting \"$message\" information in UPL.xml" 1
     set xml [::xml::LoadFile $file]
 
     set search [::xml::GetData $xml "UpdatePackageList:Header:$key"]
