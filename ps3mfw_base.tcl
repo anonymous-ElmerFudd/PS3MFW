@@ -444,10 +444,10 @@ proc pup_get_build {pup} {
 # proc for extracting tar files
 proc extract_tar {tar dest} {
 	
-	debug "Extracting tar file [file tail $tar] into [file tail $dest]"	
+	debug "Extracting tar file: [file tail $tar] into: [file tail $dest]"	
 	# now go untar the file
     file mkdir $dest    
-    catch_die {::tar::untar $tar -dir $dest} "Could not untar file $tar"
+    catch_die {::tar::untar $tar -dir $dest} "Could not untar file: $tar"
 }
 
 # create_tar proc, for creating custom tar files
@@ -572,8 +572,8 @@ proc find_devflash_archive {dir find} {
 # --- "PKG" build process!
 proc spkg_archive {pkg} {
 	die "This function is NO LONGER SUPPORTED!!!"
-    debug "spkg-ing file [file tail $pkg]"
-    catch_die {spkg $pkg} "Could not spkg file [file tail $pkg]"
+    debug "spkg-ing file: [file tail $pkg]"
+    catch_die {spkg $pkg} "Could not spkg file: [file tail $pkg]"
 }
 proc spkg {pkg} {
 	die "This function is NO LONGER SUPPORTED!!!"
@@ -582,8 +582,8 @@ proc spkg {pkg} {
 
 # 'wrapper' function for calling "unpkg" function
 proc unpkg_archive {pkg dest} {
-    debug "unpkg-ing file [file tail $pkg]"
-    catch_die {unpkg $pkg $dest} "Could not unpkg file [file tail $pkg]"
+    debug "unpkg-ing file: [file tail $pkg]"
+    catch_die {unpkg $pkg $dest} "Could not unpkg file: [file tail $pkg]"
 }
 # function for 'unpackaging'(decrypt) a PKG file
 # (outputs the 'content' file)
@@ -597,8 +597,8 @@ proc unpkg {pkg dest} {
 
 # 'wrapper' function for calling "pkg" 
 proc pkg_archive {dir pkg} {
-    debug "pkg-ing file [file tail $pkg]"
-    catch_die {pkg $dir $pkg} "Could not pkg file [file tail $pkg]"
+    debug "pkg-ing file: [file tail $pkg]"
+    catch_die {pkg $dir $pkg} "Could not pkg file: [file tail $pkg]"
 }
 # proc for building the normal 'pkg' (encrypt) package
 # (outputs the ".pkg" file
@@ -625,8 +625,8 @@ proc pkg {pkg dest} {
 
 # 'wrapper' function for calling "pkg_spkg"
 proc pkg_spkg_archive {dir pkg} {
-    debug "pkg-ing / spkg-ing file [file tail $pkg]"
-    catch_die {pkg_spkg $dir $pkg} "Could not pkg / spkg file [file tail $pkg]"
+    debug "pkg-ing / spkg-ing file: [file tail $pkg]"
+    catch_die {pkg_spkg $dir $pkg} "Could not pkg / spkg file: [file tail $pkg]"
 }
 # proc for building the "new" pkg with spkg headers
 # (encrypt) into the pkg/spkg output files
@@ -659,8 +659,8 @@ proc pkg_spkg {pkg dest} {
 # -------------------------------- CORE_OS functions (cospkg/cosunpkg) ------------------------------------------------- #
 # 'wrapper' function for calling "cospkg"
 proc cospkg_package { dir pkg } {
-    debug "cospkg-ing file [file tail $dir]"
-    catch_die { cospkg $dir $pkg } "Could not cospkg file [file tail $pkg]"
+    debug "cospkg-ing file: [file tail $dir]"
+    catch_die { cospkg $dir $pkg } "Could not cospkg file: [file tail $pkg]"
 }
 # func for "packaging up" COS files
 # (creates the 'content' file)
@@ -685,8 +685,8 @@ proc cospkg { dir pkg } {
 }
 # 'wrapper' function for calling "cosunpkg"
 proc cosunpkg_package { pkg dest } {
-    debug "cosunpkg-ing file [file tail $pkg]"
-    catch_die { cosunpkg $pkg $dest } "Could not cosunpkg file [file tail $pkg]"
+    debug "cosunpkg-ing file: [file tail $pkg]"
+    catch_die { cosunpkg $pkg $dest } "Could not cosunpkg file: [file tail $pkg]"
 }
 # function for "unpacking" CORE_COS files
 # (unpacks the 'content' file
@@ -705,7 +705,7 @@ proc modify_coreos_file { file callback args } {
 	## at the start/end of the MFW build script
 	die "THIS ROUTINE IS NO LONGER SUPPORTED!!!"
 	
-    log "Modifying CORE_OS file [file tail $file]"  	
+    log "Modifying CORE_OS file: [file tail $file]"  	
     set pkg [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.pkg]
     set unpkgdir [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.unpkg]
     set cosunpkgdir [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE]
@@ -739,7 +739,7 @@ proc modify_coreos_files { files callback args } {
 	## at the start/end of the MFW build script
 	die "THIS ROUTINE IS NO LONGER SUPPORTED!!!"
 	
-    log "Modifying CORE_OS files [file tail $files]" 	
+    log "Modifying CORE_OS files: [file tail $files]" 	
     set pkg [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.pkg]
     set unpkgdir [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE.unpkg]
     set cosunpkgdir [file join ${::CUSTOM_UPDATE_DIR} CORE_OS_PACKAGE]
@@ -829,6 +829,8 @@ proc repack_coreos_files { array } {
     } else {
         ::pkg_archive $unpkgdir $pkg
     }
+	# cleanup/remove the old .unpkg dir
+    catch_die {file delete -force ${unpkgdir}} "Could not delete directory:$unpkgdir for cleanup"
 	
 	# set the global flag that "CORE_OS" is packed
 	set ::FLAG_COREOS_UNPACKED 0
@@ -838,7 +840,7 @@ proc repack_coreos_files { array } {
 
 # proc for reading in the pup 'build' number
 proc get_pup_build {} {
-    debug "Getting PUP build from [file tail ${::IN_FILE}]"
+    debug "Getting PUP build from: [file tail ${::IN_FILE}]"
     catch_die {pup_get_build ${::IN_FILE}} "Could not get the PUP build information"
     return [pup_get_build ${::IN_FILE}]
 }
@@ -849,7 +851,7 @@ proc set_pup_build {build} {
 }
 # proc for getting the pup 'version' number
 proc get_pup_version {dir} {
-    debug "Getting PUP version from [file tail $dir]"
+    debug "Getting PUP version from: [file tail $dir]"
     set fd [open [file join $dir] r]
     set version [string trim [read $fd]]
     close $fd
@@ -857,7 +859,7 @@ proc get_pup_version {dir} {
 }
 # proc for setting the pup 'version' number
 proc set_pup_version {version} {
-    debug "Setting PUP version in [file tail ${::CUSTOM_VERSION_TXT}]"
+    debug "Setting PUP version in: [file tail ${::CUSTOM_VERSION_TXT}]"
     set fd [open [file join ${::CUSTOM_VERSION_TXT}] w]
     puts $fd "${version}"
     close $fd
@@ -984,8 +986,8 @@ proc makeself {in out array} {
 
 # stub proc for decrypting self file
 proc decrypt_self {in out} {
-    debug "Decrypting self file [file tail $in]"
-    catch_die {unself $in $out} "Could not decrypt file [file tail $in]"
+    debug "Decrypting self file: [file tail $in]"
+    catch_die {unself $in $out} "Could not decrypt file: [file tail $in]"
 }
 # proc to run the scetool to dump the SELF header info
 proc import_self_info {in array} {	
@@ -1054,14 +1056,14 @@ proc import_self_info {in array} {
 proc sign_elf {in out array} {
 	upvar $array MySelfHdrs
 	
-    debug "Rebuilding self file [file tail $out]"		
+    debug "Rebuilding self file: [file tail $out]"		
 	# go dispatch the "makeself" routine
-    catch_die {makeself $in $out MySelfHdrs} "Could not rebuild file [file tail $out]"
+    catch_die {makeself $in $out MySelfHdrs} "Could not rebuild file: [file tail $out]"
 }
 # proc for decrypting, modifying, and re-signing a SELF file
 proc modify_self_file {file callback args} {
 
-    log "Modifying self/sprx file [file tail $file]"
+    log "Modifying self/sprx file: [file tail $file]"
 	array set MySelfHdrs {
 		--KEYREV ""
 		--AUTHID ""
@@ -1214,14 +1216,14 @@ proc patch_file_multi {file search replace_offset replace {ignore_bytes {}}} {
 # func. for modifying single dev_flash file
 proc modify_devflash_file {file callback args} {
 
-    log "Modifying dev_flash file [file tail $file]"		
+    log "Modifying dev_flash file: [file tail $file]"		
     set tar_file [find_devflash_archive ${::CUSTOM_DEVFLASH_DIR} $file]
     if {$tar_file == ""} {
-        die "Could not find [file tail $file] in devflash file"
+        die "Could not find: [file tail $file] in devflash file"
     }
 
     set pkg_file [file tail [file dirname $tar_file]]
-    debug "Found [file tail $file] in $pkg_file"
+    debug "Found: [file tail $file] in $pkg_file"
 
     file delete -force [file join ${::CUSTOM_DEVFLASH_DIR} dev_flash]			
 	# extract the original flash file
@@ -1258,16 +1260,16 @@ proc modify_devflash_files {path files callback args} {
     foreach file $files {
 	
         set file [file join $path $file]			
-        log "Modifying dev_flash file [file tail $file] in devflash file"
+        log "Modifying dev_flash file: [file tail $file] in devflash file"
         
         set tar_file [find_devflash_archive ${::CUSTOM_DEVFLASH_DIR} $file]        
         if {$tar_file == ""} {
-            debug "Skipping [file tail $file] not found"
+            debug "Skipping: [file tail $file] not found"
             continue
         }
         
         set pkg_file [file tail [file dirname $tar_file]]
-        debug "Found [file tail $file] in $pkg_file"
+        debug "Found: [file tail $file] in $pkg_file"
        
         file delete -force [file join ${::CUSTOM_DEVFLASH_DIR} dev_flash]		
         extract_tar $tar_file ${::CUSTOM_DEVFLASH_DIR}
@@ -1332,6 +1334,8 @@ proc modify_upl_file {callback args} {
     } else {
         ::pkg_archive $unpkgdir $pkg
     }
+	# cleanup/remove the old .unpkg dir
+    catch_die {file delete -force ${unpkgdir}} "Could not delete directory:$unpkgdir for cleanup"
 }
 
 proc remove_node_from_xmb_xml { xml key message} {
@@ -1402,13 +1406,13 @@ proc rco_compile {rco_xml rco_new} {
 }
 
 proc unpack_rco_file {rco rco_xml rco_dir} {
-    log "unpacking rco file [file tail $rco]"
-    catch_die {rco_dump $rco $rco_xml $rco_dir} "Could not unpack rco file [file tail $rco]"
+    log "unpacking rco file: [file tail $rco]"
+    catch_die {rco_dump $rco $rco_xml $rco_dir} "Could not unpack rco file: [file tail $rco]"
 }
 
 proc pack_rco_file {rco_xml rco_new} {
-    log "packing rco file [file tail $rco_new]"
-    catch_die {rco_compile $rco_xml $rco_new} "Could not pack rco file [file tail $rco_new]"
+    log "packing rco file: [file tail $rco_new]"
+    catch_die {rco_compile $rco_xml $rco_new} "Could not pack rco file: [file tail $rco_new]"
 }
 
 proc callback_modify_rco {rco_file callback callback_args} {
@@ -1426,7 +1430,7 @@ proc callback_modify_rco {rco_file callback callback_args} {
         file rename -force $RCO_NEW $rco_file
         file delete -force $RCO_XML
         file delete -force $RCO_DIR
-    } "Could not cleanup files after modifying [file tail $rco_file]"
+    } "Could not cleanup files after modifying: [file tail $rco_file]"
 }
 
 proc modify_rco_file {rco_file callback args} {
@@ -1501,31 +1505,37 @@ proc spp {in out} {
 	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spp -in [file nativename $in] -out [file nativename $out]   
 }
 
+# wrapper func. for decrypting .spp file
 proc decrypt_spp {in out} {
-    debug "Decrypting spp file [file tail $in]"
-    catch_die {unspp $in $out} "Could not decrypt file [file tail $in]"
+    debug "Decrypting spp file: [file tail $in]"
+    catch_die {unspp $in $out} "Could not decrypt file: [file tail $in]"
 }
 
+# wrapper func. for patching decryped spp file (.pp)
 proc patch_pp {file search replace_offset replace {ignore_bytes {}}} {
     patch_file $file $search $replace_offset $replace $ignore_bytes
 }
 
+# wrapper func for encrypting .pp file (to .spp)
 proc sign_pp {in out} {
-    debug "Rebuilding spp file [file tail $out]"
-    catch_die {spp $in $out} "Could not rebuild file [file tail $out]"
+    debug "Rebuilding spp file: [file tail $out]"
+    catch_die {spp $in $out} "Could not rebuild file: [file tail $out]"
 }
 
 # main proc for modifying 'spp' files
 proc modify_spp_file {file callback args} {
 
-    log "Modifying spp file [file tail $file]"
-	
+    log "Modifying spp file: [file tail $file]"	
 	# decrypt the '.spp' file to a '.spp.pp' file
     decrypt_spp $file ${file}.pp
-    eval $callback ${file}.pp $args
+	
+	# do the callback func.
+    eval $callback ${file}.pp $args	
+	
 	# re-encrypt the '.spp.pp' file back to '.spp' file
-    sign_pp ${file}.pp $file
-    file delete ${file}.pp
+    sign_pp ${file}.pp $file	
+	# cleanup/remove the old .pp file
+    catch_die {file delete -force ${file}.pp} "Could not delete $file for cleanup"
 }
 # ------------------------------ END OF THIS SCRIPT --------------------------------------------- ##
 # ----------------------------------------------------------------------------------------------- ##

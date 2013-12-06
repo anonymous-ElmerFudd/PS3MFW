@@ -13,8 +13,10 @@
 
 # Option --enable-spoof-build: [3.xx/4.xx]  -->  Enable setting PUP build version (FW Spoofing)
 # Option --spoof-build-number:	[3.xx/4.xx] ---->  PUP build version to set
+# Option --patch-rogero-vsh-patches: [3.xx/4.xx]  -->  Patch VSH with ROGERO patches
 # Option --allow-unsigned-app: [3.xx/4.xx]  -->  Patch to allow running of unsigned applications (3.xx/4.xx)
 # Option --patch-vsh-react-psn-v2-4x: [3.xx/4.xx]  -->  Jailbait - Patch to implement ReactPSN v2.0 into VSH (3.xx/4.xx)
+# Option --patch-vsh-no-delete-actdat: [3.xx/4.xx]  -->  Jailbait - Patch to implement NO deleting of unsigned act/dat (3.xx/4.xx)
 # Option --disable-cinavia-protection-4x: [3.xx/4.xx]  -->  Disable Cinavia Protection (4.xx)
 # Option --allow-retail-pkg-dex: [3.xx/4.xx]  -->  Patch to allow installation of retail packages on DEX (3.xx/4.xx)
 # Option --allow-pseudoretail-pkg: [3.xx/4.xx]  -->  Patch to allow installation of pseudo-retail packages on REX/DEX (3.xx/4.xx)
@@ -24,12 +26,14 @@
 
 # Type --enable-spoof-build: boolean
 # Type --spoof-build-custom: combobox { }
+# Type --patch-rogero-vsh-patches: boolean
 # Type --allow-unsigned-app: boolean
+# Type --patch-vsh-react-psn-v2-4x: boolean
+# Type --patch-vsh-no-delete-actdat: boolean
 # Type --disable-cinavia-protection-4x: boolean
 # Type --allow-retail-pkg-dex: boolean
 # Type --allow-pseudoretail-pkg: boolean
 # Type --allow-debug-pkg: boolean
-# Type --patch-vsh-react-psn-v2-4x: boolean
 # Type --customize-fw-ssl-cer: file open {"SSL Certificate" {cer}}
 # Type --customize-fw-change-cer: combobox {{DNAS} {Proxy} {ALL} {CA01.cer} {CA02.cer} {CA03.cer} {CA04.cer} {CA05.cer} {CA23.cer} {CA06.cer} {CA07.cer} {CA08.cer} {CA09.cer} {CA10.cer} {CA11.cer} {CA12.cer} {CA13.cer} {CA14.cer} {CA15.cer} {CA16.cer} {CA17.cer} {CA18.cer} {CA19.cer} {CA20.cer} {CA21.cer} {CA22.cer} {CA24.cer} {CA25.cer} {CA26.cer} {CA27.cer} {CA28.cer} {CA29.cer} {CA30.cer} {CA31.cer} {CA32.cer} {CA33.cer} {CA34.cer} {CA35.cer} {CA36.cer}}
 
@@ -38,12 +42,14 @@ namespace eval ::patch_vsh {
     array set ::patch_vsh::options {
 		--enable-spoof-build true
 		--spoof-build-number "99999"
-		--allow-unsigned-app true		
+		--patch-rogero-vsh-patches true
+		--allow-unsigned-app true
+		--patch-vsh-react-psn-v2-4x true
+		--patch-vsh-no-delete-actdat false	
 		--disable-cinavia-protection-4x false		
         --allow-retail-pkg-dex false
         --allow-pseudoretail-pkg false		
-        --allow-debug-pkg false
-		--patch-vsh-react-psn-v2-4x true           
+        --allow-debug-pkg false		
         --customize-fw-ssl-cer ""
         --customize-fw-change-cer ""		   
     }
@@ -74,7 +80,8 @@ namespace eval ::patch_vsh {
             ::modify_devflash_file $self ::patch_vsh::patch_self
         }
         # if "unsigned/psn" patches enabled, patch "vsh.self"
-        if {$::patch_vsh::options(--allow-unsigned-app)  || $::patch_vsh::options(--patch-vsh-react-psn-v2-4x)} {
+        if {$::patch_vsh::options(--allow-unsigned-app) || $::patch_vsh::options(--patch-vsh-react-psn-v2-4x) || $::patch_vsh::options(--patch-rogero-vsh-patches) ||
+			$::patch_vsh::options(--patch-vsh-no-delete-actdat)} {
             set self [file join dev_flash vsh module vsh.self]
             ::modify_devflash_file $self ::patch_vsh::patch_self
         }		
@@ -166,6 +173,7 @@ namespace eval ::patch_vsh {
 				# OFW 3.55 == 0x371E4 (0x370F4)			
 				# OFW 3.70 == 0x3BDB4 (0x3BCC4)  
 				# OFW 4.46 == 0x2E988 (0x2E898)
+				# OFW 4.46 == 0x (0x)
 				log "Patching [file tail $elf] to allow retail pkg installs on dex"         
 				set search  "\x55\x60\x06\x3E\x2F\x80\x00\x00\x41\x9E\x01\xB0\x3B\xA1\x00\x80"
 				set replace "\x60\x00\x00\x00"
@@ -196,14 +204,65 @@ namespace eval ::patch_vsh {
 		
 		##########		PATCHES FOR "VSH.SELF"   		#############################
 		##
-		if { [string first "vsh.self" $elf 0] != -1 } {			
-			
+		if { [string first "vsh.self" $elf 0] != -1 } {
+
+			# patch VSH.self for ROGERO patches
+			# there are TWO of these patches, easier to
+			# just use the "MULTI" patch to hit them both in one shot
+			if {$::patch_vsh::options(--patch-rogero-vsh-patches)} {			
+				# verified OFW ver. 3.60 - 4.50+
+				# OFW 3.60 == 0x (0x)
+				# OFW 4.00 == 0x17E2EC,0x17FF18 (0x18E2EC,0x18FF18)  
+				# OFW 4.46 == 0x18406C,0x185CA4 (0x19406C,0x195CA4)
+				# OFW 4.50 == 0x184274,0x185EAC (0x194274,0x195EAC)
+				log "Patching VSH.self with Rogero patch 1&2/4"
+				set ::FLAG_PATCH_FILE_MULTI 1				
+				
+				set search  "\x39\x29\x00\x04\x7C\x00\x48\x28"
+				set replace "\x38\x00\x00\x01"
+				set offset 4         				
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      
+				
+				log "Patching VSH.self with (downgrader patch) Rogero patch 3/4"	
+				# verified OFW ver. 3.60 - 4.50+
+				# OFW 3.60 == 0x (0x)
+				# OFW 4.00 == 0x2320A8 (0x2420A8)  
+				# OFW 4.46 == 0x23CFC0 (0x24CFC0)
+				# OFW 4.50 == 0x23E718 (0x24E718)				
+				set search    "\x6C\x60\x80\x01\x2F\x80\x00\x06\x40\x9E\x02\xD0\x48\x00\x02\xB8"
+				append search "\x38\x61\x02\x90\x48\x00"
+				set replace   "\x60\x00\x00\x00"
+				set offset 20   				
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"														
+				
+				log "Patching VSH.self with Rogero patch 4/4"	
+				# verified OFW ver. 3.60 - 4.50+
+				# OFW 3.60 == 0x (0x)
+				# OFW 3.70 == 0x (0x)  
+				# OFW 4.00 == 0x697A30 (0x6B7A30)  
+				# OFW 4.46 == 0x6AA330 (0x6BA330)
+				# OFW 4.50 == 0x6A9CB0 (0x6B9D0D)	
+				set search     "\x61\x64\x5F\x72\x65\x63\x65\x69\x76\x65\x5F\x65\x76\x65\x6E\x74"
+				append search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+				append search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+				append search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+				append search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+				append search  "\x00\x00\x00\x24\x13\xBC\xC5\xF6\x00\x33\x00\x00\x00"
+				set replace    "\x34"
+				set offset 93    				
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"											
+			}			
 			# if "--allow-unsigned-app" enabled, patch it
 			if {$::patch_vsh::options(--allow-unsigned-app)} {
-				# verified OFW ver. 3.55 - 4.46+
+				# verified OFW ver. 3.55 - 4.50+
 				# OFW 3.55 == 0x5FFEE8 (0x60FEE8)			
-				# OFW 3.70 == 0x61A3C4 (0x62A3C4)  
+				# OFW 3.70 == 0x61A3C4 (0x62A3C4)
+				# OFW 4.00 == 0x5DB8B8 (0x5FB8B8)  				
 				# OFW 4.46 == 0x5EA584 (0x5FA584)
+				# OFW 4.50 == 0x5E98F0 (0x5F98F0)
 				log "Patching [file tail $elf] to allow running of unsigned applications 1/2"         
 				set search  "\xF8\x21\xFF\x81\x7C\x08\x02\xA6\x38\x61\x00\x70\xF8\x01\x00\x90\x4B\xFF\xFF\xE1\x38\x00\x00\x00"
 				set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
@@ -212,10 +271,12 @@ namespace eval ::patch_vsh {
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
 			 
-				# verified OFW ver. 3.55 - 4.46+
+				# verified OFW ver. 3.55 - 4.50+
 				# OFW 3.55 == 0x30A7C0 (0x31A7C0)			
-				# OFW 3.70 == 0x31B55C (0x32B55C)  
+				# OFW 3.70 == 0x31B55C (0x32B55C) 
+				# OFW 4.00 == 0x2376B8 (0x2476B8) 
 				# OFW 4.46 == 0x241C2C (0x251C2C)
+				# OFW 4.50 == 0x243388 (0x253388)
 				log "Patching [file tail $elf] to allow running of unsigned applications 2/2"
 				set search  "\xA0\x7F\x00\x04\x39\x60\x00\x01\x38\x03\xFF\x7F\x2B\xA0\x00\x01\x40\x9D\x00\x08\x39\x60\x00\x00"
 				set replace "\x60\x00\x00\x00"
@@ -226,11 +287,12 @@ namespace eval ::patch_vsh {
 			}
 			# if "--patch-vsh-react-psn-v2-4x" enabled, patch it
 			if {$::patch_vsh::options(--patch-vsh-react-psn-v2-4x)} {
-				# verified OFW ver. 3.55 - 4.46+
+				# verified OFW ver. 3.55 - 4.50+
 				# OFW 3.55 == 0x30B1D4 (0x31B1D4)			
-				# OFW 3.70 == 0x31BF70 (0x250970)  
+				# OFW 3.70 == 0x31BF70 (0x250970)				
 				# OFW 4.30 == 0x240974 (0x250974)
-				# OFW 4.46 == 0x2425F0 (0x2525F0)
+				# OFW 4.46 == 0x2425EC (0x2525EC)
+				# OFW 4.50 == 0x243D48 (0x253D48)
 				log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"          
 			   #set search    "\x4B\xDC\x03\xA9" --- old value ---
 			    set search    "\x4E\x80\x00\x20\x7C\x80\x23\x78\x78\x63\x00\x20\x2F\x80\x00\x00"
@@ -240,12 +302,15 @@ namespace eval ::patch_vsh {
 			 
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
-			 
-				# verified OFW ver. 3.55 - 4.46+
+			}
+			# if "--patch-vsh-no-delete-actdat" enabled, patch it
+			if {$::patch_vsh::options(--patch-vsh-no-delete-actdat)} {
+				# verified OFW ver. 3.55 - 4.50+
 				# OFW 3.55 == 0x30AC64 (0x31AC64)			
 				# OFW 3.70 == 0x31BA00 (0x32BA00)  
 				# OFW 4.30 == 0x240400 (0x250400)
 				# OFW 4.46 == 0x24207C (0x25207C)
+				# OFW 4.50 == 0x2437D8 (0x2537D8)
 				log "Patching [file tail $elf] to disable deleting of unsigned act.dat & .rif files"
 			   #set search    "\x48\x3D\x55\x6D"   ---- old value ----
 			    set search    "\x7C\x08\x03\xA6\xEB\x61\x00\xA8\xEB\x81\x00\xB0\xEB\xA1\x00\xB8"
@@ -255,7 +320,7 @@ namespace eval ::patch_vsh {
 				set offset 44
 			 
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        				
+				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 				
 			}									
 		}
 		#
