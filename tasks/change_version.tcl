@@ -9,22 +9,19 @@
 #
     
 # Priority: 210
-# Description: CHANGE: Change PUP build / version
+# Description: CHANGE: Change PUP version info
 
-# Option --pup-build: PUP build number
 # Option --version-string: If set, overrides the entire PUP version string
 # Option --version-prefix: Prefix to add to the PUP version string
 # Option --version-suffix: Suffix to add to the PUP version string
 
-# Type --pup-build: string
 # Type --version-string: string
 # Type --version-prefix: string
 # Type --version-suffix: string
     
 namespace eval ::change_version {
 
-    array set ::change_version::options {
-      --pup-build ""
+    array set ::change_version::options {     
       --version-string " MFW OTHEROS++"
       --version-prefix ""
       --version-suffix ""
@@ -32,12 +29,6 @@ namespace eval ::change_version {
 
     proc main {} {
       variable options
-
-      if {$options(--pup-build) != ""} {
-        ::set_pup_build $options(--pup-build)
-      } else {
-        ::set_pup_build [::get_pup_build]
-      }
 
       log "Changing PUP version.txt file"
       if {$options(--version-string) != ""} {

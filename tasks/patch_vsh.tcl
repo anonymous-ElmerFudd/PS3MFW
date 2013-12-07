@@ -140,7 +140,8 @@ namespace eval ::patch_vsh {
 		if { $xml == "" } {
 			die "Updating build number in UPL.xml failed...."
 		} 
-		set ::PUP_BUILD $buildnum
+		# go set the global '::BUILDNUM'
+		::set_pup_build $buildnum
     }
 	# ------------------------------------------------- #
 	
