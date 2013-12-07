@@ -119,13 +119,18 @@ namespace eval ::patch_vsh {
 	# ------------------------------------------------- #
 	# func. to replace the "UPL.xml.pkg" "buildnum" in
 	# the '<BUILD>buildnum, buildate</BUILD>' tag
-	proc set_upl_xml_build {filename buildnum} {
-	        
+	proc set_upl_xml_build {filename buildnum} {	      
+		
 		# retrieve the '<BUILD>.....</BUILD>' xml tag
         set data [::get_header_key_upl_xml $filename Build Build]	
 		if { [regexp {(^[0-9]{5,5}),.*} $data none orgbuild] == 0} {
 			die "Failed to locate build number in UPL file!\n"
-		}			
+		}		
+		# make sure the user supplied 'buildnum' is same
+		# length as original, or error out		
+		if {[string length $buildnum] != [string length $orgbuild]} {
+			die "Error: build number:$buildnum is invalid!!\n"
+		}		
 		# substitute in the new build number
 		if {[regsub ($orgbuild) $data $buildnum data] == 0} {
 			die "Failed updating build number in UPL file\n"
