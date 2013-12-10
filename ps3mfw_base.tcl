@@ -1094,21 +1094,27 @@ proc modify_self_file {file callback args} {
 	log "Self successfully rebuilt"
 }
 
+# wrapper function for modifying/patching a SELF file
 proc patch_self {file search replace_offset replace {ignore_bytes {}}} {
     modify_self_file $file patch_elf $search $replace_offset $replace $ignore_bytes
 }
+
 # proc for patching files matching the pattern with replace bytes,
 # added the global "flag" check for multi-pattern replace, verus
 # usual "single" pattern match
 proc patch_elf {file search replace_offset replace {ignore_bytes {}}} {
+	set offset 0
 	if { $::FLAG_PATCH_FILE_MULTI != 0 } {
 		patch_file_multi $file $search $replace_offset $replace $ignore_bytes
 		set ::FLAG_PATCH_FILE_MULTI 0
 	} else {
-		patch_file $file $search $replace_offset $replace $ignore_bytes
+		set offset [patch_file $file $search $replace_offset $replace $ignore_bytes]
 	}
+	# return the 'offset' from the 'patch_file' function
+	# (or just '0' if doing multi-patch)
+	return $offset
 }
-
+# main function for binary patching a file (single patch occurance)
 proc patch_file {file search replace_offset replace {ignore_bytes {}}} {
     foreach bytes $ignore_bytes {
         if {[llength $bytes] == 1} {
@@ -1158,14 +1164,29 @@ proc patch_file {file search replace_offset replace {ignore_bytes {}}} {
     if {$offset == -1} {
         error "Could not find pattern to patch"
     }
+	
 	set offsetInHex [format %x $offset]
-    #debug "offset: $offset"
-	debug "patched offset: 0x$offsetInHex"	
-    seek $fd $offset
-    puts -nonewline $fd $replace
-    close $fd
+	# use this flag to ONLY find the offset if we
+	# set it, otherwise binary patch the file
+	if {$::FLAG_PATCH_FILE_FINDONLY != 0} {	
+		debug "flag set to find offset only, skipping file patching..."
+		debug "match at offset: 0x$offsetInHex"
+	} else {
+		debug "patched offset: 0x$offsetInHex"	
+		seek $fd $offset
+		puts -nonewline $fd $replace		
+	} 
+	# close the filehandle
+	close $fd
+	
+	# make sure we always reset the flag before leaving
+	set ::FLAG_PATCH_FILE_FINDONLY 0
+	
+	# return the patched "offset" in case we want
+	# to use it for further patching/reference
+	return $offset
 }
-
+# main function for binary patching a file (multiple patche occurances)
 proc patch_file_multi {file search replace_offset replace {ignore_bytes {}}} {
     foreach bytes $ignore_bytes {
         if {[llength $bytes] == 0} {

@@ -50,11 +50,11 @@ set ::SUF ""
 set ::CFW 0
 set ::OFW_MAJOR_VER 0
 set ::OFW_MINOR_VER 0
+set ::FLAG_PATCH_FILE_FINDONLY 0
 set ::FLAG_PATCH_FILE_MULTI 0
 set ::FLAG_NO_LV1LDR_CRYPT 0
 set ::FLAG_COREOS_UNPACKED 0
 set ::FLAG_4xx_LV0_UNPACKED 0
-set ::APPSELF "dev_flash/vsh/module/vsh.self dev_flash/vsh/module/explore_category_game.sprx dev_flash/vsh/module/explore_plugin.sprx dev_flash/vsh/module/netconf_plugin.sprx dev_flash/vsh/module/sysconf_plugin.sprx dev_flash/vsh/module/libad_core.sprx dev_flash/vsh/module/libmedi.sprx dev_flash/vsh/module/libsysutil_np_clans.sprx dev_flash/vsh/module/libsysutil_np_commerce2.sprx dev_flash/vsh/module/libsysutil_np_util.sprx dev_flash/vsh/module/autodownload_plugin.sprx dev_flash/vsh/module/download_plugin.sprx dev_flash/vsh/module/esehttp.sprx dev_flash/vsh/module/eula_cddb_plugin.sprx dev_flash/vsh/module/eula_hcopy_plugin.sprx dev_flash/vsh/module/eula_net_plugin.sprx dev_flash/vsh/module/explore_category_friend.sprx dev_flash/vsh/module/explore_category_music.sprx dev_flash/vsh/module/explore_category_network.sprx dev_flash/vsh/module/explore_category_photo.sprx dev_flash/vsh/module/explore_category_psn.sprx dev_flash/vsh/module/explore_category_sysconf.sprx dev_flash/vsh/module/explore_category_tv.sprx dev_flash/vsh/module/explore_category_user.sprx dev_flash/vsh/module/explore_category_video.sprx dev_flash/vsh/module/explore_plugin_ft.sprx dev_flash/vsh/module/explore_plugin_np.sprx dev_flash/vsh/module/friendtrophy_plugin.sprx dev_flash/vsh/module/game_ext_plugin.sprx dev_flash/vsh/module/hknw_plugin.sprx dev_flash/vsh/module/nas_plugin.sprx dev_flash/vsh/module/newstore_plugin.sprx dev_flash/vsh/module/np_eula_plugin.sprx dev_flash/vsh/module/np_trophy_plugin.sprx dev_flash/vsh/module/np_trophy_util.sprx dev_flash/vsh/module/photo_network_sharing_plugin.sprx dev_flash/vsh/module/profile_plugin.sprx dev_flash/vsh/module/regcam_plugin.sprx dev_flash/vsh/module/sysconf_plugin.sprx dev_flash/vsh/module/videoeditor_plugin.sprx dev_flash/vsh/module/videoplayer_plugin.sprx dev_flash/vsh/module/videoplayer_util.sprx dev_flash/vsh/module/vsh.self dev_flash/vsh/module/x3_mdimp11.sprx x3_mdimp7.sprx dev_flash/vsh/module/netconf_plugin.sprx dev_flash/vsh/module/sysconf_plugin.sprx dev_flash/vsh/module/eula_net_plugin.sprx dev_flash/vsh/module/mintx_client.sprx dev_flash/vsh/module/videodownloader_plugin.sprx"
 
 
 ## ----------------------------------------------------- ##
