@@ -44,8 +44,7 @@ namespace eval ::patch_cos {
 	# just create empty globals for the binary search/replace/offset strings
 	set ::patch_cos::search ""
 	set ::patch_cos::replace ""
-	set ::patch_cos::offset 0
-	
+	set ::patch_cos::offset 0	
     array set ::patch_cos::options {	
 		--patch-lv0-nodescramble-lv1ldr false
 		--patch-lv0-ldrs-ecdsa-checks true
@@ -59,8 +58,7 @@ namespace eval ::patch_cos {
 		--patch-spkg-ecdsa-check true
 		--patch-sppverifier-ecdsa-check true
 		--patch-sputoken-ecdsa-check true
-		--patch-RSOD-bypass true       
-
+		--patch-RSOD-bypass true
     }
 
     proc main { } {
@@ -123,7 +121,27 @@ namespace eval ::patch_cos {
     proc Do_CoreOS_Patches {path} {
 	
 		# call the function to do any LV0 selected patches
-		::patch_cos::Do_LV0_Patches $path
+		::patch_cos::Do_LV0_Patches $path		
+		
+		set self "lv1ldr.self"
+		set file [file join $path $self]		
+		# base function to decrypt the "self" to "elf" for patching
+        ::modify_self_file $file ::patch_cos::Do_LV1LDR_Patches
+		
+		set self "lv2ldr.self"
+		set file [file join $path $self]		
+		# base function to decrypt the "self" to "elf" for patching
+        ::modify_self_file $file ::patch_cos::Do_LV2LDR_Patches
+		
+		set self "isoldr.self"
+		set file [file join $path $self]		
+		# base function to decrypt the "self" to "elf" for patching
+        ::modify_self_file $file ::patch_cos::Do_ISOLDR_Patches
+		
+		set self "appldr.self"
+		set file [file join $path $self]		
+		# base function to decrypt the "self" to "elf" for patching
+        ::modify_self_file $file ::patch_cos::Do_APPLDR_Patches
 		
 		# call the function to do any LV1 selected patches				
 		set self "lv1.self"
@@ -149,76 +167,7 @@ namespace eval ::patch_cos {
 	#
 	proc Do_LV0_Patches {path} {
 		
-		log "Applying LV0 patches...."
-		
-		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
-		# enable the "FLAG_PATCH_FILE_MULTI" true, so we patch
-		# ALL occurances of ECDSA checks in each ldr
-		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {		
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x81A8 (0x1ACA8)			
-			# OFW 3.70 == 0x6E48 (0x19948)  
-			# OFW 4.00 == 0x6E50 (0x19950) 
-			# OFW 4.46 == 0x6EC4 (0x199C4)
-			log "Patching 4.xx LV1LDR ECDSA CHECKS......"            
-			set self "lv1ldr.self"
-			set file [file join $path $self]			
-			set ::FLAG_PATCH_FILE_MULTI 1
-			
-            set ::patch_cos::search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
-            set ::patch_cos::replace "\x40\x80\x00\x03"
-            set ::patch_cos::offset 12		
-			# base function to decrypt the "self" to "elf" for patching
-			::modify_self_file $file ::patch_cos::patch_elf
-
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x43C0 (0x16EC0)			
-			# OFW 3.70 == 0x4458 (0x16F58)  
-			# OFW 4.00 == 0x47F0 (0x172F0) 
-			# OFW 4.46 == 0x47E8 (0x172E8)
-			log "Patching 4.xx LV2LDR ECDSA CHECKS......"
-			set self "lv2ldr.self"
-			set file [file join $path $self]			
-			set ::FLAG_PATCH_FILE_MULTI 1
-            
-            set ::patch_cos::search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
-            set ::patch_cos::replace "\x40\x80\x00\x03"
-            set ::patch_cos::offset 12		
-			# base function to decrypt the "self" to "elf" for patching
-			::modify_self_file $file ::patch_cos::patch_elf
-		
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x49F0 (0x2A170)			
-			# OFW 3.70 == 0x2750 (0x27ED0)  
-			# OFW 4.00 == 0x2750 (0x27ED0) 
-			# OFW 4.46 == 0x2898 (0x28018)
-			log "Patching 4.xx ISOLDR ECDSA CHECKS......"       
-			set self "isoldr.self"
-			set file [file join $path $self]
-			set ::FLAG_PATCH_FILE_MULTI 1			
-            
-            set ::patch_cos::search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
-            set ::patch_cos::replace "\x40\x80\x00\x03"
-            set ::patch_cos::offset 12		
-			# base function to decrypt the "self" to "elf" for patching
-			::modify_self_file $file ::patch_cos::patch_elf
-			
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x9F60 (0x1CA60)			
-			# OFW 3.70 == 0x56B0 (0x181B0)  
-			# OFW 4.00 == 0x5778 (0x18278) 
-			# OFW 4.46 == 0x5740 (0x18240)
-			log "Patching 4.xx APPLDR ECDSA CHECKS......"
-			set self "appldr.self"
-			set file [file join $path $self]			
-			set ::FLAG_PATCH_FILE_MULTI 1
-			
-            set ::patch_cos::search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
-            set ::patch_cos::replace "\x40\x80\x00\x03"
-            set ::patch_cos::offset 12		
-			# base function to decrypt the "self" to "elf" for patching
-			::modify_self_file $file ::patch_cos::patch_elf            						
-		}					
+		log "Applying LV0 patches...."									
 		# if "lv0-LV1LDR descramble" patch is enabled, patch in "lv0.elf"
 		# ** LV0 IS ONLY SCRAMBLED IN OFW VERSIONS 3.65+ **
         if {$::patch_cos::options(--patch-lv0-nodescramble-lv1ldr)} {
@@ -244,11 +193,234 @@ namespace eval ::patch_cos {
 			} else {	
 				log "SKIPPING LV0-DESCRAMBLE PATCH, LV0 is NOT scrambled in FW below 3.65...."				
 			}
-        }			
-		
+        }					
 		log "Done LV0 patches...."
 	}
 	### ------------------------------------- END:    Do_LV0_Patches{} --------------------------------------------- ### 
+	
+	
+	
+	# --------------------------  BEGIN:  Do_LV1LDR_Patches   -------------------------------------------------------### 
+	#
+	# This proc is for applying any patches to LV1 LOADER
+	#
+	#
+	proc Do_LV1LDR_Patches {elf} {	
+	
+		log "Applying LV1LDR patches...."			
+		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
+		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {
+		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x (0x)			
+			# OFW 3.70 == 0x (0x)  
+			# OFW 4.00 == 0x6CD4 (0x197D4) 
+			# OFW 4.46 == 0x6E3C (0x1993C)
+			# OFW 4.50 == 0x6ECC (0x199CC)
+			log "Patching 4.xx LV1LDR ECDSA CHECKS 1/2......"            			
+			set search    "\x4C\xFF\xC1\x82\x1C\x08\x00\x81\x09\x20\x81\x03\x0C\x00\x01\x83"
+			if {${::NEWMFW_VER} <= "4.00"} {
+				append search "\x35\x00\x00\x00\x12\x7A\x7D\x09\x24\xFF\xC0\xD0"
+			} else {
+				append search "\x35\x00\x00\x00\x12\x09\x45\x09\x24\xFF\xC0\xD0"
+			}			
+            set replace   "\x40\x80\x00\x03\x35\x00\x00\x00"
+            set offset 20		
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"     				
+			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x81A8 (0x1ACA8)			
+			# OFW 3.70 == 0x6E48 (0x19948)  
+			# OFW 4.00 == 0x6E50 (0x19950) 
+			# OFW 4.46 == 0x6EC4 (0x199C4)
+			# OFW 4.50 == 0x6F48 (0x19A48)
+			log "Patching 4.xx LV1LDR ECDSA CHECKS 2/2(ECDSA RETVAL)......"      				
+            set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
+            set replace "\x40\x80\x00\x03"
+            set offset 12		
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"     
+			
+		}		
+		log "Done LV1LDR patches...."	
+	}
+	#
+	### ------------------------------------- END:    Do_LV1LDR_Patches{} ------------------------------------------ ###
+	
+	
+	# --------------------------  BEGIN:  Do_LV2LDR_Patches   -------------------------------------------------------### 
+	#
+	# This proc is for applying any patches to LV2 LOADER
+	#
+	#
+	proc Do_LV2LDR_Patches {elf} {	
+	
+		log "Applying LV2LDR patches...."	
+		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
+		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {
+		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x (0x)			
+			# OFW 3.70 == 0x (0x)  
+			# OFW 4.00 == 0x22B0 (0x) 
+			# OFW 4.46 == 0x22A8 (0x14DB0)
+			# OFW 4.50 == 0x22A8 (0x14DA8)
+			log "Patching 4.xx LV2LDR ECDSA CHECKS 1/3......"		                    
+			set search    "\x34\x00\x13\xA6\x3B\x89\xD3\x25\x3F\xE1\x12\x85\x18\x01\x42\x06"
+			append search "\x33\x04\x99\x00"
+            set replace   "\x40\x80\x00\x03"
+            set offset 16	
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  
+			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x (0x)			
+			# OFW 3.70 == 0x (0x)  
+			# OFW 4.00 == 0x2A98 (0x15598) 
+			# OFW 4.46 == 0x2A90 (0x15590)
+			# OFW 4.50 == 0x2A90 (0x15590)
+			log "Patching 4.xx LV2LDR ECDSA CHECKS 2/3......"			               
+			set search    "\x3F\x82\x21\x04\x3B\x90\x60\x3F\x3F\xE1\x1F\x85\x18\x01\x42\x06"
+			append search "\x33\x03\x9C\x00"		
+            set replace   "\x40\x80\x00\x03"
+            set offset 16	
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  
+
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x43C0 (0x16EC0)			
+			# OFW 3.70 == 0x4458 (0x16F58)  
+			# OFW 4.00 == 0x47F0 (0x172F0) 
+			# OFW 4.46 == 0x47E8 (0x172E8)
+			# OFW 4.50 == 0x47E8 (0x172E8)
+			log "Patching 4.xx LV2LDR ECDSA CHECKS 3/3(ECDSA RETVAL)......"						            
+            set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
+            set replace "\x40\x80\x00\x03"
+            set offset 12		
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  
+		}				
+		log "Done LV2LDR patches...."	
+	}
+	#
+	### ------------------------------------- END:    Do_LV2LDR_Patches{} ------------------------------------------ ###
+	
+	
+	
+	# --------------------------  BEGIN:  Do_ISOLDR_Patches   -------------------------------------------------------### 
+	#
+	# This proc is for applying any patches to ISO LOADER
+	#
+	#
+	proc Do_ISOLDR_Patches {elf} {	
+	
+		log "Applying ISOLDR patches...."	
+		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
+		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {
+		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x (0x)			
+			# OFW 3.70 == 0x (0x)  
+			# OFW 4.00 == 0x3540 (0x28CC0) 
+			# OFW 4.46 == 0x36B0 (0x28E30)
+			# OFW 4.50 == 0x36B0 (0x28E30)
+			log "Patching 4.xx ISOLDR ECDSA CHECKS 1/3......"       			
+            set search    "\x34\x00\x13\xA6\x3B\x89\xD3\x25\x3F\xE1\x12\x85\x18\x01\x42\x06"
+			append search "\x33\x7E"
+            set replace   "\x40\x80\x00\x03"
+            set offset 16		
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x (0x)			
+			# OFW 3.70 == 0x (0x)  
+			# OFW 4.00 == 0x3D28 (0x294A8) 
+			# OFW 4.46 == 0x3E98 (0x29618)
+			# OFW 4.50 == 0x3E98 (0x29618)
+			log "Patching 4.xx ISOLDR ECDSA CHECKS 2/3......"       			            
+            set search    "\x3F\x82\x21\x04\x3B\x90\x60\x3F\x3F\xE1\x1F\x85\x18\x01\x42\x06"
+			append search "\x33\x7D"			
+            set replace   "\x40\x80\x00\x03"
+            set offset 16		
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x49F0 (0x2A170)			
+			# OFW 3.70 == 0x2750 (0x27ED0)  
+			# OFW 4.00 == 0x2750 (0x27ED0) 
+			# OFW 4.46 == 0x2898 (0x28018)
+			# OFW 4.50 == 0x2898 (0x28018)
+			log "Patching 4.xx ISOLDR ECDSA CHECKS 3/3(ECDSA RETVAL)......"       			
+            set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
+            set replace "\x40\x80\x00\x03"
+            set offset 12		
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+		}				
+		log "Done ISOLDR patches...."	
+	}
+	#
+	### ------------------------------------- END:    Do_ISOLDR_Patches{} ------------------------------------------ ###
+	
+	
+	# --------------------------  BEGIN:  Do_APPLDR_Patches   -------------------------------------------------------### 
+	#
+	# This proc is for applying any patches to ISO LOADER
+	#
+	#
+	proc Do_APPLDR_Patches {elf} {	
+	
+		log "Applying APPLDR patches...."	
+		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
+		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {
+		
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x (0x)			
+			# OFW 3.70 == 0x (0x)  
+			# OFW 4.00 == 0x5700 (0x18200) 
+			# OFW 4.46 == 0x56C8 (0x181C8)
+			# OFW 4.50 == 0x56C8 (0x181C8)
+			log "Patching 4.xx APPLDR ECDSA CHECKS 1/3......"			
+            set search    "\x1C\x0C\x00\x81\x34\xFF\xC0\xD0\x35\x00\x00\x00\x00\x20\x00\x00"
+			append search "\x12\x11"
+            set replace   "\x48\x20\xC1\x83\x35\x00\x00\x00"
+            set offset 16		
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x (0x)			
+			# OFW 3.70 == 0x (0x)  
+			# OFW 4.00 == 0x78B0 (0x1A3B0) 
+			# OFW 4.46 == 0x78A0 (0x1A3A0)
+			# OFW 4.50 == 0x78A0 (0x1A3A0)
+			log "Patching 4.xx APPLDR ECDSA CHECKS 2/3......"			
+            set search    "\x3F\x82\x0A\x04\x3B\x84\xEE\xD9\x3F\xE1\x2C\x85\x18\x01\x42\x06"
+			append search "\x33\x7B"
+            set replace   "\x40\x80\x00\x03"
+            set offset 16	
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x9F60 (0x1CA60)			
+			# OFW 3.70 == 0x56B0 (0x181B0)  
+			# OFW 4.00 == 0x5778 (0x18278) 
+			# OFW 4.46 == 0x5740 (0x18240)
+			log "Patching 4.xx APPLDR ECDSA CHECKS 3/3(ECDSA RETVAL)......"			
+            set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
+            set replace "\x40\x80\x00\x03"
+            set offset 12		
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+		}				
+		log "Done APPLDR patches...."	
+	}
+	#
+	### ------------------------------------- END: Do_APPLDR_Patches{} ------------------------------------------ ###
 	
 	
 	
@@ -263,6 +435,7 @@ namespace eval ::patch_cos {
 		
 		# if "lv1-peek-poke" enabled, patch it
 		if {$::patch_cos::options(--patch-lv1-peek-poke)} {
+		
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x1225E8 (0x3025E8)
 			# OFW 3.60: 0x123DB4 (0x303DB4			
@@ -305,8 +478,7 @@ namespace eval ::patch_cos {
         }
 		log "Done LV1 patches...."	
 	}
-	### ------------------------------------- END:    Do_LV1_Patches{} --------------------------------------------- ###   
-	
+	### ------------------------------------- END:    Do_LV1_Patches{} --------------------------------------------- ###  				
 	
 	
 	# --------------------------  BEGIN:  Do_LV2_Patches   --------------------------------------------------------- ### 
@@ -362,6 +534,7 @@ namespace eval ::patch_cos {
 		}
 		# if "--patch-lv2-peek-poke-4x" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-peek-poke-4x)} {
+		
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x65F64 (0x55F64)
 			# OFW 3.60: 0x6692C (0x5692C)			
@@ -389,6 +562,7 @@ namespace eval ::patch_cos {
 		}
 		# if "--patch-lv2-lv1-peek-poke-4x" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-lv1-peek-poke-4x)} {
+		
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x10F00 (0xF00) ** PATCH @0x1170C **
 			# OFW 3.60: 0x10F00 (0xF00) ** PATCH @0x1170C **		
@@ -439,6 +613,7 @@ namespace eval ::patch_cos {
 		}
 		# if "-patch-lv2-npdrm-ecdsa-check" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-npdrm-ecdsa-check)} {
+		
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x8AEE8???? (0x)  ** unsure of this patch **
 			# OFW 3.60: 0x69CAC (0x59CAC)
@@ -464,6 +639,7 @@ namespace eval ::patch_cos {
 		}
 		# if "--patch-lv2-SC36-4x" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-SC36-4x)} {
+		
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x65F10 (0x55F10)
 			# OFW 3.60: 0x668D8 (0x568D8)
@@ -515,6 +691,7 @@ namespace eval ::patch_cos {
 		}
 		# if "--patch-lv2-payload-hermes-4x" enabled, then patch
 		if {$::patch_cos::options(--patch-lv2-payload-hermes-4x)} {
+		
 			# vars for setting up the hermes payload,
 			# and the various offsets, etc
 			set payloadaddr_byte3 0
@@ -687,7 +864,8 @@ namespace eval ::patch_cos {
 		
 		log "Done LV2 patches...."
 	}
-	### ------------------------------------- END:    Do_LV2_Patches{} --------------------------------------------- ###   
+	### ------------------------------------- END:    Do_LV2_Patches{} ---------------------------------------------------------------------- ###  			
+	
 	
 	
 	# --------------------------  BEGIN:  Do_Misc_OS_Patches   --------------------------------------------------------- ### 
