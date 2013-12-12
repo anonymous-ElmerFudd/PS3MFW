@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 207
+# Priority: 208
 # Description: CHANGE: Change SSL CA public certificate
 
 # Option --ssl-cer: New SSL CA certificate (source)

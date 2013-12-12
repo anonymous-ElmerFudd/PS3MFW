@@ -19,7 +19,7 @@
 #        until DEX firmware with a bdp_plugin.sprx is released or someone patches 
 #        this file manually.
 
-# Priority: 203
+# Priority: 204
 # Description: CHANGE: Change Cinavia DRM affected files
 
 # Option --cinavia-videoplayerutil: Patched videoplayer_util.sprx filename

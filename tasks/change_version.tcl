@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
     
-# Priority: 210
+# Priority: 0201
 # Description: CHANGE: Change PUP version info
 
 # Option --version-string: If set, overrides the entire PUP version string
@@ -22,9 +22,9 @@
 namespace eval ::change_version {
 
     array set ::change_version::options {     
-      --version-string " MFW OTHEROS++"
+      --version-string ""
       --version-prefix ""
-      --version-suffix ""
+      --version-suffix "-CFW v1.00"
     }
 
     proc main {} {
@@ -34,7 +34,7 @@ namespace eval ::change_version {
       if {$options(--version-string) != ""} {
         ::modify_pup_version_file $options(--version-string) "" 1
       } else {
-        ::modify_pup_version_file $options(--version-prefix) $options(--version-suffix)
+        ::modify_pup_version_file $options(--version-prefix) $options(--version-suffix) 0
       }
     }
 }

@@ -865,11 +865,11 @@ proc set_pup_version {version} {
     close $fd
 }
 # wrapper function for calling 'set_pup_version'
-proc modify_pup_version_file {prefix suffix {clear 0} dir} {
+proc modify_pup_version_file {prefix suffix {clear 0}} {
     if {$clear} {
       set version ""
     } else {
-      set version [::get_pup_version $dir]
+      set version [::get_pup_version ${::ORIGINAL_VERSION_TXT}]
     }
     debug "PUP version: ${prefix}${version}${suffix}"
     set_pup_version "${prefix}${version}${suffix}"
