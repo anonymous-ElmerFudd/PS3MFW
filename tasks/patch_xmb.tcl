@@ -11,7 +11,6 @@
 # Priority: 0004
 # Description: PATCH: XMB - Miscellaneous
 
-# Option --patch-act-pkg: [4.xx]  -->  Patch the standard  '*Install Package Files'  function back in to the XMB (4.00+) 
 # Option --patch-package-files: [3.xx/4.xx]  -->  Add "Install Package Files" icon to the XMB Game Category    
 # Option --patch-app-home: [3.xx/4.xx]  -->  Add "/app_home" icon to the XMB Game Category
 # Option --patch-ren-apphome: [3.xx/4.xx]  -->  Rename /app_home/PS3_GAME/ to Discless
@@ -25,7 +24,6 @@
 # Option --fix-typo-sysconf-Italian: [3.xx/4.xx]  -->  Fix a typo in the Italian localization of the sysconf plugin
 # Option --tv-cat: [3.xx]  -->  Show TV category in xmb no matter if your country supports it. (3.55 ONLY)
 
-# Type --patch-act-pkg: boolean
 # Type --patch-package-files: boolean
 # Type --patch-app-home: boolean
 # Type --patch-ren-apphome: boolean
@@ -60,9 +58,8 @@ namespace eval patch_xmb {
 	set ::patch_xmb::hermes_enabled false
 	set ::patch_xmb::flag_icons_copied false
 		
-    array set ::patch_xmb::options {
-		--patch-act-pkg true
-		--patch-package-files false
+    array set ::patch_xmb::options {		
+		--patch-package-files true
 		--patch-app-home true
         --patch-ren-apphome false
         --add-install-pkg false		
@@ -117,9 +114,16 @@ namespace eval patch_xmb {
 		        ::modify_rco_file $::patch_xmb::XMB_INGAME_RCO ::patch_xmb::callback_discless
 		    }
 		}
-		# if "--patch-act-pkg" option enabled, patch the files
-		if {$::patch_xmb::options(--patch-act-pkg)} {			
-			modify_devflash_files [file join dev_flash vsh module] $::patch_xmb::ACTIVATE_IPF ::patch_xmb::patch_self
+		# if "--patch-package-files" option enabled, patch the files
+		if {$::patch_xmb::options(--patch-package-files)} {
+			log "Adding *Install Package Files icon back into XMB....." 
+			if {${::NEWMFW_VER} >= "4.00"} {
+				log ".......MFW is 4.xx, modifying explore_xxx.sprx files first......" 
+				modify_devflash_files [file join dev_flash vsh module] $::patch_xmb::ACTIVATE_IPF ::patch_xmb::patch_self
+			} else {
+				log ".......MFW is 3.xx, no need to modify explore_xxx.sprx files......."
+			}
+			log ".......Modifying xml for *Install Package files back to XMB........." 
 		}
         # modify the "category_game.xml"
 		if {$::patch_xmb::options(--patch-app-home)  || $::patch_xmb::options(--patch-package-files) || $::patch_xmb::options(--patch-alpha-sort) || $::patch_xmb::options(--patch-rape-sfo) || [expr {$::patch_xmb::options(--homebrew-cat) ne ""}]} {			
@@ -262,7 +266,7 @@ namespace eval patch_xmb {
 		#####         *some* of the patches are found in OFW early as 3.60, but others later???
 		#
 		# if "add install pkg files" back to XMB enabled, patch it
-		if {$::patch_xmb::options(--patch-act-pkg)} {
+		if {$::patch_xmb::options(--patch-package-files)} {
 		
 			# verified against "Rogero 4.46 - 09/20/2013"
 			# patches are valid for OFW 4.00 - 4.46+
@@ -328,7 +332,7 @@ namespace eval patch_xmb {
 			}					
 		}
 		#
-		#### END "if {$::patch_xmb::options(--patch-act-pkg)} ENABLED ######
+		#### END "if {$::patch_xmb::options(patch-package-files)} ENABLED ######
     }
 	#
 	#### END "patch_elf{} ######

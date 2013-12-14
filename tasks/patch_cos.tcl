@@ -209,25 +209,7 @@ namespace eval ::patch_cos {
 	
 		log "Applying LV1LDR patches...."			
 		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
-		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {
-		
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x (0x)			
-			# OFW 3.70 == 0x (0x)  
-			# OFW 4.00 == 0x6CD4 (0x197D4) 
-			# OFW 4.46 == 0x6E3C (0x1993C)
-			# OFW 4.50 == 0x6ECC (0x199CC)
-			log "Patching 4.xx LV1LDR ECDSA CHECKS 1/2......"            			
-			set search    "\x4C\xFF\xC1\x82\x1C\x08\x00\x81\x09\x20\x81\x03\x0C\x00\x01\x83"
-			if {${::NEWMFW_VER} <= "4.00"} {
-				append search "\x35\x00\x00\x00\x12\x7A\x7D\x09\x24\xFF\xC0\xD0"
-			} else {
-				append search "\x35\x00\x00\x00\x12\x09\x45\x09\x24\xFF\xC0\xD0"
-			}			
-            set replace   "\x40\x80\x00\x03\x35\x00\x00\x00"
-            set offset 20		
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"     				
+		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {					
 			
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55 == 0x81A8 (0x1ACA8)			
@@ -235,7 +217,7 @@ namespace eval ::patch_cos {
 			# OFW 4.00 == 0x6E50 (0x19950) 
 			# OFW 4.46 == 0x6EC4 (0x199C4)
 			# OFW 4.50 == 0x6F48 (0x19A48)
-			log "Patching 4.xx LV1LDR ECDSA CHECKS 2/2(ECDSA RETVAL)......"      				
+			log "Patching 4.xx LV1LDR ECDSA CHECKS......"      				
             set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
             set replace "\x40\x80\x00\x03"
             set offset 12		
@@ -258,43 +240,15 @@ namespace eval ::patch_cos {
 	
 		log "Applying LV2LDR patches...."	
 		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
-		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {
-		
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x (0x)			
-			# OFW 3.70 == 0x (0x)  
-			# OFW 4.00 == 0x22B0 (0x) 
-			# OFW 4.46 == 0x22A8 (0x14DB0)
-			# OFW 4.50 == 0x22A8 (0x14DA8)
-			log "Patching 4.xx LV2LDR ECDSA CHECKS 1/3......"		                    
-			set search    "\x34\x00\x13\xA6\x3B\x89\xD3\x25\x3F\xE1\x12\x85\x18\x01\x42\x06"
-			append search "\x33\x04\x99\x00"
-            set replace   "\x40\x80\x00\x03"
-            set offset 16	
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  
-			
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x (0x)			
-			# OFW 3.70 == 0x (0x)  
-			# OFW 4.00 == 0x2A98 (0x15598) 
-			# OFW 4.46 == 0x2A90 (0x15590)
-			# OFW 4.50 == 0x2A90 (0x15590)
-			log "Patching 4.xx LV2LDR ECDSA CHECKS 2/3......"			               
-			set search    "\x3F\x82\x21\x04\x3B\x90\x60\x3F\x3F\xE1\x1F\x85\x18\x01\x42\x06"
-			append search "\x33\x03\x9C\x00"		
-            set replace   "\x40\x80\x00\x03"
-            set offset 16	
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  
-
+		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {	
+			  
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55 == 0x43C0 (0x16EC0)			
 			# OFW 3.70 == 0x4458 (0x16F58)  
 			# OFW 4.00 == 0x47F0 (0x172F0) 
 			# OFW 4.46 == 0x47E8 (0x172E8)
 			# OFW 4.50 == 0x47E8 (0x172E8)
-			log "Patching 4.xx LV2LDR ECDSA CHECKS 3/3(ECDSA RETVAL)......"						            
+			log "Patching 4.xx LV2LDR ECDSA CHECKS......"						            
             set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
             set replace "\x40\x80\x00\x03"
             set offset 12		
@@ -317,43 +271,15 @@ namespace eval ::patch_cos {
 	
 		log "Applying ISOLDR patches...."	
 		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
-		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {
-		
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x (0x)			
-			# OFW 3.70 == 0x (0x)  
-			# OFW 4.00 == 0x3540 (0x28CC0) 
-			# OFW 4.46 == 0x36B0 (0x28E30)
-			# OFW 4.50 == 0x36B0 (0x28E30)
-			log "Patching 4.xx ISOLDR ECDSA CHECKS 1/3......"       			
-            set search    "\x34\x00\x13\xA6\x3B\x89\xD3\x25\x3F\xE1\x12\x85\x18\x01\x42\x06"
-			append search "\x33\x7E"
-            set replace   "\x40\x80\x00\x03"
-            set offset 16		
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
-			
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x (0x)			
-			# OFW 3.70 == 0x (0x)  
-			# OFW 4.00 == 0x3D28 (0x294A8) 
-			# OFW 4.46 == 0x3E98 (0x29618)
-			# OFW 4.50 == 0x3E98 (0x29618)
-			log "Patching 4.xx ISOLDR ECDSA CHECKS 2/3......"       			            
-            set search    "\x3F\x82\x21\x04\x3B\x90\x60\x3F\x3F\xE1\x1F\x85\x18\x01\x42\x06"
-			append search "\x33\x7D"			
-            set replace   "\x40\x80\x00\x03"
-            set offset 16		
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
-			
+		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {	
+			 			
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55 == 0x49F0 (0x2A170)			
 			# OFW 3.70 == 0x2750 (0x27ED0)  
 			# OFW 4.00 == 0x2750 (0x27ED0) 
 			# OFW 4.46 == 0x2898 (0x28018)
 			# OFW 4.50 == 0x2898 (0x28018)
-			log "Patching 4.xx ISOLDR ECDSA CHECKS 3/3(ECDSA RETVAL)......"       			
+			log "Patching 4.xx ISOLDR ECDSA CHECKS......"       			
             set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
             set replace "\x40\x80\x00\x03"
             set offset 12		
@@ -376,41 +302,13 @@ namespace eval ::patch_cos {
 		log "Applying APPLDR patches...."	
 		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
 		if {$::patch_cos::options(--patch-lv0-ldrs-ecdsa-checks)} {
-		
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x (0x)			
-			# OFW 3.70 == 0x (0x)  
-			# OFW 4.00 == 0x5700 (0x18200) 
-			# OFW 4.46 == 0x56C8 (0x181C8)
-			# OFW 4.50 == 0x56C8 (0x181C8)
-			log "Patching 4.xx APPLDR ECDSA CHECKS 1/3......"			
-            set search    "\x1C\x0C\x00\x81\x34\xFF\xC0\xD0\x35\x00\x00\x00\x00\x20\x00\x00"
-			append search "\x12\x11"
-            set replace   "\x48\x20\xC1\x83\x35\x00\x00\x00"
-            set offset 16		
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
-			
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x (0x)			
-			# OFW 3.70 == 0x (0x)  
-			# OFW 4.00 == 0x78B0 (0x1A3B0) 
-			# OFW 4.46 == 0x78A0 (0x1A3A0)
-			# OFW 4.50 == 0x78A0 (0x1A3A0)
-			log "Patching 4.xx APPLDR ECDSA CHECKS 2/3......"			
-            set search    "\x3F\x82\x0A\x04\x3B\x84\xEE\xD9\x3F\xE1\x2C\x85\x18\x01\x42\x06"
-			append search "\x33\x7B"
-            set replace   "\x40\x80\x00\x03"
-            set offset 16	
-			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
-			
+						
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55 == 0x9F60 (0x1CA60)			
 			# OFW 3.70 == 0x56B0 (0x181B0)  
 			# OFW 4.00 == 0x5778 (0x18278) 
 			# OFW 4.46 == 0x5740 (0x18240)
-			log "Patching 4.xx APPLDR ECDSA CHECKS 3/3(ECDSA RETVAL)......"			
+			log "Patching 4.xx APPLDR ECDSA CHECKS......"			
             set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
             set replace "\x40\x80\x00\x03"
             set offset 12		

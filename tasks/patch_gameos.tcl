@@ -31,7 +31,7 @@
 namespace eval ::patch_gameos {
 
     array set ::patch_gameos::options {
-		--patch-disable-pupsearch-in-game-disc true		
+		--patch-disable-pupsearch-in-game-disc false	
         --patch-gameos-hdd-region-size "" 
         --patch-gameos-hdd-region-size-half false
         --patch-gameos-hdd-region-size-quarter false
@@ -65,6 +65,9 @@ namespace eval ::patch_gameos {
 			
 			# if "--patch-pup-search-in-game-disc" enabled, do patch
 			if {$::patch_gameos::options(--patch-disable-pupsearch-in-game-disc)} {
+			
+				die "THIS PATCH CAUSES HARD BRICK!! DO NOT USE!!!!"
+				
 				# verified OFW ver. 3.55 - 4.46+
 				# OFW 3.55: 0x40468 (0x50468)
 				# OFW 3.70: 0x40A98 (0x50A98)

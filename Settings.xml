@@ -7,5 +7,5 @@
 	<IN_FILE></IN_FILE>	
 	<OUT_DIR>OUT</OUT_DIR>
 	<OUT_FILE>MFW_TEST</OUT_FILE>	    
-	<tasks>patch_cos patch_lv1 patch_lv2 patch_appldr patch_xmb patch_vsh patch_gameos change_version add_license_msg</tasks>
+	<tasks>patch_cos patch_lv1 patch_lv2 patch_appldr patch_xmb patch_vsh change_version add_license_msg</tasks>
 </Settings>
