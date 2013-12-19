@@ -8,7 +8,7 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 0006
+# Priority: 0007
 # Description: PATCH: GAMEOS - Miscellaneous
 
 # Option --patch-disable-pupsearch-in-game-disc: [3.xx/4.xx]  -->  Disable searching for update packages in GAME disc

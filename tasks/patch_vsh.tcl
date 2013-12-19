@@ -8,11 +8,9 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 0005
+# Priority: 0002
 # Description: PATCH: Patch VSH - Miscellaneous
 
-# Option --enable-spoof-build: [3.xx/4.xx]  -->  Enable setting PUP build version (FW Spoofing)
-# Option --spoof-build-number:	[3.xx/4.xx] ---->  PUP build version to set
 # Option --patch-rogero-vsh-patches: [3.xx/4.xx]  -->  Patch VSH with ROGERO patches
 # Option --allow-unsigned-app: [3.xx/4.xx]  -->  Patch to allow running of unsigned applications (3.xx/4.xx)
 # Option --patch-vsh-react-psn-v2-4x: [3.xx/4.xx]  -->  Jailbait - Patch to implement ReactPSN v2.0 into VSH (3.xx/4.xx)
@@ -24,8 +22,6 @@
 # Option --customize-fw-ssl-cer: [3.xx/4.xx]  -->  Change SSL - New SSL CA certificate (source)
 # Option --customize-fw-change-cer: [3.xx/4.xx]  -->  Change SSL - SSL CA public certificate (destination)
 
-# Type --enable-spoof-build: boolean
-# Type --spoof-build-custom: combobox { }
 # Type --patch-rogero-vsh-patches: boolean
 # Type --allow-unsigned-app: boolean
 # Type --patch-vsh-react-psn-v2-4x: boolean
@@ -40,8 +36,6 @@
 namespace eval ::patch_vsh {
 
     array set ::patch_vsh::options {
-		--enable-spoof-build true
-		--spoof-build-number "99999"
 		--patch-rogero-vsh-patches true
 		--allow-unsigned-app true
 		--patch-vsh-react-psn-v2-4x true
@@ -59,20 +53,8 @@ namespace eval ::patch_vsh {
         set src $::patch_vsh::options(--customize-fw-ssl-cer)
         set dst $::patch_vsh::options(--customize-fw-change-cer)
         set path [file join dev_flash data cert]
+				
 		
-		
-		# setup vars based on the spoof string
-        if {$::patch_vsh::options(--enable-spoof-build)} {
-			set org_build ""
-			set new_build ""
-			log "Changing PUP build version, patching UPL.xml........"
-			            
-			set org_build ${::PUP_BUILD}
-			set new_build $::patch_vsh::options(--spoof-build-number)	
-			
-			# go patch the UPL.xml file
-            ::modify_upl_file ::patch_vsh::set_upl_xml_build $new_build			
-		}
      
 		# if "retail/debug pkg" options, then patch "nas_plugin.sprx"
         if {$::patch_vsh::options(--allow-pseudoretail-pkg) || $::patch_vsh::options(--allow-debug-pkg) || $::patch_vsh::options(--allow-retail-pkg-dex)} {
@@ -114,36 +96,7 @@ namespace eval ::patch_vsh {
 			log "...to disable cinavia protection"
 			::patch_vsh::swappCinavia
 		}
-    }
-	
-	# ------------------------------------------------- #
-	# func. to replace the "UPL.xml.pkg" "buildnum" in
-	# the '<BUILD>buildnum, buildate</BUILD>' tag
-	proc set_upl_xml_build {filename buildnum} {	      
-		
-		# retrieve the '<BUILD>.....</BUILD>' xml tag
-        set data [::get_header_key_upl_xml $filename Build Build]	
-		if { [regexp {(^[0-9]{5,5}),.*} $data none orgbuild] == 0} {
-			die "Failed to locate build number in UPL file!\n"
-		}		
-		# make sure the user supplied 'buildnum' is same
-		# length as original, or error out		
-		if {[string length $buildnum] != [string length $orgbuild]} {
-			die "Error: build number:$buildnum is invalid!!\n"
-		}		
-		# substitute in the new build number
-		if {[regsub ($orgbuild) $data $buildnum data] == 0} {
-			die "Failed updating build number in UPL file\n"
-		}				
-		# update the <BUILD>....</BUILD> data
-		set xml [::set_header_key_upl_xml $filename Build "${data}" Build]
-		if { $xml == "" } {
-			die "Updating build number in UPL.xml failed...."
-		} 
-		# go set the global '::BUILDNUM'
-		::set_pup_build $buildnum
-    }
-	# ------------------------------------------------- #
+    }		
 	
 	# proc for dispatching to the appropriate func to path the
 	# desired "self" file

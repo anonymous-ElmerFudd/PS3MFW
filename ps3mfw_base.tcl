@@ -603,24 +603,14 @@ proc pkg_archive {dir pkg} {
 # proc for building the normal 'pkg' (encrypt) package
 # (outputs the ".pkg" file
 proc pkg {pkg dest} {
-	log "Building ORIGINAL PKG retail package"
-	set orgfilepath [file join $pkg "content"]
-	set orgfilesize ""
+	log "Building ORIGINAL PKG retail package"	
 	set debugmode no
 	if { $::options(--tool-debug) } {
 		set debugmode yes
-	}
- 	
-	# setup path to ORIGINAL 'content' file in PS3MFW-OFW
-	if { [regsub ($::CUSTOM_PUP_DIR) $orgfilepath $::ORIGINAL_PUP_DIR orgfilepath] } {	
-		set orgfilesize [file size $orgfilepath]	
-		log "Imported ORG 'content' size: 0x[format %x $orgfilesize], from file: \"$orgfilepath\""
-	} else {
-		log "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
-		die "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
-	}
+	} 	
+	
 	# now go build the pkg/spkg output	
-	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type pkg -setpkgsize $orgfilesize -in [file nativename $pkg] -out [file nativename $dest]	
+	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type pkg -in [file nativename $pkg] -out [file nativename $dest]	
 }
 
 # 'wrapper' function for calling "pkg_spkg"
@@ -631,24 +621,14 @@ proc pkg_spkg_archive {dir pkg} {
 # proc for building the "new" pkg with spkg headers
 # (encrypt) into the pkg/spkg output files
 proc pkg_spkg {pkg dest} {
-	log "Building NEW PKG & SPKG retail package(s)"	
-	set orgfilepath [file join $pkg "content"]
-	set orgfilesize ""
+	log "Building NEW PKG & SPKG retail package(s)"		
 	set debugmode no
 	if { $::options(--tool-debug) } {
 		set debugmode yes
-	} 
+	}	
 	
-	# setup path to ORIGINAL 'content' file in PS3MFW-OFW
-	if { [regsub ($::CUSTOM_PUP_DIR) $orgfilepath $::ORIGINAL_PUP_DIR orgfilepath] } {	
-		set orgfilesize [file size $orgfilepath]	
-		log "Imported ORG 'content' size: 0x[format %x $orgfilesize], from file: \"$orgfilepath\""
-	} else {
-		log "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
-		die "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
-	}
-	# now go build the pkg/spkg output	
-	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spkg -setpkgsize $orgfilesize -in [file nativename $pkg] -out [file nativename $dest]
+	# now go build the pkg/spkg output		
+	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spkg -in [file nativename $pkg] -out [file nativename $dest]	
 }
 
 # ---------------------------------------------------------------------------------------------------------------------- #
@@ -670,18 +650,10 @@ proc cospkg { dir pkg } {
 	set debugmode no	
 	if { $::options(--tool-debug) } {
 		set debugmode yes
-	} 
-	
-	# setup path to ORIGINAL 'content' file in PS3MFW-OFW
-	if { [regsub ($::CUSTOM_PUP_DIR) $orgfilepath $::ORIGINAL_PUP_DIR orgfilepath] } {	
-		set orgfilesize [file size $orgfilepath]	
-		log "Imported ORG 'content' size: 0x[format %x $orgfilesize], from file: \"$orgfilepath\""
-	} else {
-		log "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
-		die "ERROR: Failed to locate ORIGINAL 'content' file for filesize read:$orgfilepath"
-	}			
+	} 	
+		
 	# now go build the pkg/spkg output	
-	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -setpkgsize $orgfilesize -in [file nativename $dir] -out [file nativename $pkg]		
+	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -in [file nativename $dir] -out [file nativename $pkg]		
 }
 # 'wrapper' function for calling "cosunpkg"
 proc cosunpkg_package { pkg dest } {
@@ -815,10 +787,12 @@ proc repack_coreos_files { array } {
 	if {${::NEWMFW_VER} >= "3.60"} {
 		catch_die {import_lv0 $::CUSTOM_COSUNPKG_DIR "lv0" MyLV0Hdrs} "ERROR: Could not import LV0"
 	}	
-    
-	# re-package up the files
-    ::cospkg_package $::CUSTOM_COSUNPKG_DIR [file join $::CUSTOM_UNPKG_DIR content]      	
-		
+	
+	# re-package up the files, and then
+	# cleanup/delete the COSUNPKG dir
+    ::cospkg_package $::CUSTOM_COSUNPKG_DIR [file join $::CUSTOM_UNPKG_DIR content]	
+    # catch_die {file delete -force $::CUSTOM_COSUNPKG_DIR} "Could not delete directory:$::CUSTOM_COSUNPKG_DIR for cleanup"	
+	
 	# if we are >= 3.56 FW, we need to build the new
 	# "spkg" headers, otherwise use normal pkg build	
 	set pkg $::CUSTOM_PKG_DIR
@@ -907,7 +881,8 @@ proc makeself {in out array} {
    set MyAppVersion ""
    set MyFwVersion ""
    set MyCtrlFlags ""   
-   set MyCapabFlags ""      
+   set MyCapabFlags ""
+   set MyIndivSeed ""
    set MyCompressed FALSE
    set skipsection FALSE   
    set ZlibCompressLevel -1
@@ -923,7 +898,9 @@ proc makeself {in out array} {
 	set MyAppVersion $MySelfHdrs(--APPVERSION)	
 	set MyCtrlFlags $MySelfHdrs(--CTRLFLAGS)
 	set MyCapabFlags $MySelfHdrs(--CAPABFLAGS)
+	set MyIndivSeed $MySelfHdrs(--INDIVSEED)
 	set MyCompressed $MySelfHdrs(--COMPRESS)	
+	
 	
 	
 	# Reading the SELF version var, and setup in SCETOOL format
@@ -932,45 +909,39 @@ proc makeself {in out array} {
 	set ::SELF [file tail $in]	
 	#debug "VERSION: $MyAppVersion"	
 	
+	# ----------- VERIFY 'INDIV SEED' -------------- #
+	# if IndivSeed is 'none', then send empty
+	# string to SCETOOL so we don't cause errors
+	#
+	# otherwise, verify length is EXACTLY 0x100
+	# bytes (ie string length of 512 chars), or error out!
+	if {$MyIndivSeed eq "NONE"} {
+		set MyIndivSeed ""
+	} elseif {[string length $MyIndivSeed] != 512} {
+		die "Error, INDIVSEED length:[string length $MyIndivSeed] from SCE header is invalid!!, exiting...\n"
+	}
+	# ---------------------------------------------- #
 	
 	# ----- IF FOR SOME STRANGE REASON, WE ENDED UP HERE WITHOUT THE SCE HEADER INFO READ IN,
 	#       THEN USE DEFAULT VALUES BELOW
 	#
-	# Load the pre-defined application var into a loop and compare it against the loaded self,
-	# search for the "::SELF" filename within the "patchself" string, as it's a full
-	# "dev_flash/xxxx" path
-	if { $MyAuthID == "" } {	
-		if { ([string first "dev_flash/sys/external/" $in 0] != -1) } {
-			set MyCompressed TRUE
-			set MyAuthID "1070000040000001"
-			set MyVendorID "01000002"		
-			set MySelfType "APP"
-			set MyKeyRev "1C"
-			set MyCtrlFlags     "00000000000000000000000000000000"
-			append MyCtrlFlags  "00000000000000000000000000000001"
-			set MyCapabFlags    "00000000000000000000000000000000"
-			append MyCapabFlags "000000000000007B0000000100000000"
-		} elseif { ([string first "dev_flash/sys/internal/" $in 0] != -1) || ([string first "dev_flash/vsh/module/" $in 0] != -1) } {  
-			set MyCompressed TRUE
-			set MyAuthID "1070000052000001"
-			set MyVendorID "01000002"			
-			set MySelfType "APP"
-			set MyKeyRev "1C"
-			set MyCtrlFlags     "40000000000000000000000000000000"
-			append MyCtrlFlags  "00000000000000000000000000000002"
-			set MyCapabFlags    "00000000000000000000000000000000"
-			append MyCapabFlags "000000000000007B0000000100020000"
-		} else {			
-			set MyCompressed FALSE
-			set MyAuthID "1ff0000001000001"
-			set MySelfType "LV0"
-			set MyCtrlFlags     "40000000000000000000000000000000"
-			append MyCtrlFlags  "00000000000000000000000000000000"
-			set MyCapabFlags    "00000000000000000000000000000000"
-			append MyCapabFlags "000000000000007B0000000100020000"
-		} 		
+	# *** also, if we need to OVERRIDE any SELF HDR specific fields, we can
+	#     set them manually here, to override all, or any specific fields
+	# ***
+	if { ($MyAuthID eq "") } {
+		log "\n !!! WARNING !!!  AuthID was empty, using default SCE HDR Params!  check your setup!\n"		
+		set MyAppVersion "0003004100000000"
+		set MyCompressed TRUE
+		set MyAuthID "1070000040000001"
+		set MyVendorID "01000002"		
+		set MySelfType "APP"
+		set MyKeyRev "1C"
+		set MyCtrlFlags     "00000000000000000000000000000000"
+		append MyCtrlFlags  "00000000000000000000000000000001"
+		set MyCapabFlags    "00000000000000000000000000000000"
+		append MyCapabFlags "000000000000007B0000000100000000"		 		
 	}
-	##### ---------------------------------------------------------- ###
+	##### ---------------------------------------------------------- ###			
 	
 	## make sure we have a valid authID, if it's blank, 
 	## then we have an unhandled SELF type that needs to be added!!	
@@ -980,7 +951,7 @@ proc makeself {in out array} {
 	}
 	# run the scetool to resign the elf file
     catch_die {shell ${::SCETOOL} -0 SELF -1 $MyCompressed -s $skipsection -2 $MyKeyRev -3 $MyAuthID -4 $MyVendorID -5 $MySelfType \
-		-A $MyAppVersion -6 $MyFirmVersion -8 $MyCtrlFlags -9 $MyCapabFlags -z $ZlibCompressLevel -e $in $out} "SCETOOL execution failed!"		
+		-A $MyAppVersion -6 $MyFirmVersion -8 $MyCtrlFlags -9 $MyCapabFlags -a $MyIndivSeed -z $ZlibCompressLevel -e $in $out} "SCETOOL execution failed!"		
 }
 # --------------------------------------------------------------------------------------------------------------------------------------- #
 
@@ -1032,6 +1003,9 @@ proc import_self_info {in array} {
 		} elseif { [regexp -- {(^CapabFlags:)(.*)} $line match] } {		
 			set MySelfHdrs(--CAPABFLAGS) [lindex [split $match ":"] 1]
 			incr MyArraySize 1
+		} elseif { [regexp -- {(^IndivSeed:)(.*)} $line match] } {		
+			set MySelfHdrs(--INDIVSEED) [lindex [split $match ":"] 1]
+			incr MyArraySize 1
 		} elseif { [regexp -- {(^Compressed:)(.*)} $line match] } {		
 			set MySelfHdrs(--COMPRESS) [lindex [split $match ":"] 1]	
 			incr MyArraySize 1
@@ -1073,6 +1047,7 @@ proc modify_self_file {file callback args} {
 		--FWVERSION ""
 		--CTRLFLAGS ""
 		--CAPABFLAGS ""
+		--INDIVSEED  ""
 		--COMPRESS ""
 	}
 	
@@ -1323,98 +1298,6 @@ proc modify_devflash_files {path files callback args} {
 		}
     }	
 }
-# func for modifying the "UPL.xml.pkg" file
-proc modify_upl_file {callback args} {	
-	
-    log "Modifying UPL.xml file"	
-    set file "content"
-    
-    set pkg [file join ${::CUSTOM_UPDATE_DIR} UPL.xml.pkg]
-    set unpkgdir [file join ${::CUSTOM_UPDATE_DIR} UPL.xml.unpkg]
-	set orgunpkgdir [file join ${::ORIGINAL_UPDATE_DIR} UPL.xml.unpkg]
-
-	# unpkg the archive in the 'MFW' dir
-    ::unpkg_archive $pkg $unpkgdir
-	# unpkg the archive in the 'OFW' dir (for importing content info)
-    ::unpkg_archive $pkg $orgunpkgdir	
-
-	# verify 'file' is writable/etc before it's patched
-    if {[file writable [file join $unpkgdir $file]] } {
-        eval $callback [file join $unpkgdir $file] $args
-    } elseif { ![file exists [file join $unpkgdir $file]] } {
-        die "Could not find $file in $unpkgdir"
-    } else {
-        die "File $file is not writable in $unpkgdir"
-    }
-	
-	# if we are >= 3.56 FW, we need to build the new
-	# "spkg" headers, otherwise use normal pkg build
-	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
-		::pkg_spkg_archive $unpkgdir $pkg
-        ::copy_spkg
-    } else {
-        ::pkg_archive $unpkgdir $pkg
-    }
-	# cleanup/remove the old .unpkg dir
-    catch_die {file delete -force ${unpkgdir}} "Could not delete directory:$unpkgdir for cleanup"
-}
-
-proc remove_node_from_xmb_xml { xml key message} {
-    log "Removing \"$message\" from XML"
-
-    while { [::xml::GetNodeByAttribute $xml "XMBML:View:Attributes:Table" key $key] != "" } {
-        set xml [::xml::RemoveNode $xml [::xml::GetNodeIndicesByAttribute $xml "XMBML:View:Attributes:Table" key $key]]
-    }
-    while { [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key $key] != "" } {
-        set xml [::xml::RemoveNode $xml [::xml::GetNodeIndicesByAttribute $xml "XMBML:View:Items:Query" key $key]]
-    }
-
-    return $xml
-}
-
-proc change_build_upl_xml { xml key message } {
-    log "Not implemented yet"
-}
-
-proc remove_pkg_from_upl_xml { xml key message } {
-    log "Removing \"$message\" package from UPL.xml" 1
-
-    set i 0
-    while { 1 } {
-        set index [::xml::GetNodeIndices $xml "UpdatePackageList:Package" $i]
-        if {$index == "" } break
-        set node [::xml::GetNodeByIndex $xml $index]
-        set data [::xml::GetData $node "Package:Type"]
-        #debug "index: $index :: node: $node :: data: $data"
-        if {[string equal $data $key] == 1 } {
-            #debug "data: $data :: key: $key"
-            set xml [::xml::RemoveNode $xml $index]
-            break
-        }
-        incr i 1
-    }
-    return $xml
-}
-
-proc remove_pkgs_from_upl_xml { xml key message } {
-    log "Removing \"$message\" packages from UPL.xml" 1
-
-    set i 0
-    while { 1 } {
-        set index [::xml::GetNodeIndices $xml "UpdatePackageList:Package" $i]
-        if {$index == "" } break
-        set node [::xml::GetNodeByIndex $xml $index]
-        set data [::xml::GetData $node "Package:Type"]
-        #debug "index: $index :: node: $node :: data: $data"
-        if {[string equal $data $key] == 1 } {
-            #debug "data: $data :: key: $key"
-            set xml [::xml::RemoveNode $xml $index]
-            incr i -1
-        }
-        incr i 1
-    }
-    return $xml
-}
 
 # .rco files handling routines
 proc rco_dump {rco rco_xml rco_dir} {
@@ -1462,6 +1345,42 @@ proc modify_rco_file {rco_file callback args} {
 proc modify_rco_files {path rco_files callback args} {
     modify_devflash_files $path $rco_files callback_modify_rco $callback $args
 }
+
+# func for modifying the "UPL.xml.pkg" file
+proc modify_upl_file {callback args} {	
+	
+    log "Modifying UPL.xml file"	
+    set file "content"
+    
+    set pkg [file join ${::CUSTOM_UPDATE_DIR} UPL.xml.pkg]
+    set unpkgdir [file join ${::CUSTOM_UPDATE_DIR} UPL.xml.unpkg]
+	set orgunpkgdir [file join ${::ORIGINAL_UPDATE_DIR} UPL.xml.unpkg]
+
+	# unpkg the archive in the 'MFW' dir
+    ::unpkg_archive $pkg $unpkgdir
+	# unpkg the archive in the 'OFW' dir (for importing content info)
+    ::unpkg_archive $pkg $orgunpkgdir	
+
+	# verify 'file' is writable/etc before it's patched
+    if {[file writable [file join $unpkgdir $file]] } {
+        eval $callback [file join $unpkgdir $file] $args
+    } elseif { ![file exists [file join $unpkgdir $file]] } {
+        die "Could not find $file in $unpkgdir"
+    } else {
+        die "File $file is not writable in $unpkgdir"
+    }
+	
+	# if we are >= 3.56 FW, we need to build the new
+	# "spkg" headers, otherwise use normal pkg build	
+	if {${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE}} {    
+		::pkg_spkg_archive $unpkgdir $pkg
+        ::copy_spkg
+    } else {
+        ::pkg_archive $unpkgdir $pkg
+    }
+	# cleanup/remove the old .unpkg dir
+    catch_die {file delete -force ${unpkgdir}} "Could not delete directory:$unpkgdir for cleanup"
+}
 # func. to retrieve xml tagged data from file
 proc get_header_key_upl_xml { file key message } {
 
@@ -1486,24 +1405,119 @@ proc get_header_key_upl_xml { file key message } {
 # func. to replace the xml tagged data in file
 proc set_header_key_upl_xml { file key replace message } {
 
-    log "Setting \"$message\" information in UPL.xml" 1
+    log "Setting \"$message\" information in UPL.xml" 1	
+	set finaldata ""
     set xml [::xml::LoadFile $file]
 
+	# search the 'xml' data, and try to find the data
+	# based on the 'key'
     set search [::xml::GetData $xml "UpdatePackageList:Header:$key"]
-    if {$search != "" } {
-        debug "$key: $search -> $replace"
+    if {$search != "" } {	
+	
         set fd [open $file r]
+		fconfigure $fd -translation binary 
         set xml [read $fd]
-        close $fd
-     
-        set xml [string map [list $search $replace] $xml]
-     
+        close $fd     
+		
+		# iterate through the 'xml' data, and replace the line
+		# with the found data
+		set lines [split $xml \x0A]
+		foreach line $lines {
+			if { [regsub ($search) $line $replace line] } {
+				log "replaced: $key: $search -> $replace"						
+			}
+			append finaldata $line\x0A
+		}
+        # write out final data
         set fd [open $file w]
-        puts -nonewline $fd $xml
+		fconfigure $fd -translation binary
+        puts -nonewline $fd $finaldata
         close $fd
         return $search
     }
     return ""
+}
+
+# proc to remove single 'node' from XML file
+proc remove_node_from_xmb_xml { xml key message} {
+    log "Removing \"$message\" from XML"
+
+    while { [::xml::GetNodeByAttribute $xml "XMBML:View:Attributes:Table" key $key] != "" } {
+        set xml [::xml::RemoveNode $xml [::xml::GetNodeIndicesByAttribute $xml "XMBML:View:Attributes:Table" key $key]]
+    }
+    while { [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key $key] != "" } {
+        set xml [::xml::RemoveNode $xml [::xml::GetNodeIndicesByAttribute $xml "XMBML:View:Items:Query" key $key]]
+    }
+
+    return $xml
+}
+# func for changing the PUP buildnum (in PUP and in UPL.xml)
+# the '<BUILD>buildnum, buildate</BUILD>' tag
+proc change_build_upl_xml { filename buildnum } {
+
+    log "Changing Buildnum in UPL.xml...."
+	# retrieve the '<BUILD>.....</BUILD>' xml tag
+	set data [::get_header_key_upl_xml $filename Build Build]	
+	if { [regexp {(^[0-9]{5,5}),.*} $data none orgbuild] == 0} {
+		die "Failed to locate build number in UPL file!\n"
+	}		
+	# make sure the user supplied 'buildnum' is same
+	# length as original, or error out		
+	if {[string length $buildnum] != [string length $orgbuild]} {
+		die "Error: build number:$buildnum is invalid!!\n"
+	}		
+	# substitute in the new build number
+	if {[regsub ($orgbuild) $data $buildnum data] == 0} {
+		die "Failed updating build number in UPL file\n"
+	}				
+	# update the <BUILD>....</BUILD> data
+	set xml [::set_header_key_upl_xml $filename Build "${data}" Build]
+	if { $xml == "" } {
+		die "Updating build number in UPL.xml failed...."
+	} 	
+	# go set the global '::BUILDNUM'
+	::set_pup_build $buildnum
+}
+
+# remove single pkg from UPL.xml
+proc remove_pkg_from_upl_xml { xml key message } {
+    log "Removing \"$message\" package from UPL.xml" 1
+
+    set i 0
+    while { 1 } {
+        set index [::xml::GetNodeIndices $xml "UpdatePackageList:Package" $i]
+        if {$index == "" } break
+        set node [::xml::GetNodeByIndex $xml $index]
+        set data [::xml::GetData $node "Package:Type"]
+        #debug "index: $index :: node: $node :: data: $data"
+        if {[string equal $data $key] == 1 } {
+            #debug "data: $data :: key: $key"
+            set xml [::xml::RemoveNode $xml $index]
+            break
+        }
+        incr i 1
+    }
+    return $xml
+}
+# remove pkgs from UPL.xml file
+proc remove_pkgs_from_upl_xml { xml key message } {
+    log "Removing \"$message\" packages from UPL.xml" 1
+
+    set i 0
+    while { 1 } {
+        set index [::xml::GetNodeIndices $xml "UpdatePackageList:Package" $i]
+        if {$index == "" } break
+        set node [::xml::GetNodeByIndex $xml $index]
+        set data [::xml::GetData $node "Package:Type"]
+        #debug "index: $index :: node: $node :: data: $data"
+        if {[string equal $data $key] == 1 } {
+            #debug "data: $data :: key: $key"
+            set xml [::xml::RemoveNode $xml $index]
+            incr i -1
+        }
+        incr i 1
+    }
+    return $xml
 }
 
 # func. for 'decrypting' an SPP file

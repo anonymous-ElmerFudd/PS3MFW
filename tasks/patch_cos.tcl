@@ -8,36 +8,42 @@
 # License ("GPL") version 3, as published by the Free Software Foundation.
 #
 
-# Priority: 0000
-# Description: PATCH CORE-OS
+# Priority: 0001
+# Description: REQ'D - **CORE-OS PATCHES**
 
-# Option --patch-lv0-nodescramble-lv1ldr: [3.xx/4.xx]  LV0: --> Patch to disable LV0 descrambling of LV1LDR (3.xx/4.xx)
-# Option --patch-lv0-ldrs-ecdsa-checks: [3.xx/4.xx]  LV0: --> Patch to disable ECDSA checks in ALL LV0-loaders (3.xx/4.xx)
-# Option --patch-lv1-peek-poke: [3.xx/4.xx]  LV1: --> Patch for peek/poke support (unused lv1 calls 182 and 183) (3.xx/4.xx)
-# Option --patch-lv1-remove-lv2-protection: [3.xx/4.xx]  LV1: --> Patch to remove LV2 protection (3.xx/4.xx)
+# Option --patch-lv0-nodescramble-lv1ldr: [3.xx/4.xx]  LV0: --> Patch LV0 to disable LV0 descrambling of LV1LDR (3.xx/4.xx)
+# Option --patch-lv0-ldrs-ecdsa-checks: [3.xx/4.xx]  LV0: --> Patch LV0 LDRS to disable ECDSA checks in ALL LV0-loaders (3.xx/4.xx)
+# Option --patch-lv1-peek-poke: [3.xx/4.xx]  LV1: --> Patch LV1 for peek/poke support (unused lv1 calls 182 and 183) (3.xx/4.xx)
+# Option --patch-lv1-remove-lv2-protection: [3.xx/4.xx]  LV1: --> Patch LV1 to remove LV2 protection (3.xx/4.xx)
+# Option --patch-lv1-coreos-hash-check: [3.xx/4.xx]  LV1: --> Patch LV1 to disable CoreOS Hash check. Product mode always on (downgrader)
+# Option --patch-lv1-sysmgr-disable-integrity-check: [3.xx/4.xx]  LV1: --> Patch LV1 to disable integrity check in System Manager (OtherOS++/downgrader)
 # Option --patch-lv2-peek-poke-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to add Peek&Poke system calls (3.xx/4.xx)
 # Option --patch-lv2-lv1-peek-poke-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to add LV1 Peek&Poke system calls (LV1 peek/poke patch necessary) (3.xx/4.xx)
 # Option --patch-lv2-npdrm-ecdsa-check: [3.xx/4.xx]  LV2: --> Patch LV2 to disable NPDRM ECDSA check  (Jailbait) (3.xx/4.xx)
-# Option --patch-lv2-payload-hermes-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to implement hermes payload SC8 /app_home/ redirection & embedded app mount (3.xx/4.xx)
 # Option --patch-lv2-SC36-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to implement SysCall36 (3.xx/4.xx)
+# Option --patch-misc-rogero-patches: [3.xx/4.xx]  LV2: --> Patch LV2 with misc ROGERO patches
+# Option --patch-lv2-payload-hermes-4x: [3.xx/4.xx]  LV2: --> Patch LV2 to implement hermes payload SC8 /app_home/ redirection & embedded app mount (3.xx/4.xx)
 # Option --patch-spkg-ecdsa-check: [3.xx/4.xx]  ALT: --> Patch SPU PKG Verifier to disable ECDSA check for spkg files (spu_pkg_rvk_verifier.self) (3.xx/4.xx)
 # Option --patch-sppverifier-ecdsa-check: [3.xx/4.xx]  ALT: --> Patch SPP Verifier to disable ECDSA check (spp_verifier.self) (3.xx/4.xx)
 # Option --patch-sputoken-ecdsa-check: [3.xx/4.xx]  ALT: --> Patch SPU Token Processor to disable ECDSA check (spu_token_processor.self) (3.xx/4.xx)
-# Option --patch-RSOD-bypass: [3.xx/4.xx]  ALT: --> Patch to bypass RSOD errors (basic_plugins.sprx) (3.xx/4.xx)
+# Option --patch-RSOD-bypass: [3.xx/4.xx]  ALT: --> Patch BASIC_PLUGINS to bypass RSOD errors (3.xx/4.xx)
 
 # Type --patch-lv0-nodescramble-lv1ldr: boolean
 # Type --patch-lv0-ldrs-ecdsa-checks: boolean
+# Type --patch-lv1-peek-poke: boolean
+# Type --patch-lv1-remove-lv2-protection: boolean
+# Type --patch-lv1-coreos-hash-check: boolean
+# Type --patch-lv1-sysmgr-disable-integrity-check: boolean
 # Type --patch-lv2-peek-poke-4x: boolean
 # Type --patch-lv2-lv1-peek-poke-4x: boolean
 # Type --patch-lv2-npdrm-ecdsa-check: boolean
-# Type --patch-lv2-payload-hermes-4x: boolean
 # Type --patch-lv2-SC36-4x: boolean
+# Type --patch-misc-rogero-patches: boolean
+# Type --patch-lv2-payload-hermes-4x: boolean
 # Type --patch-spkg-ecdsa-check: boolean
 # Type --patch-sppverifier-ecdsa-check: boolean
 # Type --patch-sputoken-ecdsa-check: boolean
 # Type --patch-RSOD-bypass: boolean
-# Type --patch-lv1-peek-poke: boolean
-# Type --patch-lv1-remove-lv2-protection: boolean
 
 namespace eval ::patch_cos {
 	
@@ -50,11 +56,14 @@ namespace eval ::patch_cos {
 		--patch-lv0-ldrs-ecdsa-checks true
 		--patch-lv1-peek-poke true
 		--patch-lv1-remove-lv2-protection true
+		--patch-lv1-coreos-hash-check true
+	    --patch-lv1-sysmgr-disable-integrity-check true
 		--patch-lv2-peek-poke-4x true
         --patch-lv2-lv1-peek-poke-4x true
         --patch-lv2-npdrm-ecdsa-check true
-        --patch-lv2-payload-hermes-4x true
 		--patch-lv2-SC36-4x true
+		--patch-misc-rogero-patches true
+        --patch-lv2-payload-hermes-4x true		
 		--patch-spkg-ecdsa-check true
 		--patch-sppverifier-ecdsa-check true
 		--patch-sputoken-ecdsa-check true
@@ -374,6 +383,39 @@ namespace eval ::patch_cos {
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                         
         }
+		# if "--patch-lv1-coreos-hash-check" enabled, patch it		
+        if {$::patch_cos::options(--patch-lv1-coreos-hash-check)} {
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55: 0x2C1FA0
+			# OFW 3.60: 0x2C21CC
+			# OFW 4.46: 0x2DFA7C
+            log "Patch CoreOS Hash check. Product mode always on (downgrader) (2891684)"            		    
+           #set search  "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01" -- old value --			
+			set search  "\x2F\x80\x00\xFF\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2"									
+            set replace "\x60\x00\x00\x00"
+			set offset 4
+         
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                       
+        }
+		# if "--patch-lv1-sysmgr-disable-integrity-check" enabled, patch it		
+        if {$::patch_cos::options(--patch-lv1-sysmgr-disable-integrity-check)} {	
+			# **** NOTE:  MAY NEED TO OPTIMIZE BETTER....(patch offset is past the match bytes)  ****
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x21D0A0 (0x44D0A0)
+			# OFW 3.60 == 0x21D0BC (0x44D0BC)
+			# OFW 4.46 == 0x23A980 (0x44A980)   
+			#set search  "\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2\x85\x78"
+			#set replace "\x60\x00\x00\x00"
+			#set replace "\x38\x60\x00\x00" -- old patch?? or is this correct???
+            log "Patching System Manager to disable integrity check (OtherOS++/downgrader) (2216116)"            
+            set search  "\x38\x60\x00\x01\xf8\x01\x00\x90\x88\x1f\x00\x00\x2f\x80\x00\x00"		   
+            set replace "\x60\x00\x00\x00"
+			set offset 20
+            
+			# PATCH THE ELF BINARY
+			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+        }
 		log "Done LV1 patches...."	
 	}
 	### ------------------------------------- END:    Do_LV1_Patches{} --------------------------------------------- ###  				
@@ -586,6 +628,22 @@ namespace eval ::patch_cos {
 			set offset 8
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			 
+		}
+		log "Applying MISC LV2 patches (QA Flag patches???)...."	
+		if {$::patch_cos::options(--patch-misc-rogero-patches)} {		    
+			# verified OFW ver. 3.55 - 4.46+
+			# OFW 3.55 == 0x29A3EC (0x28A3EC)
+			# OFW 3.60 == 0x29AC54 (0x28AC54)
+			# OFW 3.70 == 0x2A0188 (0x290188)  
+			# OFW 4.46 == 0x2A72FC (0x2972FC)
+			# OFW 4.50 == 0x27F608 (0x26F608)
+			log "Patching LV2_KERNEL with Rogero QA Flag patch??"						 
+			set search    "\x7C\x09\xFE\x76\x7D\x23\x02\x78\x7C\x69\x18\x50\x38\x63\xFF\xFF"
+			append search "\x78\x63\x0F\xE0\x4E\x80\x00\x20\x80\x03\x02\x6C"
+			set replace   "\x38\x60\x00\x00\x7C\x63\x07\xB4\x4E\x80\x00\x20"
+			set offset 24       				
+			# PATCH THE ELF BINARY
+            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  		
 		}
 		# if "--patch-lv2-payload-hermes-4x" enabled, then patch
 		if {$::patch_cos::options(--patch-lv2-payload-hermes-4x)} {
@@ -816,7 +874,7 @@ namespace eval ::patch_cos {
 			# OFW 3.60: 0x29C (0xA1C)
 			# OFW 4.30: 0x29C (0xA1C)
 			# OFW 4.46: 0x29C (0xA1C)
-            log "Patching SPU_TOKEN_PROCESSOR to disable ECDSA check"  
+            log "Patching SPU_TOKEN_PROCESSOR to disable ECDSA check" 			
 			set self "spu_token_processor.self"
 			set file [file join $path $self]			
           

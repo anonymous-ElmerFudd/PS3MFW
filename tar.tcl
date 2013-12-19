@@ -428,7 +428,7 @@ proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
 	set mytotal 0	
 	set nofinalpad 0
 	set nodirs 0
-    parseOpts {dereference 0 nodirs 0 nofinalpad 0} $args		
+    parseOpts {dereference 0 nodirs 0} $args		
     
 	set fh [::open $tar w+]
 	fconfigure $fh -encoding binary -translation lf -eofchar {}   
@@ -452,13 +452,8 @@ proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
 			} else { die "file not found:$x" }
 		}
     }
-	# -- skip padding the file (if -nopad) ---
-	if {! $nofinalpad} {
-		puts -nonewline $fh [string repeat \x00 1024]
-	} else {
-		log "skipping file padding!"
-	}
-    
+	# always finalize file with 'two' 512-byte empty sectors
+	puts -nonewline $fh [string repeat \x00 1024]    
 	close $fh    
     return $tar
 }

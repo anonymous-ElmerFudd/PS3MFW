@@ -201,12 +201,12 @@ proc build_mfw {input output tasks} {
 	### ----------  !!!! DONE EXEUCTION OF TASKS !!! --------------------------- ###
 	
 	#repack the CORE_OS files here, pass the 
-	# SELF-SCE Headers array
-	::repack_coreos_files LV0_SCE_HDRS
+	# SELF-SCE Headers array	
+	::repack_coreos_files LV0_SCE_HDRS	
 
     # RECREATE PS3UPDAT.PUP
     file delete -force ${::CUSTOM_DEVFLASH_DIR}
-	debug "custom dev_flash deleted"
+	debug "custom dev_flash deleted"	
 	
 	# if firmware is >= 3.56, we need to repack spkg files	
 	if { ${::NEWMFW_VER} >= ${::OFW_2NDGEN_BASE} } {		
@@ -246,3 +246,5 @@ proc build_mfw {input output tasks} {
     pack_custom_pup ${::CUSTOM_PUP_DIR} ${final_output}
 	log "CUSTOM FIMWARE VER:$::OFW_MAJOR_VER.$::OFW_MINOR_VER BUILD COMPLETE!!!"
 }
+#
+# ---------------------------------------  END OF TASKS SCRIPT --------------------------------------------- #
