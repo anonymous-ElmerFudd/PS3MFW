@@ -52,12 +52,12 @@ namespace eval ::broken_bluray {
         set xml [read $fd]
         close $fd     		
 		
-		# iterate through the 'xml' data		
-		append finaldata "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\x0A"
-		#append finaldata $xml
-		set lines [split $xml "\x0A"]
-		foreach line $lines {
-			regsub "\x0D" $line "\x0A" line
+		# iterate through the 'xml' data
+		# since the "xml.tcl" removes the original xml header, we
+		# need to add it back!!
+		append finaldata "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\x0A"		
+		set lines [split $xml "\x0D"]
+		foreach line $lines {			
 			append finaldata $line
 		}
         # write out final data

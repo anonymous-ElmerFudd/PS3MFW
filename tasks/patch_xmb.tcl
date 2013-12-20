@@ -102,6 +102,25 @@ namespace eval patch_xmb {
 		set ::patch_xmb::rapen "cond=An+Game:Game.category X4+An+Game:Game.category X0+An+Game:Game.category"
 		
 		
+		# modify the "category_game.xml"
+		if {($::patch_xmb::options(--patch-package-files)) || ($::patch_xmb::options(--patch-app-home))} {
+		
+			log "Adding '*Install Package Files/APP_HOME' icons back into XMB....." 
+			::modify_devflash_file $::patch_xmb::CATEGORY_GAME_XML ::patch_xmb::category_game_addpkgfiles
+			
+			# if patch-package enabled, need to check if modules also need to be
+			# patched (depending on FW rev)
+			if {$::patch_xmb::options(--patch-package-files)} {												
+				if {${::NEWMFW_VER} >= "4.00"} {
+					log ".......MFW is 4.xx, modifying explore_xxx.sprx files first......" 
+					modify_devflash_files [file join dev_flash vsh module] $::patch_xmb::ACTIVATE_IPF ::patch_xmb::patch_self
+				} else {
+					log ".......MFW is 3.xx, no need to modify explore_xxx.sprx files......."
+				}
+				log ".......Modifying xml for *Install Package files back to XMB...."
+			}				
+		}
+		
 		# if homebrew options enabled, setup the homebrew segments
 		if {$::patch_xmb::options(--add-install-pkg) || $::patch_xmb::options(--add-pkg-mgr) || $::patch_xmb::options(--add-hb-seg) || $::patch_xmb::options(--add-emu-seg)} {
 		    ::modify_rco_file $::patch_xmb::EXPLORE_PLUGIN_FULL_RCO ::patch_xmb::callback_homebrew
@@ -113,20 +132,10 @@ namespace eval patch_xmb {
 		        ::modify_rco_file $::patch_xmb::EXPLORE_PLUGIN_FULL_RCO ::patch_xmb::callback_discless
 		        ::modify_rco_file $::patch_xmb::XMB_INGAME_RCO ::patch_xmb::callback_discless
 		    }
-		}
-		# if "--patch-package-files" option enabled, patch the files
-		if {$::patch_xmb::options(--patch-package-files)} {
-			log "Adding *Install Package Files icon back into XMB....." 
-			if {${::NEWMFW_VER} >= "4.00"} {
-				log ".......MFW is 4.xx, modifying explore_xxx.sprx files first......" 
-				modify_devflash_files [file join dev_flash vsh module] $::patch_xmb::ACTIVATE_IPF ::patch_xmb::patch_self
-			} else {
-				log ".......MFW is 3.xx, no need to modify explore_xxx.sprx files......."
-			}
-			log ".......Modifying xml for *Install Package files back to XMB........." 
-		}
-        # modify the "category_game.xml"
-		if {$::patch_xmb::options(--patch-app-home)  || $::patch_xmb::options(--patch-package-files) || $::patch_xmb::options(--patch-alpha-sort) || $::patch_xmb::options(--patch-rape-sfo) || [expr {$::patch_xmb::options(--homebrew-cat) ne ""}]} {			
+		}	       
+		
+		if {$::patch_xmb::options(--patch-alpha-sort) || $::patch_xmb::options(--patch-rape-sfo) ||
+		[expr {$::patch_xmb::options(--homebrew-cat) ne ""}]} {		
 		    ::modify_devflash_file $::patch_xmb::CATEGORY_GAME_XML ::patch_xmb::patch_xml	    
 		}
         # modify the "xmb_plugin.sprx"
@@ -150,15 +159,8 @@ namespace eval patch_xmb {
             ::patch_xmb::read_cat ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::NET_CAT_XML 
             ::patch_xmb::inject_nodes ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::NET_CAT_XML 
             ::patch_xmb::inject_cat ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::PSN_CAT_XML 
-        }
-        
-        if {$::patch_xmb::options(--patch-app-home) || $::patch_xmb::options(--patch-package-files) } {
-            if {$::patch_xmb::pointer_xmb == 0} {
-				::patch_xmb::find_nodes1 ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::CATEGORY_GAME_TOOL2_XML 
-            }			
-		    ::patch_xmb::inject_nodes2 ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::CATEGORY_GAME_XML
-		}
-	  
+        }     
+        	  
 		if {$::patch_xmb::options(--patch-alpha-sort)} {
 			::patch_xmb::alpha_sort ${::CUSTOM_DEVFLASH_DIR} $::patch_xmb::REGISTORY_XML 
         }
@@ -674,22 +676,14 @@ namespace eval patch_xmb {
 		set filepath [file join $path $file]		
         set xml [::xml::LoadFile $filepath]
         
-        if {$::patch_xmb::options(--add-install-pkg) || $::patch_xmb::options(--patch-package-files)} {
+        if {$::patch_xmb::options(--add-install-pkg)} {
             set ::query_package_files [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_package_files"]
             set ::view_package_files [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_package_files"]
             set ::view_packages [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_packages"]         
             if {$::query_package_files == "" || $::view_package_files == "" || $::view_packages == "" } {
                 die "Could not parse $file"
             }
-        }
-        
-        if {$::patch_xmb::options(--patch-app-home)} {
-            set ::query_gamedebug [::xml::GetNodeByAttribute $xml "XMBML:View:Items:Query" key "seg_gamedebug"]
-            set ::view_gamedebug [::xml::GetNodeByAttribute $xml "XMBML:View" id "seg_gamedebug"]         
-            if {$::query_gamedebug == "" || $::view_gamedebug== "" } {
-                die "Could not parse $file"
-            }
-        }		
+        }               
     }
     
     proc find_nodes2 { path file } {
@@ -804,7 +798,71 @@ namespace eval patch_xmb {
 			}
         }		
     }
-   
+    ######################################################################################################################
+	#
+    proc category_game_addpkgfiles { file } {	        
+		
+		log "Modifying XML(for *InstallPkg):[file tail $file]"		
+		set filepath [file join ${::CUSTOM_DEVFLASH_DIR} $file]		
+		
+		set fd [open $file r]
+		fconfigure $fd -translation binary 
+        set xml [read $fd]
+        close $fd         
+
+		set totalquery ""		
+		# pkgquery for '*Install PKG Files'
+		log "Adding '*Install PKG Files' back into XML....."
+		set pkgquery 	"\n\t\t\t<Query\n"
+		append pkgquery "\t\t\t\tclass=\"type:x-xmb/folder-pixmap\"\n"
+		append pkgquery "\t\t\t\tkey=\"seg_package_files\"\n"
+		append pkgquery "\t\t\t\tsrc=\"xmb://localhost/%flash/xmb/category_game_tool2.xml#seg_package_files\"\n"
+		append pkgquery "\t\t\t\t/>"
+		# if '--patch-package-files' enabled, append the query to the 'install-pkg-files' query
+		if {$::patch_xmb::options(--patch-package-files)} {
+			append totalquery $pkgquery
+		}
+		
+		# pkgquery for 'app_home' icon	
+		log "Adding 'APP_HOME' icon back into XML....."		
+		set apphomequery 	"\n\t\t\t<Query\n"
+		append apphomequery "\t\t\t\tclass=\"type:x-xmb/folder-pixmap\"\n"
+		append apphomequery "\t\t\t\tkey=\"seq_gamedebug\"\n"
+		append apphomequery "\t\t\t\tsrc=\"xmb://localhost/%flash/xmb/category_game_tool2.xml#seg_gamedebug\"\n"
+		append apphomequery "\t\t\t\t/>"		
+		# if 'app-home' enabled, append the query to the 'install-pkg-files' query
+		if {$::patch_xmb::options(--patch-app-home)} {
+			append totalquery $apphomequery
+		}			
+		
+		set inserted 0
+		set finaldata ""	
+		set lines [split $xml "\x0D"]
+		foreach line $lines {			
+			if {$inserted == 0} {
+				if {([string first "<Items>" $line 0] != -1)} {
+					set inserted 1
+					append finaldata $line
+					append finaldata $totalquery
+				} else {
+					append finaldata $line
+				}
+			} else {
+				append finaldata $line
+			}
+		}
+        # write out final data
+		log "Saving XML file:[file tail $filepath]"
+        set fd [open $filepath w]
+		fconfigure $fd -translation binary
+        puts -nonewline $fd $finaldata
+        close $fd         	
+       
+    }
+	#
+	#######################################     end of "category_game_addpkgfiles"  #########################################################
+	
+	
     ######################################################################################################################
 	#
     proc inject_nodes2 { path file } {
