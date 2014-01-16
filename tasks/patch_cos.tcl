@@ -646,14 +646,7 @@ namespace eval ::patch_cos {
             catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  		
 		}
 		# if "--patch-lv2-payload-hermes-4x" enabled, then patch
-		if {$::patch_cos::options(--patch-lv2-payload-hermes-4x)} {
-		
-			# vars for setting up the hermes payload,
-			# and the various offsets, etc
-			set payloadaddr_byte3 0
-			set payloadaddr_byte2 0
-			set payloadaddr_byte1 0
-			
+		if {$::patch_cos::options(--patch-lv2-payload-hermes-4x)} {								
 			
 			## ------------------------------------------------------------------------------------------------------- ##
 			## ------------------------------- FIND THE OFFSETs FOR THE HERMES PAYLOAD SETUP ------------------------- ##
@@ -715,13 +708,13 @@ namespace eval ::patch_cos {
 			
 			set got_data 0
 			# PATCH1: extract out the bytes of the 'string1' (patch1)
-			set temp [format %.8X $hermes_payload_data(--patch1_data)]	
-			set temp [binary format H* $temp]
-			if {[string length $temp] == 4} {
-				set p1byte4 [string index $temp 0]
-				set p1byte3 [string index $temp 1]
-				set p1byte2 [string index $temp 2]
-				set p1byte1 [string index $temp 3]
+			set temp [format %llX $hermes_payload_data(--patch1_data)]				
+			set temp [binary format H* $temp]			
+			if {[string length $temp] == 8} {
+				set p1byte4 [string index $temp 4]
+				set p1byte3 [string index $temp 5]
+				set p1byte2 [string index $temp 6]
+				set p1byte1 [string index $temp 7]
 				incr got_data 1
 			} 			
 			# PATCH2: extract out the bytes of the 'payload_branch_address1' (patch2)
@@ -735,13 +728,13 @@ namespace eval ::patch_cos {
 				incr got_data 1
 			} 
 			# PATCH3: extract out the bytes of the 'string2' (patch3)
-			set temp [format %.8X $hermes_payload_data(--patch3_data)]	
+			set temp [format %llX $hermes_payload_data(--patch3_data)]	
 			set temp [binary format H* $temp]
-			if {[string length $temp] == 4} {
-				set p3byte4 [string index $temp 0]
-				set p3byte3 [string index $temp 1]
-				set p3byte2 [string index $temp 2]
-				set p3byte1 [string index $temp 3]
+			if {[string length $temp] == 8} {
+				set p3byte4 [string index $temp 4]
+				set p3byte3 [string index $temp 5]
+				set p3byte2 [string index $temp 6]
+				set p3byte1 [string index $temp 7]
 				incr got_data 1
 			} 
 			# PATCH4: extract out the bytes of the 'payload_branch_address2' (patch4)
@@ -765,23 +758,31 @@ namespace eval ::patch_cos {
 				incr got_data 1
 			} 
 			# PATCH6: extract out the bytes of the 'string2_address' (patch6)
-			set temp [format %.8X $hermes_payload_data(--patch6_data)]	
+			set temp [format %llX $hermes_payload_data(--patch6_data)]	
 			set temp [binary format H* $temp]
-			if {[string length $temp] == 4} {
-				set p6byte4 [string index $temp 0]
-				set p6byte3 [string index $temp 1]
-				set p6byte2 [string index $temp 2]
-				set p6byte1 [string index $temp 3]
+			if {[string length $temp] == 8} {
+				set p6byte8 [string index $temp 0]
+				set p6byte7 [string index $temp 1]
+				set p6byte6 [string index $temp 2]
+				set p6byte5 [string index $temp 3]
+				set p6byte4 [string index $temp 4]
+				set p6byte3 [string index $temp 5]
+				set p6byte2 [string index $temp 6]
+				set p6byte1 [string index $temp 7]
 				incr got_data 1
 			}
 			# PATCH7: extract out the bytes of the 'string3_address' (patch7)
-			set temp [format %.8X $hermes_payload_data(--patch7_data)]	
+			set temp [format %llX $hermes_payload_data(--patch7_data)]	
 			set temp [binary format H* $temp]
-			if {[string length $temp] == 4} {
-				set p7byte4 [string index $temp 0]
-				set p7byte3 [string index $temp 1]
-				set p7byte2 [string index $temp 2]
-				set p7byte1 [string index $temp 3]
+			if {[string length $temp] == 8} {
+				set p7byte8 [string index $temp 0]
+				set p7byte7 [string index $temp 1]
+				set p7byte6 [string index $temp 2]
+				set p7byte5 [string index $temp 3]
+				set p7byte4 [string index $temp 4]
+				set p7byte3 [string index $temp 5]
+				set p7byte2 [string index $temp 6]
+				set p7byte1 [string index $temp 7]
 				incr got_data 1
 			}	
 			# verify all hermes setup data was extracted from the array
@@ -791,19 +792,22 @@ namespace eval ::patch_cos {
 			# now build the final 'hermes' payload, populate in all the patch
 			# bytes calculated above
 			log "Patching Hermes payload 4.xx into LV2"	
+			set ACTUAL_HERMES_PAYLOAD_SIZE 0xB0	;# the actual exact size this payload must be
 			set search $hermes_payload_data(--payloadspot_pattern)
 			set replace    	"\xF8\x21\xFF\x61\x7C\x08\x02\xA6\xFB\x81\x00\x80\xFB\xA1\x00\x88"
 			append replace  "\xFB\xE1\x00\x98\xFB\x41\x00\x70\xFB\x61\x00\x78\xF8\x01\x00\xB0" 
 			append replace  "\x7C\x9C\x23\x78\x7C\x7D\x1B\x78\x3B\xE0\x00\x01\x7B\xFF\xF8\x06"
-			append replace  "\x67\xE4\x00$p1byte3\x60\x84$p1byte2$p1byte1\x38\xA0\x00\x02\x4B$p2byte3$p2byte2$p2byte1"	;# patches 1 & 2 in this line
-			append replace  "\x28\x23\x00\x00\x40\x82\x00\x28\x67\xFF\x00$p3byte3\x63\xFF$p3byte2$p3byte1"				;# patch3 in this line
+			append replace  "\x67\xE4\x00$p1byte3\x60\x84$p1byte2$p1byte1\x38\xA0\x00\x02\x4B$p2byte3$p2byte2$p2byte1"		;# patches 1 & 2 in this line
+			append replace  "\x28\x23\x00\x00\x40\x82\x00\x28\x67\xFF\x00$p3byte3\x63\xFF$p3byte2$p3byte1"					;# patch3 in this line
 			append replace  "\xE8\x7F\x00\x00\x28\x23\x00\x00\x41\x82\x00\x14\xE8\x7F\x00\x08"
-			append replace  "\x38\x9D\x00\x09\x4B$p4byte3$p4byte2$p4byte1\xEB\xBF\x00\x00\x7F\xA3\xEB\x78"				;# patch4 in this line
-			append replace  "\x4B$p5byte3$p5byte2$p5byte1\x2F\x61\x70\x70\x5F\x68\x6F\x6D\x65\x00\x00\x00"				;# patch5 in this line
-			append replace  "\x00\x00\x00\x00\x80\x00\x00\x00\x00$p6byte3$p6byte2$p6byte1\x80\x00\x00\x00"				;# patch6 in this line
-			append replace  "\x00$p7byte3$p7byte2$p7byte1\x2F\x64\x65\x76\x5F\x66\x6C\x61\x73\x68\x2F\x70"				;# patch7 in this line
-			append replace  "\x6B\x67\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"	
+			append replace  "\x38\x9D\x00\x09\x4B$p4byte3$p4byte2$p4byte1\xEB\xBF\x00\x00\x7F\xA3\xEB\x78"					;# patch4 in this line
+			append replace  "\x4B$p5byte3$p5byte2$p5byte1\x2F\x61\x70\x70\x5F\x68\x6F\x6D\x65\x00\x00\x00"					;# patch5 in this line
+			append replace  "\x00\x00\x00\x00$p6byte8$p6byte7$p6byte6$p6byte5$p6byte4$p6byte3$p6byte2$p6byte1"				;# patch6 in this line
+			append replace  "$p7byte8$p7byte7$p7byte6$p7byte5$p7byte4$p7byte3$p7byte2$p7byte1\x2F\x64\x65\x76\x5F\x66"		;# patch7 in this line
+			append replace  "\x6C\x61\x73\x68\x2F\x70\x6B\x67\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"	
 			set offset 8
+			# final sanity check to make sure 'hermes payload' data is exactly the right size
+			if {[string length $replace] != $ACTUAL_HERMES_PAYLOAD_SIZE} { die "hermes payload appears to be corrupt, current length is invalid!" }			
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 				
 			
@@ -909,73 +913,151 @@ namespace eval ::patch_cos {
 		# if verbose mode enabled
 		if { $::options(--task-verbose) } {
 			set verbosemode yes
+		}				
+		
+		### ------------------------------------------------------------------------------------------------ ###
+		### -------------------------- INITIAL ELF 32/64 HEADER DATA --------------------------------------- ###
+		###																									 ###
+		##   ** note:  Just setup both 32/64 bit ELF headers, just in case									  ##
+		##             we need to use the 32-bit in the future 												  ##
+		##             (in our case, LV2_KERNEL is always 64-bit)											  ##
+		##   **																								  ##
+		
+		# read in the first 0x100 bytes of the ELF
+		# file to verify/setup header bytes
+		set fd [open $elf r]
+		fconfigure $fd -translation binary 
+        catch_die {set rawdata [read $fd 255]} "Error, could not read $elf->ELF header data! Exiting\n"
+        close $fd     		
+		
+		set elf_header_32 [string range $rawdata 0 51] 
+		set elf_header_64 [string range $rawdata 0 63] 
+		binary scan $elf_header_32 Iu1cu1cu1cu1cu1cu1a7Su1Su1Iu1Iu1Iu1Iu1Iu1Su2Su2Su2Su2Su2Su2 \
+									elmag elclass eldata elversion elosabi elabiver elpad \
+									eltype elmachine elversion32 elentry32 elphoff32 elshoff32 \
+									elflags32 elehsize32 elphentsize32 elphnum32 elshentsize32 elshnum32 elshstrndx32 
+		binary scan $elf_header_64 Iu1cu1cu1cu1cu1cu1a7Su1Su1Iu1Wu1Wu1Wu1Iu1Su2Su2Su2Su2Su2Su2 \
+									elmag elclass eldata elversion elosabi elabiver elpad \
+									eltype elmachine elversion64 elentry64 elphoff64 elshoff64 \
+									elflags64 elehsize64 elphentsize64 elphnum64 elshentsize64 elshnum64 elshstrndx64 																				
+		
+		# verify elf-magic is ".ELF",
+		# verify lv2_kernel is 64-bit,
+		# verify lv2_kernel is BIG-ENDIAN format
+		if {$elmag != 2135247942} { die "ELF header is invalid!\n" }
+		if {$elclass != 2} { die "ELF is NOT 64-bit, exiting!" }
+		if {$eldata != 2} { die "ELF is NOT BIG-ENDIAN format, exiting!" }
+		
+		# now read in the 'ELF program header'
+		catch_die {set elf_prog_header_64 [string range $rawdata $elphoff64 [expr $elphoff64+56]]} "Error, offset out of range!!"
+		binary scan $elf_prog_header_64 Iu1Iu1Wu1Wu1Wu1Wu1Wu1Wu1 \
+										ptype64 pflags64 poffset64 pvaddr64 ppaddr64 \
+										pfilesz64 pmemsz64 palign64		
+		
+		# verify lv2_kernel 'ptype' is PT_LOAD (ie 0x01),
+		# verify lv2_kernel 'flags' is Read & Execute
+		if {$ptype64 != 1} { die "ELF is NOT PT_LOAD type, exiting!" }				
+		if {$pflags64 != 5} { die "ELF is NOT Read/Execute, exiting!" }
+		if {$pvaddr64 != $ppaddr64} { die "ELF Virtual Address is Not Equal to Physical Address, scripts now needs fixing!!!" }					
+		
+		# if verbose enabled, log the ELF 
+		# vars read in
+		if {$verbosemode eq yes} {
+			log "Magic is:0x$elmag"
+			log "Class is:0x[format %x $elclass]"
+			log "Data is:0x[format %x $eldata]"
+			log "Entry point is:0x[format %llx $elentry64]"
+			log "Program Header offset is:0x[format %llx $elphoff64]"
+			log "Section Header offset is:0x[format %llx $elshoff64]"
+			log "Program Type is:0x[format %llx $ptype64]"
+			log "Program Flags is:0x[format %llx $pflags64]"
+			log "Program Begin FileOffset is:0x[format %llx $poffset64]"
+			log "Program Virtual Addr is:0x[format %llx $pvaddr64]"
+			log "Program Phys. Addr is:0x[format %llx $ppaddr64]\n"
 		}
+		###
+		### -------------------------- DONE INITIAL ELF 32/64 HEADER PARSING ------------------------------- ###
+		### ------------------------------------------------------------------------------------------------ ###						
+		
+		
+		# all checks passed, setup the actual: 
+		# 1) 64-bit LV2_KERNEL base address, and
+		# 2) 64-bit LV2_KERNEL 'starting offset' from the ELF file
+		set LV2_KERNEL_BASEADDR_64 $pvaddr64
+		set LV2_KERNEL_PROGRAM_STARTOFFSET $poffset64
+		
 		# vars for setting up the hermes payload,
-		# and the various offsets, etc
-		# base address start for lv2 code is offset 0x10000
-		set lv2_baseaddress_offset 65536		;# 'LV2' code starts from offset 0x10000 in ELF
+		# and the various offsets, etc				
 		set hermes_payload_install_spot 0
 		set hermes_payload_jmp_address 0
 		set hermes_jmp_offset 0
 		set offsetpatch ""
 
-		set lv2_offset_branch1 59
-		set hermes_payload_branch_address1 0	;# offset in hermes payload, to branch out function 1		
-		set lv2_offset_branch2 99
-		set hermes_payload_branch_address2 0	;# offset in hermes payload, to branch out function 2
-		set lv2_offset_ret_branch3 36				
-		set lv2_offset_branch3 112
-		set hermes_payload_branch_address3 0
+		set lv2_offset_branch1 59				;# 0x3B:  offset to 'branch#1' in hermes payload
+		set hermes_payload_branch_address1 0	;# 0x.... 24-bit offset in hermes payload, to branch out function 1		
+		set lv2_offset_branch2 99				;# 0x63:  offset to 'branch#2' in hermes payload
+		set hermes_payload_branch_address2 0	;# 0x.... 24-bit offset in hermes payload, to branch out function 2
+		set lv2_offset_ret_branch3 36			;# 0x24:  offset to return spot from branch#3		
+		set lv2_offset_branch3 112				;# 0x70:  offset to 'branch#3' in hermes payload
+		set hermes_payload_branch_address3 0	;# 0x.... 24-bit offset in hermes payload, to branch out function 3	
 		set hermes_payload_branch_ret_address3 0	
 		
-		set hermes_payload_ptr_string2 132		;# offset in hermes payload, 64-bit pointer to string1 ('/app_home')
-		set hermes_payload_ptr_string3 144		;# offset in hermes payload, 64-bit pointer to string2 ('/dev_flash/pkg')		
+		set hermes_payload_ptr_string2 132		;# 0x84:  offset in hermes payload, 64-bit pointer to string1 ('/app_home')
+		set hermes_payload_ptr_string3 144		;# 0x90:  offset in hermes payload, 64-bit pointer to string2 ('/dev_flash/pkg')		
 		
-		set hermes_payload_offset_string1 116	;# offset in hermes payload to string1 ('/app_home')
-		set hermes_payload_offset_string2 148   ;# offset in hermes payload to string2 ('/dev_flash/pkg')
-		set hermes_payload_offset_string3 162	;# offset in hermes payload to string3 ('')  ** i.e currently unused **											
+		set hermes_payload_offset_string1 116	;# 0x74:  offset in hermes payload to string1 ('/app_home')
+		set hermes_payload_offset_string2 148   ;# 0x94:  offset in hermes payload to string2 ('/dev_flash/pkg')
+		set hermes_payload_offset_string3 162	;# 0xA2:  offset in hermes payload to string3 ('')  ** i.e currently unused **											
 		
 	
 	    # ----------------------------------------------------------------- #
 		# -------------- FIND 'HERMES PAYLOAD INSTALL LOCATION ------------ #
 		# ----------------------------------------------------------------- #
-		# go and find the offset ONLY, to use for final install location
-		set ::FLAG_PATCH_FILE_FINDONLY 1
-		log "finding Hermes payload install location....(find 1/3)"				
+		# go and find the offset ONLY, to use for final install location		
+		log "finding Hermes payload install location....(Hermes Setup 1/4)"	
+		
 		set search $my_payload_data(--payloadspot_pattern)
 		set replace ""			
 		set offset 8
 		# GRAB THE PATCH OFFSET VALUE ONLY
+		set ::FLAG_PATCH_FILE_FINDONLY 1
 		catch_die {set hermes_payload_install_spot [::patch_elf $elf $search $offset $replace]} "Unable to patch self [file tail $elf]" 
-		set hermes_payload_install_spot [expr $hermes_payload_install_spot - $lv2_baseaddress_offset]
+		set hermes_payload_install_spot [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_install_spot - $LV2_KERNEL_PROGRAM_STARTOFFSET]				
 		
 		# -------------- FIND 'HERMES PAYLOAD' JMP TO ADDRESS ------------- #
 		# set the 'flag' to ONLY find the patch offset initially, as we want
-		# to find the offset first, calculate the jmp offset, then do the patch
-		set ::FLAG_PATCH_FILE_FINDONLY 1
-		log "finding Hermes payload jmp spot location....(find 2/3)"	
+		# to find the offset first, calculate the jmp offset, then do the patch		
+		log "finding Hermes payload jmp spot location....(Hermes Setup 2/4)"	
+		
 		set search $my_payload_data(--jmpspot_pattern)		
 		set replace ""
 		set offset 0       				
 		# GRAB THE PATCH OFFSET VALUE ONLY
+		set ::FLAG_PATCH_FILE_FINDONLY 1
 		catch_die {set hermes_payload_jmp_address [::patch_elf $elf $search $offset $replace]} "Unable to patch self [file tail $elf]"
-		set hermes_payload_jmp_address [expr $hermes_payload_jmp_address - $lv2_baseaddress_offset]
+		set hermes_payload_jmp_address [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_jmp_address - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		
 		## verify that the 'hermes' install spot, is PAST the 'jmp to spot', or we need to adjust
 		## the jmp to be a back jmp instead of fwd jmp
 		if {[expr $hermes_payload_install_spot < $hermes_payload_jmp_address]} {
 			die "Unexpected error, hermes install spot needs to be adjusted!, exiting...\n"
-		}
-		# calc. the offset for the 'branch'(jmp) to the hermes payload,
-		# extract out the indiv. bytes for the 'patch'		
+		}				
+		# calc. the offset for the 'branch'(jmp) to the hermes payload,		
+		#
+		# ** initial "JUMP" to the hermes payload MUST be within 24-bit offset, or we are
+		#    out of range, and must move the hermes payload to a new spot **		
 		set hermes_jmp_offset [format %.8X [expr {$hermes_payload_install_spot - $hermes_payload_jmp_address}]]	
-		set temp [binary format H* $hermes_jmp_offset]
+		if {[expr {$hermes_payload_install_spot - $hermes_payload_jmp_address} > 16777215]} { die "Error, hermes install spot is too far from jump to, script needs fixing!!\n" }		
+		
+		# extract out the indiv. bytes for the 'patch'	
+		# 32-bit offset is: 'b4b3b2b1'
+		set temp [binary format H* $hermes_jmp_offset]		
 		if {[string length $temp] == 4} {
 			set byte4 [string index $temp 0]
 			set byte3 [string index $temp 1]
 			set byte2 [string index $temp 2]
 			set byte1 [string index $temp 3]
-			set offsetpatch $byte3$byte2$byte1
+			set offsetpatch $byte3$byte2$byte1			
 		} else {
 			die "failed to extract bytes for Hermes branch offset, exiting!\n"
 		}				
@@ -988,57 +1070,62 @@ namespace eval ::patch_cos {
 		# -------------- FIND 'HERMES PAYLOAD BRANCH ADDRESS 1' ----------- #
 		# ----------------------------------------------------------------- #
 		# set the 'flag' to ONLY find the patch offset initially, as we want
-		# to find the address only
-		set ::FLAG_PATCH_FILE_FINDONLY 1
-		log "finding Hermes branch out address 1/2....(find 3/4)"
+		# to find the address only		
+		log "finding Hermes branch out address 1/2....(Hermes Setup 3/4)"
+		
 		set search    "\x2C\x25\x00\x00\x41\x82\x00\x50\x89\x64\x00\x00\x89\x23\x00\x00"
 		append search "\x55\x60\x06\x3E\x7F\x89\x58\x00"	
 		set replace   ""
 		set offset 0       				
 		# GRAB THE PATCH OFFSET VALUE ONLY
+		set ::FLAG_PATCH_FILE_FINDONLY 1
 		catch_die {set hermes_payload_branch_address1 [::patch_elf $elf $search $offset $replace]} "Unable to patch self [file tail $elf]"
+		set hermes_payload_branch_address1 [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_branch_address1 - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		
 		# verify 'branch address1' is also backwards from 'hermes install location', or
 		# hermes payload branch instruct. needs to be changed
 		if {[expr $hermes_payload_install_spot < $hermes_payload_branch_address1]} {
 			die "Unexpected error, hermes install spot needs to be adjusted!, exiting...\n"
-		}
-		# set the final value for the 'branch1' offset values
-		set hermes_payload_branch_address1 [expr $hermes_payload_branch_address1 - $lv2_baseaddress_offset]		
-		set hermes_payload_branch_address1 [expr $hermes_payload_branch_address1 - ($hermes_payload_install_spot + $lv2_offset_branch1)]						
+		}		
+		# set the final value for the 'branch1' offset values		
+		set hermes_payload_branch_address1 [expr $hermes_payload_branch_address1 - ($hermes_payload_install_spot + $lv2_offset_branch1)]				
+		if {[expr $hermes_payload_branch_address1 < -16777215] || [expr $hermes_payload_branch_address1 > 0]} { die "hermes branch_address1 is invalid, fix script!" }
 		# ----------------------------------------------------------------- #
 		# -------------- END 'HERMES PAYLOAD BRANCH ADDRESS 1' ------------ #
 		# ----------------------------------------------------------------- #
 		
 				
 		# ----------------------------------------------------------------- #
-		# -------------- FIND 'HERMES PAYLOAD BRANCH ADDRESS 2/3' --------- #
+		# -------------- FIND 'HERMES PAYLOAD BRANCH ADDRESS 2&3' --------- #
 		# ----------------------------------------------------------------- #
 		# set the 'flag' to ONLY find the patch offset initially, as we want
-		# to find the address only
-		set ::FLAG_PATCH_FILE_FINDONLY 1
-		log "finding Hermes branch out address 2/2....(find 4/4)"
+		# to find the address only		
+		log "finding Hermes branch out address 2/2....(Hermes Setup 4/4)"
+		
 		set search    "\x88\x04\x00\x00\x2F\x80\x00\x00\x98\x03\x00\x00\x4D\x9E\x00\x20"
 		append search "\x7C\x69\x1B\x78\x8C\x04\x00\x01\x2F\x80\x00\x00"		
 		set replace   ""
 		set offset 0       				
 		# GRAB THE PATCH OFFSET VALUE ONLY
+		set ::FLAG_PATCH_FILE_FINDONLY 1
 		catch_die {set hermes_payload_branch_address2 [::patch_elf $elf $search $offset $replace]} "Unable to patch self [file tail $elf]" 
+		set hermes_payload_branch_address2 [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_branch_address2 - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		
 		# verify 'branch address2' is also backwards from 'hermes install location', or
 		# hermes payload branch instruct. needs to be changed
 		if {[expr $hermes_payload_install_spot < $hermes_payload_branch_address2]} {
 			die "Unexpected error, hermes install spot needs to be adjusted!, exiting...\n"
 		}
-		# set the final value for the 'branch2' offset values
-		set hermes_payload_branch_address2 [expr $hermes_payload_branch_address2 - $lv2_baseaddress_offset]	
+		# set the final value for the 'branch2' offset values		
 		set hermes_payload_branch_address2 [expr $hermes_payload_branch_address2 - ($hermes_payload_install_spot + $lv2_offset_branch2)]						
+		if {[expr $hermes_payload_branch_address2 < -16777215] || [expr $hermes_payload_branch_address2 > 0]} { die "hermes branch_address2 is invalid, fix script!" }
 		
 		# set the final value for the 'branch3' offset values
 		set hermes_payload_branch_ret_address3 [expr $hermes_payload_jmp_address + $lv2_offset_ret_branch3]				
 		set hermes_payload_branch_address3 [expr $hermes_payload_branch_ret_address3 - ($hermes_payload_install_spot + $lv2_offset_branch3)]		
+		if {[expr $hermes_payload_branch_address3 < -16777215] || [expr $hermes_payload_branch_address3 > 0]} { die "hermes branch_address3 is invalid, fix script!" }
 		# ----------------------------------------------------------------- #
-		# -------------- END 'HERMES PAYLOAD BRANCH ADDRESS 2/3' --------- #
+		# -------------- END 'HERMES PAYLOAD BRANCH ADDRESS 2&3' ---------- #
 		# ----------------------------------------------------------------- #				
 			 						
 		
@@ -1053,17 +1140,17 @@ namespace eval ::patch_cos {
 		set my_payload_data(--patch6_data) [expr $hermes_payload_install_spot + $hermes_payload_offset_string2]
 		set my_payload_data(--patch7_data) [expr $hermes_payload_install_spot + $hermes_payload_offset_string3]		
 		if {$verbosemode eq yes} {
-			log "hermes payload spot:[format %.6X $hermes_payload_install_spot]"
-			log "hermes intercept vector at:[format %.6X $hermes_payload_jmp_address]"
-			log "hermes jmp offset:$hermes_jmp_offset"				
-			log "hermes patch1_adddress:[format %.6X $my_payload_data(--patch1_data)]"	
-			log "hermes patch2_adddress:[format %.6X $my_payload_data(--patch2_data)]"	
-			log "hermes patch3_adddress:[format %.6X $my_payload_data(--patch3_data)]"	
-			log "hermes patch4_adddress:[format %.6X $my_payload_data(--patch4_data)]"	
-			log "hermes patch5_adddress:[format %.6X $my_payload_data(--patch5_data)]"	
-			log "hermes patch6_adddress:[format %.6X $my_payload_data(--patch6_data)]"	
-			log "hermes patch7_adddress:[format %.6X $my_payload_data(--patch7_data)]"
-		}
+			log "hermes payload install spot:0x[format %llX $hermes_payload_install_spot]"
+			log "hermes intercept vector at:0x[format %llX $hermes_payload_jmp_address]"
+			log "hermes jmp offset:0x$hermes_jmp_offset"				
+			log "hermes patch1_adddress:0x[format %llX $my_payload_data(--patch1_data)]"	
+			log "hermes patch2_offset:0x[format %.6X $my_payload_data(--patch2_data)]"	
+			log "hermes patch3_adddress:0x[format %llX $my_payload_data(--patch3_data)]"	
+			log "hermes patch4_offset:0x[format %.6X $my_payload_data(--patch4_data)]"	
+			log "hermes patch5_offset:0x[format %.6X $my_payload_data(--patch5_data)]"	
+			log "hermes patch6_adddress:0x[format %llX $my_payload_data(--patch6_data)]"	
+			log "hermes patch7_adddress:0x[format %llX $my_payload_data(--patch7_data)]"
+		}		
 	}
 	### ------------------------------------------------------------------------------- ##
 	### ------------------- END CONFIGURING 'HERMES' PAYLOAD -------------------------- ##
