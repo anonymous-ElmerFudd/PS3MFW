@@ -108,9 +108,10 @@ namespace eval ::patch_lv1 {
 		    set search  "\x41\x9E\xFF\xF0\x4B\xFF\xFD\x00\x38\x60\x00\x00\x4B\xFF\xFC\x58"                      
             set replace "\x01"
 			set offset 7
+			set mask 0	
 			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }                        
         # if "--patch-lv1-htab-write" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-htab-write)} {
@@ -123,9 +124,10 @@ namespace eval ::patch_lv1 {
 	        append search "\x65\x4a\xb5\x8e\x41\xdc\x00\x54\x3d\x40\x99\x79\x41\xda\x00\x54"
             set replace   "\x60\x00\x00\x00"
 			set offset 28
+			set mask 0
 			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 	    }
 		# if "--patch-lv1-mfc-sr1-mask" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-mfc-sr1-mask)} {
@@ -138,9 +140,10 @@ namespace eval ::patch_lv1 {
 	        append search "\x78\x00\xef\xa6\x7c\xab\x48\x38\x78\x00\x1f\xa4\x7d\x6b\x03\x78"
             set replace   "\x39\x20\xff\xff"
 			set offset 4
+			set mask 0
           
 		    # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 	    }
 		# if "--patch-lv1-dabr-priv-mask" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-dabr-priv-mask)} {
@@ -152,9 +155,10 @@ namespace eval ::patch_lv1 {
             set search  "\x60\x00\x00\x00\x38\x00\x00\x0b\x7f\xe9\x00\x38\x7f\xa9\xf8\x00"
             set replace "\x38\x00\x00\x0f"
 			set offset 4
+			set mask 0
          
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 	    }
 		# if "--patch-lv1-encdec-ioctl-0x85" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-encdec-ioctl-0x85)} {
@@ -167,8 +171,10 @@ namespace eval ::patch_lv1 {
 				set search  "\x38\x00\x00\x01\x39\x20\x00\x4f\x7c\x00\xf8\x36\x7c\x00\x48\x38"
 				set replace "\x39\x20\x00\x5f"
 				set offset 4
+				set mask 0
+				
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 			} else {
 				log "SKIPPING \"ENCDEC IOCTL command 0x85 patch\", as it's unneeded in this firmware version!"
 			}         			
@@ -184,9 +190,10 @@ namespace eval ::patch_lv1 {
 		    set search  "\xF9\x23\x01\x98\xF9\x23\x01\xA0\xF9\x23\x01\xA8\x41\x9E\x00\x0C\x3C\x00\x00\x01"
             set replace "\x38\x00\x10\x00"
 			set offset 16
+			set mask 0
          
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 	    }
 		# if "--patch-lv1-dispmgr-access" enabled, patch it		
         if {$::patch_lv1::options(--patch-lv1-dispmgr-access)} {		
@@ -199,9 +206,10 @@ namespace eval ::patch_lv1 {
             set search  "\xe8\x17\x00\x08\x7f\xc4\xf3\x78\x7f\x83\xe3\x78\xf8\x01\x00\x98"
             set replace "\x60\x00\x00\x00"
 			set offset 12
+			set mask 0
            
 		    # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
 			# patch SS services part 2/3 
 			# verified OFW ver. 3.55 - 4.46+
@@ -212,9 +220,10 @@ namespace eval ::patch_lv1 {
             set search  "\x7f\xa4\xeb\x78\x7f\x85\xe3\x78\x4b\xff\xf0\xe5\x54\x63\x06\x3e"
             set replace "\x38\x60\x00\x01"
 			set offset 8
+			set mask 0
            
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
 			# patch SS services part 3/3 
 			# verified OFW ver. 3.55 - 4.46+
@@ -227,9 +236,10 @@ namespace eval ::patch_lv1 {
 		    set search  "\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00"
             set replace "\x3b\xe0\x00\x01\x9b\xe1\x00\x70\x38\x60\x00\x00"
 			set offset 4
+			set mask 0
          
 		    # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-iimgr-access" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-iimgr-access)} {
@@ -241,9 +251,10 @@ namespace eval ::patch_lv1 {
             set search  "\x38\x60\x00\x0d\x38\x00\x00\x0d\x7c\x63\x00\x38\x4e\x80\x00\x20"
             set replace "\x38\x60\x00\x00"
 			set offset 8
+			set mask 0
          
 		    # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
         # if "--patch-lv1-um-extract-pkg" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-um-extract-pkg)} {
@@ -256,9 +267,10 @@ namespace eval ::patch_lv1 {
 	        append search "\xf8\x1b\x00\x00\x41\x9d\x00\xa8\x7b\xfd\x00\x20\x7f\x44\xd3\x78"
             set replace   "\x60\x00\x00\x00"
 			set offset 20
+			set mask 0
          
 		    # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-um-write-eprom-product-mode" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-um-write-eprom-product-mode)} {
@@ -270,9 +282,10 @@ namespace eval ::patch_lv1 {
             set search  "\xe8\x18\x00\x08\x2f\xa0\x00\x00\x40\x9e\x00\x10\x7f\xc3\xf3\x78"
             set replace "\x38\x00\x00\x00"
 			set offset 0
+			set mask 0
          
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-sm-del-encdec-key" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-sm-del-encdec-key)} {
@@ -285,9 +298,10 @@ namespace eval ::patch_lv1 {
             append search "\x38\x00\x00\x09\x41\x9d\x00\x4c"
             set replace   "\x60\x00\x00\x00"
 			set offset 20
+			set mask 0
 			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-repo-node-lpar" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-repo-node-lpar)} {
@@ -301,9 +315,10 @@ namespace eval ::patch_lv1 {
             set replace    "\xe8\x1e\x00\x20\xe9\x3e\x00\x28\xe9\x5e\x00\x30\xe9\x1e\x00\x38\xe8\xfe\x00\x40"
 	        append replace "\xe8\xde\x00\x48\xeb\xfe\x00\x18"
 			set offset 64
+			set mask 0
 			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 			
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55 == 0xFDCB4 (0x2DDCB4)
@@ -315,9 +330,10 @@ namespace eval ::patch_lv1 {
             set replace    "\xe8\x1e\x00\x20\xe9\x3e\x00\x28\xe9\x5e\x00\x30\xe9\x1e\x00\x38\xe8\xfe\x00\x40"
 	        append replace "\xe8\xde\x00\x48\xeb\xfe\x00\x18"
 			set offset 64
+			set mask 0
 			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55 == 0xFD590 (0x2DD590)
@@ -328,9 +344,10 @@ namespace eval ::patch_lv1 {
 	        append search "\xf8\x21\xff\x31\x39\x29\x98\x18\xfb\xa1\x00\xb8"
             set replace   "\xe8\x1e\x00\x20\xe9\x5e\x00\x28\xe9\x1e\x00\x30\xe8\xfe\x00\x38\xeb\xfe\x00\x18"
 			set offset 60
+			set mask 0
 			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }				
 		# if "--patch-lv1-storage-skip-acl-check" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-storage-skip-acl-check)} {
@@ -343,9 +360,10 @@ namespace eval ::patch_lv1 {
 	        append search "\x2f\x80\x00\x00\x40\x9e\x00\x18"
             set replace   "\x38\x60\x00\x01\x2f\x83\x00\x00\x41\x9e\x00\x14\x38\x00\x00\x01"
 			set offset 0
+			set mask 0
          
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		
 		##################### 		BEGIN BROKEN/3.XX ONLY PATCHES 		##########################################################
@@ -364,9 +382,10 @@ namespace eval ::patch_lv1 {
             append search "\x60\x00\xf7\xee\xf8\x1f\x01\xc0\xe8\x01\x00\x90"
             set replace   "\x64\x00\xff\xff\xf9\x3f\x01\xc8\x60\x00\xff\xfe"
 			set offset 12
+			set mask 0
          
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
         # if "--patch-lv1-gameos-gos-mode-one" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-gameos-gos-mode-one)} {
@@ -382,9 +401,10 @@ namespace eval ::patch_lv1 {
             set search  "\xe9\x29\x00\x00\x2f\xa9\x00\x01\x40\x9e\x00\x18\x38\x60\x00\x00"
             set replace "\x38\x60\x00\x01"
 			set offset 12
+			set mask 0
          
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-otheros-plus-plus-cold-boot-fix" enabed, patch it
         if {$::patch_lv1::options(--patch-lv1-otheros-plus-plus-cold-boot-fix)} {
@@ -399,9 +419,10 @@ namespace eval ::patch_lv1 {
             set search  "\xe9\x29\x00\x00\x2f\xa9\x00\x01\x40\x9e\x00\x18"
             set replace "\x39\x20\x00\x03"
 			set offset 0
+			set mask 0
          
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		##################### 				END BROKEN/3.XX ONLY PATCHES 			   ##########################################################
 		
@@ -418,8 +439,9 @@ namespace eval ::patch_lv1 {
 				set search "\x41\x9E\x00\x1C\x7F\xA3\xEB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01"
 				set replace "\x60\x00\x00\x00\x7F\xA3\xEB\x78\xE8\xA2\x85\x68\x38\x80\x00\x01"
 				set offset 0
+				set mask 0				
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 			}
         }
         # if "--patch-lv1-patch-productmode-erase" enabled, patch it
@@ -433,8 +455,9 @@ namespace eval ::patch_lv1 {
 				set search "\x41\x9E\x00\x0C\xE8\xA2\x8A\x38\x48\x00\x00\xCC\x7B\xFD\x00\x20"
 				set replace "\x60\x00\x00\x00\xE8\xA2\x8A\x38\x48\x00\x00\xCC\x7B\xFD\x00\x20"
 				set offset 0
+				set mask 0
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 			}
         }
 		# if "--patch-lv1-otheros-plus-plus" enabled, patch it
@@ -458,9 +481,10 @@ namespace eval ::patch_lv1 {
             append replace "\x00\x00\x77\x20\x00\x00\x00\x00\x00\x00\x81\x30\x00\x00\x00\x00\x00\x01\x00\x00"
             append replace "\x00\x00\x00\x00\x00\x01\x04\x80\x00\x00\x00\x00\x00\x01\xd0\x00"
 			set offset 240
+			set mask 0
          
             # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
             log "Patching Secure LPAR Loader to add OtherOS++ support 2/5 (3640268)"
             set search  "\x63\x2f\xeb\x68\x7f\x45\x4c\x46\x02\x02\x01\x66\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -471,18 +495,20 @@ namespace eval ::patch_lv1 {
             append search "\x00\x00\x00\x00\x00\x01\xc0\x80\x00\x00\x00\x00\x00\x01\xc0\x80"
             set replace  "\x00\x00\x00\x00\x00\x01\xd0\x00\x00\x00\x00\x00\x00\x01\xd0\x00"
 			set offset 100
+			set mask 0
          
             # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
             log "Patching Secure LPAR Loader to add OtherOS++ support 3/5 (3871772)"
             set search  "\x00\x00\x00\x27\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00"
 	        append search "\x80\x01\xb3\x90\x00\x00\x00\x00\x00\x02\xb3\x90\x00\x00\x00\x00\x00\x00\x0c\xf0"
             set replace  "\x00\x00\x00\x00\x00\x00\x1c\x70"
 			set offset 32
+			set mask 0
          
             # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
             log "Patching Secure LPAR Loader to add OtherOS++ support 4/5 (3820524)"
             set search  "\x00\x00\x00\x00\xc0\x00\x5c\xd8\x00\x00\x00\x00\xc0\x00\x5c\xc0\x00\x00\x00\x00"
@@ -557,18 +583,20 @@ namespace eval ::patch_lv1 {
 	        append replace "\x6f\x70\x79\x00\x00\x00\x00\x00\x69\x6f\x73\x00\x61\x74\x61\x00\x00\x00\x00\x00"
 	        append replace "\x72\x65\x67\x69\x6f\x6e\x30\x00\x61\x63\x63\x65\x73\x73\x00\x00"
 			set offset 96
+			set mask 0
          
             # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
             log "Patching Secure LPAR Loader to add OtherOS++ support 5/5 (3708368)"
             set search  "\x88\x04\x00\x00\x2f\x80\x00\x00\x41\x9e\x01\x20\x2b\xa6\x00\x01\x40\x9d\x01\x18"
             append search "\x7c\xa4\x2b\x78\x7c\xc5\x33\x78\x48\x00\x03\xe1"
             set replace  "\x48\x01\xb6\x1d"
 			set offset 28
+			set mask 0
          
             # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		##
 		##

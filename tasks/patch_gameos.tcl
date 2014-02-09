@@ -73,17 +73,14 @@ namespace eval ::patch_gameos {
 				# OFW 3.70: 0x40A98 (0x50A98)
 				# OFW 4.30: 0x43288 (0x53288)
 				# OFW 4.46: 0x432A0 (0x532A0)
-				log "Patching EMER_INIT to disable searching for update packages in GAME disc"				
-			    if {${::NEWMFW_VER} <= "3.55"} {
-					set search  "\x80\x01\x00\x74\x2F\x80\x00\x00\x40\x9E\x00\x14\x7F\xA3\xEB\x78"
-				} else { 
-					set search  "\x80\x01\x00\x74\x2F\x80\x00\x00\x40\x9E\x00\x14\x7F\xE3\xFB\x78"
-				}
+				log "Patching EMER_INIT to disable searching for update packages in GAME disc"						    					
+				set search  "\x80\x01\x00\x74\x2F\x80\x00\x00\x40\x9E\x00\x14\x7F\xE3\xFB\x78"
+				set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x0F\x0F\xFF"
 				set replace "\x38\x00\x00\x01"				 
-				set offset 0
+				set offset 0				
 				
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      	
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      	
 			}											
 			# determine if we have a user-defined HDD "size",
 			# if we have one set, then do the HDD resize patch
@@ -318,9 +315,10 @@ namespace eval ::patch_gameos {
 				} elseif {[string equal ${size} "1000GB"] == 1} {
 					append replace "\x83\x00"
 				}			 				
+				set mask 0
 				
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      					
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      					
 			}											 			
 		}	
 		# if "--patch-gameos-hdd-region-size-half" enabled, patch it
@@ -343,9 +341,10 @@ namespace eval ::patch_gameos {
 				set replace   "\x79\x3A\xF8\x42"
 				set offset 12
 			}
+			set mask 0
 
             # PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"    
         }
 		# if "--patch-gameos-hdd-region-size-quarter" enabled, patch it
         if {$::patch_gameos::options(--patch-gameos-hdd-region-size-quarter)} {
@@ -367,9 +366,10 @@ namespace eval ::patch_gameos {
 				set replace   "\x79\x3A\xF0\x82"
 				set offset 12
 			}
+			set mask 0
 
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"    
         }
 		# if "--patch-gameos-hdd-region-size-eighth" enabled, patch it
         if {$::patch_gameos::options(--patch-gameos-hdd-region-size-eighth)} {
@@ -391,9 +391,10 @@ namespace eval ::patch_gameos {
 				set replace   "\x79\x3A\xE8\xC2"
 				set offset 12
 			}
+			set mask 0
             
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"    
         }
 		# if "--patch-gameos-hdd-region-size-22gb-smaller" enabled, patch it
         if {$::patch_gameos::options(--patch-gameos-hdd-region-size-22gb-smaller)} {
@@ -415,9 +416,10 @@ namespace eval ::patch_gameos {
 				set replace   "\x3F\x49\xFD\x40"
 				set offset 12
 			}
+			set mask 0
             
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"    
         }		
     }
 	###########								proc Do_DefaultSpp_Patches		###############################################################################
@@ -440,10 +442,11 @@ namespace eval ::patch_gameos {
 			append search "\x10\x70\x00\x00\x02\x00\x00\x01\x2F\x66\x6C\x68\x2F\x6F\x73\x2F\x6C\x76\x32\x5F"
 			append search "\x6B\x65\x72\x6E\x65\x6C\x2E\x73\x65\x6C\x66\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 			set replace   "\x00\x00\x00\x00\x00\x00\x00\x1B"							
-			set offset 304	
+			set offset 304
+			set mask 0			
 			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    		 				
+			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"    		 				
 		}	
 	}	
 	##

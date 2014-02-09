@@ -122,9 +122,10 @@ namespace eval ::patch_vsh {
 				set search  "\x7C\x60\x1B\x78\xF8\x1F\x01\x80\xE8\x7F\x01\x80"
 				set replace "\x38\x00\x00\x00"
 				set offset 0
+				set mask 0	
 			 
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"   
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"   
 			}			
 			# if "--allow-retail-pkg-dex" enabled, patch it
 			if {$::patch_vsh::options(--allow-retail-pkg-dex) } {
@@ -137,9 +138,10 @@ namespace eval ::patch_vsh {
 				set search  "\x55\x60\x06\x3E\x2F\x80\x00\x00\x41\x9E\x01\xB0\x3B\xA1\x00\x80"
 				set replace "\x60\x00\x00\x00"
 				set offset 8
+				set mask 0	
 			 
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			}			
 			# if "--allow-debug-pkg" enabled, patch it
 			if {$::patch_vsh::options(--allow-debug-pkg) } {
@@ -152,9 +154,10 @@ namespace eval ::patch_vsh {
 				set search  "\x2F\x89\x00\x00\x41\x9E\x00\x4C\x38\x00\x00\x00\x81\x22"
 				set replace "\x60\x00\x00\x00"
 				set offset 4
+				set mask 0					
 			 
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			}			
 		} 
 		##
@@ -179,9 +182,10 @@ namespace eval ::patch_vsh {
 				
 				set search  "\x39\x29\x00\x04\x7C\x00\x48\x28"
 				set replace "\x38\x00\x00\x01"
-				set offset 4         				
+				set offset 4 
+				set mask 0					
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      
 				
 				log "Patching VSH.self with (downgrader patch) Rogero patch 3/4"	
 				# verified OFW ver. 3.60 - 4.50+
@@ -192,9 +196,10 @@ namespace eval ::patch_vsh {
 				set search    "\x6C\x60\x80\x01\x2F\x80\x00\x06\x40\x9E\x02\xD0\x48\x00\x02\xB8"
 				append search "\x38\x61\x02\x90\x48\x00"
 				set replace   "\x60\x00\x00\x00"
-				set offset 20   				
+				set offset 20
+				set mask 0	
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"														
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"														
 				
 				log "Patching VSH.self with Rogero patch 4/4"	
 				# verified OFW ver. 3.60 - 4.50+
@@ -210,9 +215,10 @@ namespace eval ::patch_vsh {
 				append search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 				append search  "\x00\x00\x00\x24\x13\xBC\xC5\xF6\x00\x33\x00\x00\x00"
 				set replace    "\x34"
-				set offset 93    				
+				set offset 93
+				set mask 0					
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"											
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"											
 			}			
 			# if "--allow-unsigned-app" enabled, patch it
 			if {$::patch_vsh::options(--allow-unsigned-app)} {
@@ -226,9 +232,9 @@ namespace eval ::patch_vsh {
 				set search  "\xF8\x21\xFF\x81\x7C\x08\x02\xA6\x38\x61\x00\x70\xF8\x01\x00\x90\x4B\xFF\xFF\xE1\x38\x00\x00\x00"
 				set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
 				set offset 0
-			 
+				set mask 0				 
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			 
 				# verified OFW ver. 3.55 - 4.50+
 				# OFW 3.55 == 0x30A7C0 (0x31A7C0)			
@@ -240,9 +246,9 @@ namespace eval ::patch_vsh {
 				set search  "\xA0\x7F\x00\x04\x39\x60\x00\x01\x38\x03\xFF\x7F\x2B\xA0\x00\x01\x40\x9D\x00\x08\x39\x60\x00\x00"
 				set replace "\x60\x00\x00\x00"
 				set offset 20
-			 
+				set mask 0				 
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			}
 			# if "--patch-vsh-react-psn-v2-4x" enabled, patch it
 			if {$::patch_vsh::options(--patch-vsh-react-psn-v2-4x)} {
@@ -258,9 +264,9 @@ namespace eval ::patch_vsh {
 				append search "\x78\x84\x00\x20\x41\x9E\x00\x08\x4B\xFF\xFF"
 				set replace   "\x38\x60\x00\x00"
 				set offset 92
-			 
+				set mask 0				 
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"        
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			}
 			# if "--patch-vsh-no-delete-actdat" enabled, patch it
 			if {$::patch_vsh::options(--patch-vsh-no-delete-actdat)} {
@@ -277,9 +283,9 @@ namespace eval ::patch_vsh {
 				append search "\xF8\x21\xFF\x91\x7C\x08\x02\xA6\xF8\x01\x00\x80\x48"
 				set replace   "\x38\x60\x00\x00"
 				set offset 44
-			 
+				set mask 0				 
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 				
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 				
 			}									
 		}
 		#

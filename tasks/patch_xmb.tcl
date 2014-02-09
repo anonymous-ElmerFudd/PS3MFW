@@ -252,9 +252,10 @@ namespace eval patch_xmb {
 					# dev_hdd0/game/BCES00275........
 					set search  "\x64\x65\x76\x5f\x68\x64\x64\x30\x2f\x67\x61\x6d\x65\x2f\x42\x43\x45\x53\x30\x30\x32\x37\x35"
 					set replace "\x64\x65\x76\x5f\x66\x6c\x61\x73\x68\x2f\x64\x61\x74\x61\x2f\x63\x65\x72\x74\x00\x00\x00\x00"
-					set offset 0			   
+					set offset 0
+					set mask 0	
 					# PATCH THE ELF BINARY
-					catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+					catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"
 					
 				} else {
 					log "ERROR:  This patch is only available on OFW < 3.60!!"
@@ -284,8 +285,9 @@ namespace eval patch_xmb {
 					set search  "\x40\x9E\x00\x3C\x3D\x20\x00\x06\x38\x00\x00\x29\x3B\xA0\x00\x00"
 					set replace "\x48\x00"
 					set offset  0
+					set mask 0	
 					# PATCH THE ELF BINARY
-					catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"   		
+					catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"   		
 				
 					# verified OFW ver. 3.55 - 4.46+
 					# OFW 3.55: 0x3734C (0x3725C)
@@ -297,8 +299,9 @@ namespace eval patch_xmb {
 					set search  "\x2F\x89\x00\x00\x41\x9E\x00\x4C\x38\x00\x00\x00\x81\x22"
 					set replace "\x40"
 					set offset 4
+					set mask 0	
 					# PATCH THE ELF BINARY
-					catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    
+					catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"    
 					
 				} else {
 					log "ERROR: Adding *Install Pkg Files to XMB via elf patching only works in 4.xx FIRMWARE!!"
@@ -320,8 +323,9 @@ namespace eval patch_xmb {
 						set search  "\xF8\x21\xFE\xD1\x7C\x08\x02\xA6\xFB\x81\x01\x10\x3B\x81\x00\x70"
 						set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
 						set offset  0
+						set mask 0	
 						# PATCH THE ELF BINARY
-						catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+						catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 						
 					} else {
 						log "ERROR: *Install Pkg Files patch encountered for unhandled file: [file tail $elf]"

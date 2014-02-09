@@ -1070,145 +1070,280 @@ proc modify_self_file {file callback args} {
 }
 
 # wrapper function for modifying/patching a SELF file
-proc patch_self {file search replace_offset replace {ignore_bytes {}}} {
-    modify_self_file $file patch_elf $search $replace_offset $replace $ignore_bytes
+proc patch_self {file search replace_offset replace mask} {	
+    modify_self_file $file patch_elf $search $replace_offset $replace $mask
 }
 
 # proc for patching files matching the pattern with replace bytes,
 # added the global "flag" check for multi-pattern replace, verus
 # usual "single" pattern match
-proc patch_elf {file search replace_offset replace {ignore_bytes {}}} {
+proc patch_elf {file search replace_offset replace mask} {
 	set offset 0
+	set mymask ""
+	
+	# setup the 'mask', if user specifed one!
+	if {($mask != 0) && ($mask != "")} { set mymask $mask }
+	
+	# if global for 'multi' is enabled, then do multiple patches, 
+	# otherwise, just do single patch
 	if { $::FLAG_PATCH_FILE_MULTI != 0 } {
-		patch_file_multi $file $search $replace_offset $replace $ignore_bytes
+		set offset [patch_file_multi $file $search $replace_offset $replace $mask]
 		set ::FLAG_PATCH_FILE_MULTI 0
 	} else {
-		set offset [patch_file $file $search $replace_offset $replace $ignore_bytes]
+		set offset [patch_file $file $search $replace_offset $replace $mymask]
 	}
 	# return the 'offset' from the 'patch_file' function
 	# (or just '0' if doing multi-patch)
 	return $offset
 }
-# main function for binary patching a file (single patch occurance)
-proc patch_file {file search replace_offset replace {ignore_bytes {}}} {
-    foreach bytes $ignore_bytes {
-        if {[llength $bytes] == 1} {
-            set search [string replace $search $bytes $bytes "?"]
-        } elseif {[llength $bytes] == 2} {
-            set idx1 [lindex $bytes 0]
-            set idx2 [lindex $bytes 1]
-            set len [expr {$idx2 - $idx1 + 1}]
-            if {$len < 0} {
-                set len 0
-            }
-            set search [string replace $search $idx1 $idx2 [string repeat "?" $len]]
-        }
-    }
-    set fd [open $file r+]
+
+# main function for binary patching a file (single patch occurrence)
+proc patch_file {file search replace_offset replace mask} {
+    
+	set buffer ""	
+	set returndata ""
+	set mysearch ""
+	set currdata ""
+	set tmp ""
+	set nummatches 0
+    set offset -1    
+	set masklen 0
+	set searchlen 0	
+	set filesearchlen 0
+	set verbosemode no
+	set do_datamask no
+	# if verbose mode enabled
+	if { $::options(--task-verbose) } {
+		set verbosemode yes
+	} 		
+
+	# input var check, if MASK is specified, make sure the search/mask 
+	# lengths are valid
+	# setup initial params, log the setup
+	# params if VERBOSE enabled
+	set masklen [string length $mask]	
+	set searchlen [string length $search]	
+	if {($mask != "") && ($mask != 0)} {						
+		if { ($searchlen == 0)} { die "!Error! search string length is zero!!" }
+		if { ($masklen != $searchlen)} { die "!Error! Data and Mask are not equal lengths!" }
+		if {[expr $masklen % 4] > 0} { die "Error! Data/Mask must be exact multiples of 4-bytes" }
+		# CHECK PASSED, ENABLE DATA MASK!
+		set do_datamask yes
+	}		   
+
+	# read in the entire file to the 'buffer' var
+	set fd [open $file r]
     fconfigure $fd -translation binary
-    set offset -1
-    set buffer ""
-    while {![eof $fd]} {
-        append buffer [read $fd 1]
-        if {[string length $buffer] > [string length $search]} {
-            set buffer [string range $buffer 1 end]
-        }
-        set tmp $buffer
-        foreach bytes $ignore_bytes {
-            if {[llength $bytes] == 1} {
-                set tmp [string replace $tmp $bytes $bytes "?"]
-            } elseif {[llength $bytes] == 2} {
-                set idx1 [lindex $bytes 0]
-                set idx2 [lindex $bytes 1]
-                set len [expr {$idx2 - $idx1 + 1}]
-                if {$len < 0} {
-                    set len 0
-                }
-                set tmp [string replace $tmp $idx1 $idx2 [string repeat "?" $len]]
-            }
-        }
-        if {$tmp == $search} {
-            if {$offset != -1} {
-                error "Pattern found multiple times"
-            }
-            set offset [tell $fd]
-            incr offset -[string length $search]
-            incr offset $replace_offset
-        }
-    }
-    if {$offset == -1} {
-        error "Could not find pattern to patch"
-    }
+	set buffer [read $fd]
+	set filelen [string length $buffer]	
+	close $fd			
+	# if 'VERBOSE' enabled, log the searching params
+	if {$verbosemode == yes} {	
+		if {$do_datamask == yes} {
+			log "PATCH_FILE():-->filelen: 0x[format %X $filelen]"	
+			log "PATCH_FILE():-->searchlen: 0x[format %X $searchlen]"		
+			log "PATCH_FILE():-->masklen: 0x[format %X $masklen]"	
+		}		
+	}	
 	
-	set offsetInHex [format %x $offset]
+	# if the 'mask' is enabled, then setup the custom "search AND mask" pattern,
+	# otherwise, just search using the original 'search' string
+	if {$do_datamask == yes} {		
+		# mask (AND) the 'search' data with the 'mask'
+		set returndata ""		
+		for {set i 0} {$i < $searchlen} {incr i 4} {						
+			set databyte [string range $search $i $i+3]
+			set maskbyte [string range $mask $i $i+3]			
+			binary scan $databyte Iu1 dwdbyte
+			binary scan $maskbyte Iu1 dwmbyte								
+			set result [expr $dwdbyte & $dwmbyte]						
+			append returndata [binary format Iu1 $result]						
+		}
+		set mysearch $returndata		
+	} else { 
+		set mysearch $search
+	}	
+	
+	# ------------------------------------------------------------ #
+	# ------------------- MAIN FILE BUFFER SEARCH ---------------- #
+	#
+	# iterate through the file buffer, searching
+	# 'datalen' blocks at a time, moving forward 1 byte
+	# in buffer at a time	'
+	# total search length can only be total 'FILELENGTH', minus the size
+	# of the 'search' pattern
+	set filesearchlen [expr $filelen - $searchlen]	
+	for {set i 0} {$i < $filesearchlen} {incr i} {		
+					
+		# if the 'mask' is enabled, AND the buffer data
+		# with the 'mask' data to produce the desired buffer data
+		set currdata [string range $buffer $i [expr $searchlen + $i - 1]]
+		if {$do_datamask == yes} {				
+			set returndata ""				
+			for {set j 0} {$j < $searchlen} {incr j 4} {			
+				set databyte [string range $currdata $j $j+3]
+				set maskbyte [string range $mask $j $j+3]
+				binary scan $databyte Iu1 dwdbyte
+				binary scan $maskbyte Iu1 dwmbyte									
+				set result [expr $dwdbyte & $dwmbyte]				
+				append returndata [binary format Iu1 $result]
+			}
+			set tmp $returndata
+		} else {
+			set tmp $currdata
+		}
+		
+		# if we found a match, incr the num matches		
+        if {$tmp == $mysearch} {
+			set offset [expr $i + $replace_offset]           
+			incr nummatches			
+            if {$nummatches > 1} { die "Pattern found multiple times" }	                     			 
+        }
+    }
+	# ------------------------------------------------------------ #
+	# ------------------------------------------------------------ #	
+	if {$nummatches == 0} { die "Pattern not found in file!" }
+
 	# use this flag to ONLY find the offset if we
 	# set it, otherwise binary patch the file
 	if {$::FLAG_PATCH_FILE_FINDONLY != 0} {	
 		debug "flag set to find offset only, skipping file patching..."
-		debug "match at offset: 0x$offsetInHex"
+		debug "match at offset: 0x[format %x $offset]"	
 	} else {
-		debug "patched offset: 0x$offsetInHex"	
+		debug "patched offset: 0x[format %x $offset]"
+		set fd [open $file r+]
+		fconfigure $fd -translation binary	
 		seek $fd $offset
-		puts -nonewline $fd $replace		
-	} 
-	# close the filehandle
-	close $fd
-	
+		puts -nonewline $fd $replace	
+		close $fd
+	} 	
 	# make sure we always reset the flag before leaving
-	set ::FLAG_PATCH_FILE_FINDONLY 0
+	set ::FLAG_PATCH_FILE_FINDONLY 0	
 	
 	# return the patched "offset" in case we want
 	# to use it for further patching/reference
 	return $offset
 }
-# main function for binary patching a file (multiple patche occurances)
-proc patch_file_multi {file search replace_offset replace {ignore_bytes {}}} {
-    foreach bytes $ignore_bytes {
-        if {[llength $bytes] == 0} {
-            set search [string replace $search $bytes $bytes "?"]
-        } else {
-            set search [string replace $search [lindex $bytes 0] [lindex $bytes 1] "?"]
-        }
-    }
-    set fd [open $file r+]
+
+# main function for binary patching a file (single patch occurrence)
+proc patch_file_multi {file search replace_offset replace mask} {
+    
+	set buffer ""	
+	set returndata ""
+	set mysearch ""
+	set currdata ""
+	set tmp ""
+	set nummatches 0
+    set offset -1    
+	set masklen 0
+	set searchlen 0	
+	set filesearchlen 0
+	set verbosemode no
+	set do_datamask no
+	# if verbose mode enabled
+	if { $::options(--task-verbose) } {
+		set verbosemode yes
+	} 		
+
+	# input var check, if MASK is specified, make sure the search/mask 
+	# lengths are valid
+	# setup initial params, log the setup
+	# params if VERBOSE enabled
+	set masklen [string length $mask]	
+	set searchlen [string length $search]	
+	if {($mask != "") && ($mask != 0)} {				
+		if { ($searchlen == 0)} { die "!Error! search string length is zero!!" }
+		if { ($masklen != $searchlen)} { die "!Error! Data and Mask are not equal lengths!" }
+		if {[expr $masklen % 4] > 0} { die "Error! Data/Mask must be exact multiples of 4-bytes" }
+		# CHECK PASSED, ENABLE DATA MASK!
+		set do_datamask yes
+	}		   
+
+	# read in the entire file to the 'buffer' var
+	set fd [open $file r]
     fconfigure $fd -translation binary
-    set offset -1
-    set counter 0
-    set buffer ""
-    while {![eof $fd]} {
-        append buffer [read $fd 1]
-        if {[string length $buffer] > [string length $search]} {
-            set buffer [string range $buffer 1 end]
-        }
-        set tmp $buffer
-        foreach bytes $ignore_bytes {
-            if {[llength $bytes] == 0} {
-                set tmp [string replace $tmp $bytes $bytes "?"]
-            } else {
-                set tmp [string replace $tmp [lindex $bytes 0] [lindex $bytes 1] "?"]
-            }
-        }
-        if {$tmp == $search} {
-            incr counter 1
-            set offset [tell $fd]
-            incr offset -[string length $search]
-            incr offset $replace_offset
-			set offsetInHex [format %x $offset]
-            #debug "offset: $offset"
-			debug "patched offset: 0x$offsetInHex"
-            seek $fd $offset
-            puts -nonewline $fd $replace
-            seek $fd $offset
-            set offset -1
+	set buffer [read $fd]
+	set filelen [string length $buffer]	
+	close $fd			
+	# if 'VERBOSE' enabled, log the searching params
+	if {$verbosemode == yes} {	
+		if {$do_datamask == yes} {
+			log "PATCH_FILE_MULTI():-->filelen: 0x[format %X $filelen]"	
+			log "PATCH_FILE_MULTI():-->searchlen: 0x[format %X $searchlen]"		
+			log "PATCH_FILE_MULTI():-->masklen: 0x[format %X $masklen]"	
+		}		
+	}	
+	
+	# if the 'mask' is enabled, then setup the custom "search AND mask" pattern,
+	# otherwise, just search using the original 'search' string
+	if {$do_datamask == yes} {		
+		# mask (AND) the 'search' data with the 'mask'
+		set returndata ""		
+		for {set i 0} {$i < $searchlen} {incr i 4} {						
+			set databyte [string range $search $i $i+3]
+			set maskbyte [string range $mask $i $i+3]			
+			binary scan $databyte Iu1 dwdbyte
+			binary scan $maskbyte Iu1 dwmbyte								
+			set result [expr $dwdbyte & $dwmbyte]						
+			append returndata [binary format Iu1 $result]						
+		}
+		set mysearch $returndata		
+	} else { 
+		set mysearch $search
+	}	
+	
+	# ------------------------------------------------------------ #
+	# ------------------- MAIN FILE BUFFER SEARCH ---------------- #
+	#
+	# iterate through the file buffer, searching
+	# 'datalen' blocks at a time, moving forward 1 byte
+	# in buffer at a time	'
+	# total search length can only be total 'FILELENGTH', minus the size
+	# of the 'search' pattern
+	set filesearchlen [expr $filelen - $searchlen]	
+	for {set i 0} {$i < $filesearchlen} {incr i} {		
+					
+		# if the 'mask' is enabled, AND the buffer data
+		# with the 'mask' data to produce the desired buffer data
+		set currdata [string range $buffer $i [expr $searchlen + $i - 1]]
+		if {$do_datamask == yes} {				
+			set returndata ""				
+			for {set j 0} {$j < $searchlen} {incr j 4} {			
+				set databyte [string range $currdata $j $j+3]
+				set maskbyte [string range $mask $j $j+3]
+				binary scan $databyte Iu1 dwdbyte
+				binary scan $maskbyte Iu1 dwmbyte									
+				set result [expr $dwdbyte & $dwmbyte]				
+				append returndata [binary format Iu1 $result]
+			}
+			set tmp $returndata
+		} else {
+			set tmp $currdata
+		}
+		
+		# if we found a match, incr the num matches		
+        if {$tmp == $mysearch} {
+			set offset [expr $i + $replace_offset]           
+			incr nummatches			
+			debug "patched offset: 0x[format %x $offset]"
+			set fd [open $file r+]
+			fconfigure $fd -translation binary	
+			seek $fd $offset
+			puts -nonewline $fd $replace	
+			close $fd                     			 
         }
     }
-    if {$counter == 0} {
-        error "Could not find pattern to patch"
-    } else {
-        debug "Replaced $counter occurences of search pattern"
-    }
-    close $fd
+	# ------------------------------------------------------------ #
+	# ------------------------------------------------------------ #	
+	if {$nummatches == 0} { 
+		die "0 Patterns found in file!" 
+	} else {
+		debug "Replaced $nummatches occurrences of search pattern"
+	}
+	# since we are doing 'multiple' patches, just return 0
+	return 0
 }
+
 # func. for modifying single dev_flash file
 proc modify_devflash_file {file callback args} {
 
@@ -1547,8 +1682,8 @@ proc decrypt_spp {in out} {
 }
 
 # wrapper func. for patching decryped spp file (.pp)
-proc patch_pp {file search replace_offset replace {ignore_bytes {}}} {
-    patch_file $file $search $replace_offset $replace $ignore_bytes
+proc patch_pp {file search replace_offset replace} {
+    patch_file $file $search $replace_offset $replace
 }
 
 # wrapper func for encrypting .pp file (to .spp)

@@ -58,9 +58,10 @@ namespace eval ::patch_appldr {
 			log "Patching Appldr with Rogero patch 1/3"						 
 			set search  "\x34\x09\x80\x80\x04\x00\x2A\x03\x18\x04\x80\x81\x34\xFF\xC0\xD0"
 			set replace "\x40\x80\x00\x03"
-			set offset 4         				
+			set offset 4 
+			set mask 0			
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      
 			
 			log "Patching Appldr with Rogero patch 2/3"	
 			# verified OFW ver. 3.60 - 4.46+
@@ -69,9 +70,10 @@ namespace eval ::patch_appldr {
 			# OFW 4.46 == 0x1FA4 (0x14AA4)
 			set search  "\x55\xC0\x09\x91\x58\x24\x88\x90\x23\x00\x0A\x10\x1C\x08\x00\x84\x40\x80\x04\x05\x43\xF0\x00\x03"
 			set replace "\x40\x80\x00\x10"
-			set offset 4      				
+			set offset 4   
+			set mask 0			
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"
 			
 			log "Patching Appldr with Rogero patch 3/3"	
 			# verified OFW ver. 3.60 - 4.46+
@@ -80,9 +82,10 @@ namespace eval ::patch_appldr {
 			# OFW 4.46 == 0x3D98 (0x16898)
 			set search  "\x04\x00\x01\xD0\x21\x00\x0F\x03\x04\x00\x28\x83\x33\x7C"
 			set replace "\x40\x80\x00\x03"
-			set offset 12      				
+			set offset 12 
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"		
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"		
 		}		
 		# patch appldr for "fself 3.40"
 		if {$::patch_appldr::options(--patch-appldr-fself-340)} {
@@ -90,9 +93,10 @@ namespace eval ::patch_appldr {
 			log "Patching Appldr to allow Fself (3.40-3.55)"						 
 			set search  "\x40\x80\x0e\x0c\x20\x00\x57\x83\x32\x00\x04\x80\x32\x80\x80"
 			set replace "\x40\x80\x0e\x0c\x20\x00\x57\x83\x32\x11\x73\x00\x32\x80\x80"
-			set offset 7          				
+			set offset 7 
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      
 		}
 		# patch appldr for "fself 3.30"
 		if {$::patch_appldr::options(--patch-appldr-fself-330)} {
@@ -100,9 +104,10 @@ namespace eval ::patch_appldr {
 			log "Patching Appldr to allow Fself (3.10-3.30)"							  
 			set search  "\x40\x80\x0e\x0d\x20\x00\x69\x09\x32\x00\x04\x80\x32\x80\x80"
 			set replace "\x40\x80\x0e\x0c\x20\x00\x57\x83\x32\x11\x73\x00\x32\x80\x80"
-			set offset 7          				
+			set offset 7  
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      
 		}
 		# patch appldr to add "3.56 keys" to "appldr 3.41"
 		if {$::patch_appldr::options(--add-356keys-to-appldr341)} {
@@ -111,16 +116,18 @@ namespace eval ::patch_appldr {
 			log "patching revision check"								
 			set search    "\x5D\x01\x83\x14"
 			set replace   "\x5D\x03\x83\x14"
-			set offset 0				
+			set offset 0
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      							
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      							
 			
 			log "patching 2nd keypair addr"
 			set search    "\x43\x5D\x28\x06"
 			set replace   "\x43\x5b\xD8\x06"
-			set offset 0				
+			set offset 0	
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      		
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      		
 			
 			# patch in "356" key data
 			set search     "\x00\x00\x00\x00\x00\x95\xF5\x00\x19\xE7\xA6\x8E\x34\x1F\xA7\x2E"
@@ -208,9 +215,10 @@ namespace eval ::patch_appldr {
 			append replace "\x71\x50\x2A\xDB\x57\x83\x58\x3A\xB8\x8B\x2D\x5F\x23\xF4\x19\xAF"
 			append replace "\x01\xC8\xB1\xE7\x2F\xCA\x1E\x69\x4A\xD4\x9F\xE3\x26\x6F\x1F\x9C"
 			append replace "\x61\xEF\xC6\xF2\x9B\x35\x11\x42\x00\x00\x00\x12\x00\x00\x00\x00"			
-			set offset 5				
+			set offset 5
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      				
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      				
 		}	
 		# patch 360 keys to appldr_355
 		if {$::patch_appldr::options(--add-360keys-to-appldr355)} {
@@ -219,30 +227,34 @@ namespace eval ::patch_appldr {
 			log "patching ecdsa signature check 0x09EF8 @ 3.55"
 			set search    "\x12\x05\x91\x09\x24\xFF\xC0\xD0"
 			set replace   "\x48\x20\xC1\x83\x35\x00\x00\x00"
-			set offset 0				
+			set offset 0
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      
 									 
 			log "patching various checks (crapdicrap) 0x02DD0 @ 3.55"
 			set search    "\x33\x7F\x8E\x00\x04\x00\x01\xD0\x21\x00\x19\x83"
 			set replace   "\x00\x20\x00\x00\x48\x34\x28\x50\x48\x20\xC1\x83"
-			set offset 0				
+			set offset 0	
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      			
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      			
 						  
 			log "patching key revision check 0x013AC @ 3.55"
 			set search    "\x5D\x03\x03\x15"
 			set replace   "\x5D\x04\x03\x15"
-			set offset 0				
+			set offset 0	
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      		  				
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      		  				
 			
 			log "patching 2nd keytable addr r6 0x01440 @ 3.55"
 			set search    "\x43\x64\x00\x06"
 			set replace   "\x43\x61\x90\x06"
-			set offset 0				
+			set offset 0	
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      	 				
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      	 				
 			
 			log "extend first keytable 0x19820 @ 3.55"
 			set search    "\x00\x00\x00\x00\x00\x95\xF5\x00\x19\xE7\xA6\x8E\x34\x1F\xA7\x2E"			 
@@ -364,37 +376,42 @@ namespace eval ::patch_appldr {
 			append replace "\x50\x59\x7B\x7F\x68\x0D\xD8\x9F\x65\x94\xD9\xBD\xC0\xCB\xEE\x03"
 			append replace "\x66\x6A\xB5\x36\x47\xD0\x48\x7F\x7F\x45\x2F\xE2\xDD\x02\x69\x46"
 			append replace "\x31\xEA\x75\x55\x48\xC9\xE9\x34\x00\x00\x00\x25\x00\x00\x00\x00"				
-			set offset 5				
+			set offset 5	
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      			 				
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      			 				
 		 
 			log "patching NPDRM key revision check 0x00B40 @ 3.55"
 			set search    "\x5D\x03\x02\x02"
 			set replace   "\x5D\x04\x02\x02"
-			set offset 0				
+			set offset 0
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      			 				
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      			 				
 		  
 			log "patching NPDRM forbidden key revision table size 0x00B50 @ 3.55"
 			set search    "\x1C\x02\x02\x87"
 			set replace   "\x1C\x03\x02\x87"
-			set offset 0				
+			set offset 0	
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      		 				
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      		 				
 		 
 			log "patching NPDRM forbidden key revision table 0x19720 @ 3.55"
 			set search    "\x00\x02\x00\x05\x00\x08\x00\x0B\x00\x00\x00\x00\x00\x00\x00\x00"
 			set replace   "\x00\x02\x00\x05\x00\x08\x00\x0B\x00\x0E\x00\x11\x00\x00\x00\x00"
-			set offset 0				
+			set offset 0	
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      	   				
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      	   				
 		   
 			log "patching 2nd keytable addr r11 0x01518 @ 3.55"
 			set search    "\x43\x69\x10\x0B"
 			set replace   "\x43\x66\xA0\x0B"
-			set offset 0				
+			set offset 0
+			set mask 0				
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"      	 				
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      	 				
 		 
 			log "extend first NPDRM keytable 0x1A240 @ 3.55"
 			set search    "\x23\x00\x00\x00\x00\x8E\x73\x72\x30\xC8\x0E\x66\xAD\x01\x62\xED"
@@ -532,9 +549,10 @@ namespace eval ::patch_appldr {
 			append replace "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 			append replace "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"			
 			set offset 5
+			set mask 0	
 			
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"           					
+            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"           					
 		}		
 	}  
 	##

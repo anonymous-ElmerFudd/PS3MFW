@@ -50,7 +50,8 @@ namespace eval ::patch_cos {
 	# just create empty globals for the binary search/replace/offset strings
 	set ::patch_cos::search ""
 	set ::patch_cos::replace ""
-	set ::patch_cos::offset 0	
+	set ::patch_cos::offset 0
+	set ::patch_cos::mask 0
     array set ::patch_cos::options {	
 		--patch-lv0-nodescramble-lv1ldr false
 		--patch-lv0-ldrs-ecdsa-checks true
@@ -185,6 +186,7 @@ namespace eval ::patch_cos {
 			# OFW 3.70 == 0x27A58 (0x8007A58)  
 			# OFW 4.00 == 0x27A58 (0x8007A58) 
 			# OFW 4.46 == 0x27AD0 (0x8007AD0)
+			# OFW 4.55 == 0x (0x)
 			if {${::NEWMFW_VER} >= "3.65"} {
 			
 				log "Patching Lv0 to disable LV1LDR descramble"
@@ -193,16 +195,17 @@ namespace eval ::patch_cos {
 				set ::FLAG_NO_LV1LDR_CRYPT 1			
 			
 				set search    "\x64\x84\xB0\x00\x48\x00\x00\xFC\xE8\x61\x00\x70\x80\x81\x00\x7C"
-				append search "\x48\x00"
+				append search "\x48\x00"				
 				set replace   "\x60\x00\x00\x00"
-				set offset 16						
+				set offset 16			
+				set mask 0
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $file $search $offset $replace} "Unable to patch self [file tail $file]"     
+				catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"     
 				
 			} else {	
 				log "SKIPPING LV0-DESCRAMBLE PATCH, LV0 is NOT scrambled in FW below 3.65...."				
 			}
-        }					
+        }		
 		log "Done LV0 patches...."
 	}
 	### ------------------------------------- END:    Do_LV0_Patches{} --------------------------------------------- ### 
@@ -214,7 +217,7 @@ namespace eval ::patch_cos {
 	# This proc is for applying any patches to LV1 LOADER
 	#
 	#
-	proc Do_LV1LDR_Patches {elf} {	
+	proc Do_LV1LDR_Patches {file} {	
 	
 		log "Applying LV1LDR patches...."			
 		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
@@ -224,16 +227,18 @@ namespace eval ::patch_cos {
 			# OFW 3.55 == 0x81A8 (0x1ACA8)			
 			# OFW 3.70 == 0x6E48 (0x19948)  
 			# OFW 4.00 == 0x6E50 (0x19950) 
-			# OFW 4.46 == 0x6EC4 (0x199C4)
-			# OFW 4.50 == 0x6F48 (0x19A48)
+			# OFW 4.46 == 0x6EB8 (0x199C4)
+			# OFW 4.50 == 0x6F48 (0x199B8)
+			# OFW 4.50 == 0x6F48 (0x199B8)
 			log "Patching 4.xx LV1LDR ECDSA CHECKS......"      				
-            set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
-            set replace "\x40\x80\x00\x03"
-            set offset 12		
+            set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"					
+            set replace "\x40\x80\x00\x03"				
+            set offset 12	
+			set mask 0			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"     
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"     
 			
-		}		
+		}	
 		log "Done LV1LDR patches...."	
 	}
 	#
@@ -245,7 +250,7 @@ namespace eval ::patch_cos {
 	# This proc is for applying any patches to LV2 LOADER
 	#
 	#
-	proc Do_LV2LDR_Patches {elf} {	
+	proc Do_LV2LDR_Patches {file} {	
 	
 		log "Applying LV2LDR patches...."	
 		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
@@ -260,9 +265,10 @@ namespace eval ::patch_cos {
 			log "Patching 4.xx LV2LDR ECDSA CHECKS......"						            
             set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
             set replace "\x40\x80\x00\x03"
-            set offset 12		
+            set offset 12
+			set mask 0			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"  
 		}				
 		log "Done LV2LDR patches...."	
 	}
@@ -276,7 +282,7 @@ namespace eval ::patch_cos {
 	# This proc is for applying any patches to ISO LOADER
 	#
 	#
-	proc Do_ISOLDR_Patches {elf} {	
+	proc Do_ISOLDR_Patches {file} {	
 	
 		log "Applying ISOLDR patches...."	
 		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
@@ -291,9 +297,10 @@ namespace eval ::patch_cos {
 			log "Patching 4.xx ISOLDR ECDSA CHECKS......"       			
             set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
             set replace "\x40\x80\x00\x03"
-            set offset 12		
+            set offset 12	
+			set mask 0			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]" 
 		}				
 		log "Done ISOLDR patches...."	
 	}
@@ -306,7 +313,7 @@ namespace eval ::patch_cos {
 	# This proc is for applying any patches to ISO LOADER
 	#
 	#
-	proc Do_APPLDR_Patches {elf} {	
+	proc Do_APPLDR_Patches {file} {	
 	
 		log "Applying APPLDR patches...."	
 		#if "--patch-lv0-ldrs-ecdsa-checks" enabled, patch it
@@ -320,9 +327,10 @@ namespace eval ::patch_cos {
 			log "Patching 4.xx APPLDR ECDSA CHECKS......"			
             set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"
             set replace "\x40\x80\x00\x03"
-            set offset 12		
+            set offset 12
+			set mask 0			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]" 
 		}				
 		log "Done APPLDR patches...."	
 	}
@@ -336,7 +344,7 @@ namespace eval ::patch_cos {
 	# This proc is for applying any patches to LV1
 	#
 	#	
-	proc Do_LV1_Patches {elf} {		
+	proc Do_LV1_Patches {file} {		
 		
 		log "Applying LV1 patches...."		
 		
@@ -352,9 +360,10 @@ namespace eval ::patch_cos {
             set search    "\x38\x00\x00\x00\x64\x00\xFF\xFF\x60\x00\xFF\xEC\xF8\x03\x00\xC0"
 	        append search "\x4E\x80\x00\x20\x38\x00\x00\x00"
             set replace   "\xE8\x83\x00\x18\xE8\x84\x00\x00\xF8\x83\x00\xC8"         
-			set offset 4				
+			set offset 4
+			set mask 0			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"                
 			
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x1225F8 (0x3025F8)
@@ -365,9 +374,10 @@ namespace eval ::patch_cos {
             set search    "\x4E\x80\x00\x20\x38\x00\x00\x00\x64\x00\xFF\xFF\x60\x00\xFF\xEC"
 	        append search "\xF8\x03\x00\xC0\x4E\x80\x00\x20\xE9\x22"
             set replace   "\xE8\xA3\x00\x20\xE8\x83\x00\x18\xF8\xA4\x00\x00"         
-			set offset 8				
+			set offset 8
+			set mask 0			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                    
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"                    
         }
 		#if "lv1-remove-lv2-protection" enabled, patch it
 		if {$::patch_cos::options(--patch-lv1-remove-lv2-protection)} {
@@ -379,9 +389,10 @@ namespace eval ::patch_cos {
             log "Patching LV1 hypervisior to remove LV2 protection"            
             set search  "\x2F\x83\x00\x00\x38\x60\x00\x01\x41\x9E\x00\x20\xE8\x62"
             set replace "\x48\x00"
-            set offset 8				
+            set offset 8
+			set mask 0			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                         
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"                         
         }
 		# if "--patch-lv1-coreos-hash-check" enabled, patch it		
         if {$::patch_cos::options(--patch-lv1-coreos-hash-check)} {
@@ -394,9 +405,10 @@ namespace eval ::patch_cos {
 			set search  "\x2F\x80\x00\xFF\x41\x9E\x00\x1C\x7F\x63\xDB\x78\xE8\xA2"									
             set replace "\x60\x00\x00\x00"
 			set offset 4
+			set mask 0
          
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"                       
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"                       
         }
 		# if "--patch-lv1-sysmgr-disable-integrity-check" enabled, patch it		
         if {$::patch_cos::options(--patch-lv1-sysmgr-disable-integrity-check)} {	
@@ -412,9 +424,10 @@ namespace eval ::patch_cos {
             set search  "\x38\x60\x00\x01\xf8\x01\x00\x90\x88\x1f\x00\x00\x2f\x80\x00\x00"		   
             set replace "\x60\x00\x00\x00"
 			set offset 20
+			set mask 0
             
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]" 
         }
 		log "Done LV1 patches...."	
 	}
@@ -426,7 +439,7 @@ namespace eval ::patch_cos {
 	# This proc is for applying any patches to the "LV2" self file
 	#
 	#
-	proc Do_LV2_Patches {elf} {
+	proc Do_LV2_Patches {file} {
 	
 		log "Applying LV2 patches...."	
 		set verbosemode no
@@ -484,8 +497,9 @@ namespace eval ::patch_cos {
 			set search   "\x3F\xE0\x80\x01\x63\xFF\x00\x3E\x4B\xFF\xFF\x0C\x83\xBC\x00\x78"
 			set replace  "\x3B\xE0\x00\x00"
 			set offset 4
+			set mask 0
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    		 					
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"    		 					
 			
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x65E98 (0x55E98)
@@ -497,8 +511,9 @@ namespace eval ::patch_cos {
 			append search "\x38\xDE\x00\x07"
 			set replace   "\x60\x00\x00\x00"
 			set offset 12
+			set mask 0
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			 
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"    			 
 		}
 		# if "--patch-lv2-lv1-peek-poke-4x" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-lv1-peek-poke-4x)} {
@@ -526,8 +541,9 @@ namespace eval ::patch_cos {
 			append replace "\x00\x00\x17\x1C\x80\x00\x00\x00\x00\x00\x17\x3C\x80\x00\x00\x00"
 			append replace "\x00\x00\x17\x5C"
 			set offset 2060
+			set mask 0
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			 					
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"    			 					
 			
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x355DE5 (0x345DE5) ** PATCH @0x3565A0 **
@@ -543,13 +559,14 @@ namespace eval ::patch_cos {
 			set replace    "\x80\x00\x00\x00\x00\x00\x17\x78\x80\x00\x00\x00\x00\x00\x17\x80"
 			append replace "\x80\x00\x00\x00\x00\x00\x17\x88\x80\x00\x00\x00\x00\x00\x17\x90"
 			append replace "\x80\x00\x00\x00\x00\x00\x17\x98"
+			set mask 0
 			if {${::NEWMFW_VER} >= "3.70"} {
 				set offset 2027
 			} else {
 				set offset 1979
 			}
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			   
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"    			   
 		}
 		# if "-patch-lv2-npdrm-ecdsa-check" enabled, do patch
 		if {$::patch_cos::options(--patch-lv2-npdrm-ecdsa-check)} {
@@ -569,8 +586,9 @@ namespace eval ::patch_cos {
 				append search  "\xE9\x22"
 				set replace    "\x38\x60\x00\x00\x4E\x80\x00\x20"
 				set offset 16
+				set mask 0
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  
+				catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"  
 				
 			} else {
 				log "NPDRM ECDSA Patch not supported for OFW <= 3.55!!"
@@ -589,45 +607,41 @@ namespace eval ::patch_cos {
 			set search     "\x41\x9E\x00\xD8\x41\x9D\x00\xC0\x2F\x84\x00\x04\x40\x9C\x00\x48"			
 			set replace    "\x60\x00\x00\x00\x2F\x84\x00\x04\x48\x00\x00\x98"
 			set offset 4
+			set mask 0
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"    			
 			
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x8AF60 (0x7AF60)
 			# OFW 3.60: 0x6A194 (0x5A194)
 			# OFW 4.30: 0x6ABA0 (0x5ABA0)
 			# OFW 4.46: 0x69AF0 (0x59AF0)
+			# OFW 4.55: 0x6A2E8 (0x5A2E8)
 			log "Patching LV2 with SysCall36 4.xx CFW part 2/3"	
-			if {${::NEWMFW_VER} <= "3.55"} {
-				# pattern for <= 3.55 OFW
-				set search "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x20\xE8\x61"
-			} else {
-				# pattern for > 3.55 OFW
-				set search "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x70\xE8\x61"
-			}			
-			set replace    "\x60\x00\x00\x00"
-			set offset 8
+		#	set search  "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x20\xE8\x61\x01\x38"	;# -- OFW 3.55 --
+		#	set search  "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x70\xE8\x61\x01\x88"	;# -- OFW 4.46 --	
+			set search  "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\xAC\xE8\x61\x01\x88"	;# -- OFW 4.55 --
+			set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\x0F" ;# <-- mask off the bits/bytes to ignore
+			set replace "\x60\x00\x00\x00"
+			set offset 8			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    		 					
-
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"    		 					
+			
 			# verified OFW ver. 3.55 - 4.46+
 			# OFW 3.55: 0x8AF74 (0x7AF74)
 			# OFW 3.60: 0x6A1A8 (0x5A1A8)
 			# OFW 4.30: 0x6ABB4 (0x5ABB4)
 			# OFW 4.46: 0x69B04 (0x59B04)
-			log "Patching LV2 with SysCall36 4.xx CFW part 3/3"
-			if {${::NEWMFW_VER} <= "3.55"} {
-				# pattern for <= 3.55 OFW							
-			   #set search "\x4B\xFF\xF3\x31\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x70"	# OLD PATCH		
-				set search "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x20\x80\x61\x00\x7C"
-			} else {
-				# pattern for > 3.55 OFW
-				set search "\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x70\x38\x61\x00\x70"
-			}
-			set replace    "\x60\x00\x00\x00"
-			set offset 8
+			# OFW 4.55: 0x6A2FC (0x5A2FC)
+			log "Patching LV2 with SysCall36 4.xx CFW part 3/3"					
+		#	set search	"\x54\x63\x06\x3E\x2F\x83\x00\x00\x60\x00\x00\x00\xE8\x61\x01\x38\x4B\xFF\xF4\xED\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x00" ;# -- OFW 3.55 --
+		#	set search  "\x54\x63\x06\x3E\x2F\x83\x00\x00\x60\x00\x00\x00\xE8\x61\x01\x88\x4B\xFF\xF3\x31\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x00" ;# -- OFW 4.46 --
+			set search  "\x54\x63\x06\x3E\x2F\x83\x00\x00\x60\x00\x00\x00\xE8\x61\x01\x88\x4B\xFF\xF2\xA9\x54\x63\x06\x3E\x2F\x83\x00\x00\x41\x9E\x00\x00" ;# -- OFW 4.55 --		
+			set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00" ;# <-- mask off bytes
+			set replace "\x60\x00\x00\x00"
+			set offset 28			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"    			 
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"    			 
 		}
 		log "Applying MISC LV2 patches (QA Flag patches???)...."	
 		if {$::patch_cos::options(--patch-misc-rogero-patches)} {		    
@@ -641,9 +655,10 @@ namespace eval ::patch_cos {
 			set search    "\x7C\x09\xFE\x76\x7D\x23\x02\x78\x7C\x69\x18\x50\x38\x63\xFF\xFF"
 			append search "\x78\x63\x0F\xE0\x4E\x80\x00\x20\x80\x03\x02\x6C"
 			set replace   "\x38\x60\x00\x00\x7C\x63\x07\xB4\x4E\x80\x00\x20"
-			set offset 24       				
+			set offset 24 
+			set mask 0			
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  		
+            catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"  		
 		}
 		# if "--patch-lv2-payload-hermes-4x" enabled, then patch
 		if {$::patch_cos::options(--patch-lv2-payload-hermes-4x)} {								
@@ -679,7 +694,7 @@ namespace eval ::patch_cos {
 			set offset 0   									
 			
 			## go and calculate all the 'hermes payload' jmp spot, install spot, etc data
-			catch_die {::patch_cos::SetupHermesPayload $elf hermes_payload_data} "Unexpected error setting up Hermes Payload!  Exiting\n"			
+			catch_die {::patch_cos::SetupHermesPayload $file hermes_payload_data} "Unexpected error setting up Hermes Payload!  Exiting\n"			
 			
 			# verify the 'hermes_payload_data{}' array, make
 			# sure no values are emtpy
@@ -806,18 +821,20 @@ namespace eval ::patch_cos {
 			append replace  "$p7byte8$p7byte7$p7byte6$p7byte5$p7byte4$p7byte3$p7byte2$p7byte1\x2F\x64\x65\x76\x5F\x66"		;# patch7 in this line
 			append replace  "\x6C\x61\x73\x68\x2F\x70\x6B\x67\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"	
 			set offset 8
+			set mask 0
 			# final sanity check to make sure 'hermes payload' data is exactly the right size
 			if {[string length $replace] != $ACTUAL_HERMES_PAYLOAD_SIZE} { die "hermes payload appears to be corrupt, current length is invalid!" }			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]" 				
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]" 				
 			
 			log "Patching Hermes payload jump to location...."				
 			set search $hermes_payload_data(--jmpspot_pattern)
 			set replace   "\x48"			
 			append replace $hermes_payload_data(--jmpspot_offset)
-			set offset 0       				
+			set offset 0
+			set mask 0			
 			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"  	
+            catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"  	
 		}		
 		##
 		#### ------------------------------------------------------  END:  4.XX PATCHES AREA ----------------------------------------------- ####				
@@ -850,6 +867,7 @@ namespace eval ::patch_cos {
 		    set ::patch_cos::search  "\x04\x00\x2A\x03\x33\x7F\xD0\x80\x04\x00\x01\x82\x32\x00\x01\x00"
             set ::patch_cos::replace "\x40\x80\x00\x03"
 			set ::patch_cos::offset 4			
+			set ::patch_cos::mask 0
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf	
         }		
@@ -867,6 +885,7 @@ namespace eval ::patch_cos {
 			set ::patch_cos::search    "\x3F\xE0\x29\x04\x42\x54\xE8\x05\x40\xFF\xFF\x53\x33\x07\x95\x00"			
 			set ::patch_cos::replace   "\x40\x80\x00\x03"
 			set ::patch_cos::offset 12	
+			set ::patch_cos::mask 0
 			
 			# base function to decrypt the "self" to "elf" for patching
 			::modify_self_file $file ::patch_cos::patch_elf	
@@ -886,7 +905,8 @@ namespace eval ::patch_cos {
 				set ::patch_cos::search    "\x40\x80\03\x02\x1C\x08\x00\x81\x80\x60\xC1\x04\x35\x00\x00\x00"
 				append ::patch_cos::search "\x12\x03\x42\x0B"
 				set ::patch_cos::replace   "\x40\x80\x00\x03\x35\x00\x00\x00"
-				set ::patch_cos::offset 16	
+				set ::patch_cos::offset 16
+				set ::patch_cos::mask 0				
 			} else {
 				log "Skipping SPU_TOKEN ECDSA PATCH, not needed in this version!"
 			}
@@ -1019,9 +1039,10 @@ namespace eval ::patch_cos {
 		set search $my_payload_data(--payloadspot_pattern)
 		set replace ""			
 		set offset 8
+		set mask 0
 		# GRAB THE PATCH OFFSET VALUE ONLY
 		set ::FLAG_PATCH_FILE_FINDONLY 1
-		catch_die {set hermes_payload_install_spot [::patch_elf $elf $search $offset $replace]} "Unable to patch self [file tail $elf]" 
+		catch_die {set hermes_payload_install_spot [::patch_elf $elf $search $offset $replace $mask]} "Unable to patch self [file tail $elf]" 
 		set hermes_payload_install_spot [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_install_spot - $LV2_KERNEL_PROGRAM_STARTOFFSET]				
 		
 		# -------------- FIND 'HERMES PAYLOAD' JMP TO ADDRESS ------------- #
@@ -1031,10 +1052,11 @@ namespace eval ::patch_cos {
 		
 		set search $my_payload_data(--jmpspot_pattern)		
 		set replace ""
-		set offset 0       				
+		set offset 0 
+		set mask 0
 		# GRAB THE PATCH OFFSET VALUE ONLY
 		set ::FLAG_PATCH_FILE_FINDONLY 1
-		catch_die {set hermes_payload_jmp_address [::patch_elf $elf $search $offset $replace]} "Unable to patch self [file tail $elf]"
+		catch_die {set hermes_payload_jmp_address [::patch_elf $elf $search $offset $replace $mask]} "Unable to patch self [file tail $elf]"
 		set hermes_payload_jmp_address [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_jmp_address - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		
 		## verify that the 'hermes' install spot, is PAST the 'jmp to spot', or we need to adjust
@@ -1076,10 +1098,11 @@ namespace eval ::patch_cos {
 		set search    "\x2C\x25\x00\x00\x41\x82\x00\x50\x89\x64\x00\x00\x89\x23\x00\x00"
 		append search "\x55\x60\x06\x3E\x7F\x89\x58\x00"	
 		set replace   ""
-		set offset 0       				
+		set offset 0 
+		set mask 0
 		# GRAB THE PATCH OFFSET VALUE ONLY
 		set ::FLAG_PATCH_FILE_FINDONLY 1
-		catch_die {set hermes_payload_branch_address1 [::patch_elf $elf $search $offset $replace]} "Unable to patch self [file tail $elf]"
+		catch_die {set hermes_payload_branch_address1 [::patch_elf $elf $search $offset $replace $mask]} "Unable to patch self [file tail $elf]"
 		set hermes_payload_branch_address1 [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_branch_address1 - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		
 		# verify 'branch address1' is also backwards from 'hermes install location', or
@@ -1105,10 +1128,11 @@ namespace eval ::patch_cos {
 		set search    "\x88\x04\x00\x00\x2F\x80\x00\x00\x98\x03\x00\x00\x4D\x9E\x00\x20"
 		append search "\x7C\x69\x1B\x78\x8C\x04\x00\x01\x2F\x80\x00\x00"		
 		set replace   ""
-		set offset 0       				
+		set offset 0  
+		set mask 0
 		# GRAB THE PATCH OFFSET VALUE ONLY
 		set ::FLAG_PATCH_FILE_FINDONLY 1
-		catch_die {set hermes_payload_branch_address2 [::patch_elf $elf $search $offset $replace]} "Unable to patch self [file tail $elf]" 
+		catch_die {set hermes_payload_branch_address2 [::patch_elf $elf $search $offset $replace $mask]} "Unable to patch self [file tail $elf]" 
 		set hermes_payload_branch_address2 [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_branch_address2 - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		
 		# verify 'branch address2' is also backwards from 'hermes install location', or
@@ -1162,7 +1186,7 @@ namespace eval ::patch_cos {
 	}		
 	# this is the proc for calling the ps3mfw_base::patch_elf{} routine
 	proc patch_elf {elf} {               
-        catch_die {::patch_elf $elf $::patch_cos::search $::patch_cos::offset $::patch_cos::replace} \
+        catch_die {::patch_elf $elf $::patch_cos::search $::patch_cos::offset $::patch_cos::replace $::patch_cos::mask} \
         "Unable to patch self [file tail $elf]"
     }
 	proc patch_devflash_self {self} {		
@@ -1186,9 +1210,10 @@ namespace eval ::patch_cos {
 			if {$::patch_cos::options(--patch-RSOD-bypass)} {
 				set search     "\x41\x9E\x00\x10\x2F\x9F\x00\x02\x40\x9E\x00\x20\x48\x00\x00\x10"     
 				set replace    "\x48\x00"
-				set offset 8	
+				set offset 8
+				set mask 0
 				# PATCH THE ELF BINARY
-				catch_die {::patch_elf $elf $search $offset $replace} "Unable to patch self [file tail $elf]"
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"
 			}
 		}
     }
