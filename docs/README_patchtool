@@ -1,0 +1,86 @@
+<-------------------------------------------------->
+<-------------------------------------------------->
+simple 'examples' to show usage of 'patchtool.exe'
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------
+example: (single patch w/NO mask)
+          ---lv1ldr.elf----
+
+
+
+to patch:  LV1LDR.elf, the code: "0C 00 01 85 34 01 40 80 1C 10 00 81 3F E0 02 83"
+                                                                      ^^
+                                                                    patch here (offset 12)
+                                                                    replace with: 40 80 00 03
+execute:
+
+patchtool.exe -action patch -filename lv1ldr.self.elf -search 0C000185340140801C1000813FE00283 -replace 40800003 -offset 12
+
+
+--------------------------------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------------------------------
+
+example: (single patch with MASK set)
+      ---lv2_kernel.elf: syscall36 pt2/3---
+
+
+patchtool.exe -action patch -filename lv2_kernel.self.elf -search 5463063E2F830000419E00ACE8610188 
+     -mask FFFFFFFFFFFFFFFFFFFF0000FFFFFF0F -replace 60000000 -offset 8
+
+
+--------------------------------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------------------------------
+
+example: (MULTPLE patches with NO mask)
+            ----- vsh.self -----
+
+
+patchtool.exe --action patch vsh.self.elf -search 392900047C004828 -replace 38000001 -offset 4 -multi yes
+
+
+--------------------------------------------------------------------------------------------------------
+
+
+
+You can always run the 'patchtool.exe' from the cmd-line, and do anything with it yourself manually.....
+and you can run it without any arguments, and it will spit out the 'usage' parameters, ie all of the possible arguments...
+
+ie like this:
+
+
+
+Arguments:
+---------
+-action:
+	PATCH:	patch the file (single patch) ** default **
+	FIND:	find patch location only
+
+-filename:	full path of input file
+
+-search:	search pattern to find
+
+-mask:		mask pattern		** optional **
+
+-replace:	patch to apply		** optional **
+
+-offset:	offset to apply patch	** optional **
+		(from found spot)
+
+-multi:		** optional **
+	YES:	multiple patches - enabled
+	NO:	multiple patches - disabled ** default **
+
+-debug:		** optional **
+	YES:	debug info enabled
+	NO:	debug info disabled ** default **
+
