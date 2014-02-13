@@ -231,13 +231,12 @@ namespace eval ::patch_cos {
 			# OFW 4.50 == 0x6F48 (0x199B8)
 			# OFW 4.50 == 0x6F48 (0x199B8)
 			log "Patching 4.xx LV1LDR ECDSA CHECKS......"      				
-            set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"					
+            set search  "\x0C\x00\x01\x85\x34\x01\x40\x80\x1C\x10\x00\x81\x3F\xE0\x02\x83"								
             set replace "\x40\x80\x00\x03"				
             set offset 12	
 			set mask 0			
 			# PATCH THE ELF BINARY
-			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"     
-			
+			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"     			
 		}	
 		log "Done LV1LDR patches...."	
 	}
@@ -448,7 +447,7 @@ namespace eval ::patch_cos {
 			set verbosemode yes
 		}
 		array set hermes_payload_data {
-			--jmpspot_pattern ""
+			--jmpspot_pattern ""			
 			--jmpspot_offset ""
 			--payloadspot_pattern ""
 			--payloadspot_address ""		
@@ -686,10 +685,10 @@ namespace eval ::patch_cos {
 			# OFW 4.46 == 0x2D47B0 (0x2C47B0)
 			# OFW 4.50 == 0x2ADD20 (0x29DD20)				
 			## --- patch for "finding Hermes payload intercept(jmp spot) location...." --- ##	
-			set search    "\xF8\x21\xFF\x61\x7C\x08\x02\xA6\xFB\x81\x00\x80\xFB\xA1\x00\x88"
-			append search "\xFB\xE1\x00\x98\xFB\x41\x00\x70\xFB\x61\x00\x78\xF8\x01\x00\xB0"
-			append search "\x7C\x9C\x23\x78\x7C\x7D\x1B\x78\x4B"
-			set hermes_payload_data(--jmpspot_pattern) $search				
+			set search    "\xF8\x21\xFF\x61\x7C\x08\x02\xA6\xFB\x81\x00\x80\xFB\xA1\x00\x88"					
+			append search "\xFB\xE1\x00\x98\xFB\x41\x00\x70\xFB\x61\x00\x78\xF8\x01\x00\xB0"					
+			append search "\x7C\x9C\x23\x78\x7C\x7D\x1B\x78\x4B"			
+			set hermes_payload_data(--jmpspot_pattern) $search								
 			set replace ""
 			set offset 0   									
 			
@@ -808,7 +807,7 @@ namespace eval ::patch_cos {
 			# bytes calculated above
 			log "Patching Hermes payload 4.xx into LV2"	
 			set ACTUAL_HERMES_PAYLOAD_SIZE 0xB0	;# the actual exact size this payload must be
-			set search $hermes_payload_data(--payloadspot_pattern)
+			set search $hermes_payload_data(--payloadspot_pattern)			
 			set replace    	"\xF8\x21\xFF\x61\x7C\x08\x02\xA6\xFB\x81\x00\x80\xFB\xA1\x00\x88"
 			append replace  "\xFB\xE1\x00\x98\xFB\x41\x00\x70\xFB\x61\x00\x78\xF8\x01\x00\xB0" 
 			append replace  "\x7C\x9C\x23\x78\x7C\x7D\x1B\x78\x3B\xE0\x00\x01\x7B\xFF\xF8\x06"
@@ -822,17 +821,18 @@ namespace eval ::patch_cos {
 			append replace  "\x6C\x61\x73\x68\x2F\x70\x6B\x67\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"	
 			set offset 8
 			set mask 0
+			
 			# final sanity check to make sure 'hermes payload' data is exactly the right size
 			if {[string length $replace] != $ACTUAL_HERMES_PAYLOAD_SIZE} { die "hermes payload appears to be corrupt, current length is invalid!" }			
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]" 				
 			
 			log "Patching Hermes payload jump to location...."				
-			set search $hermes_payload_data(--jmpspot_pattern)
+			set search $hermes_payload_data(--jmpspot_pattern)			
 			set replace   "\x48"			
 			append replace $hermes_payload_data(--jmpspot_offset)
 			set offset 0
-			set mask 0			
+			set mask 0
 			# PATCH THE ELF BINARY
             catch_die {::patch_elf $file $search $offset $replace $mask} "Unable to patch self [file tail $file]"  	
 		}		
@@ -1041,7 +1041,7 @@ namespace eval ::patch_cos {
 		set offset 8
 		set mask 0
 		# GRAB THE PATCH OFFSET VALUE ONLY
-		set ::FLAG_PATCH_FILE_FINDONLY 1
+		set ::FLAG_PATCH_FILE_NOPATCH 1
 		catch_die {set hermes_payload_install_spot [::patch_elf $elf $search $offset $replace $mask]} "Unable to patch self [file tail $elf]" 
 		set hermes_payload_install_spot [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_install_spot - $LV2_KERNEL_PROGRAM_STARTOFFSET]				
 		
@@ -1050,12 +1050,12 @@ namespace eval ::patch_cos {
 		# to find the offset first, calculate the jmp offset, then do the patch		
 		log "finding Hermes payload jmp spot location....(Hermes Setup 2/4)"	
 		
-		set search $my_payload_data(--jmpspot_pattern)		
+		set search $my_payload_data(--jmpspot_pattern)			
 		set replace ""
-		set offset 0 
+		set offset 0 	
 		set mask 0
 		# GRAB THE PATCH OFFSET VALUE ONLY
-		set ::FLAG_PATCH_FILE_FINDONLY 1
+		set ::FLAG_PATCH_FILE_NOPATCH 1
 		catch_die {set hermes_payload_jmp_address [::patch_elf $elf $search $offset $replace $mask]} "Unable to patch self [file tail $elf]"
 		set hermes_payload_jmp_address [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_jmp_address - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		
@@ -1101,7 +1101,7 @@ namespace eval ::patch_cos {
 		set offset 0 
 		set mask 0
 		# GRAB THE PATCH OFFSET VALUE ONLY
-		set ::FLAG_PATCH_FILE_FINDONLY 1
+		set ::FLAG_PATCH_FILE_NOPATCH 1
 		catch_die {set hermes_payload_branch_address1 [::patch_elf $elf $search $offset $replace $mask]} "Unable to patch self [file tail $elf]"
 		set hermes_payload_branch_address1 [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_branch_address1 - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		
@@ -1131,7 +1131,7 @@ namespace eval ::patch_cos {
 		set offset 0  
 		set mask 0
 		# GRAB THE PATCH OFFSET VALUE ONLY
-		set ::FLAG_PATCH_FILE_FINDONLY 1
+		set ::FLAG_PATCH_FILE_NOPATCH 1
 		catch_die {set hermes_payload_branch_address2 [::patch_elf $elf $search $offset $replace $mask]} "Unable to patch self [file tail $elf]" 
 		set hermes_payload_branch_address2 [expr $LV2_KERNEL_BASEADDR_64 + $hermes_payload_branch_address2 - $LV2_KERNEL_PROGRAM_STARTOFFSET]		
 		

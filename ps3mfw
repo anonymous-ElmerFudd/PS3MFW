@@ -38,6 +38,7 @@ array set ::options {
 set ::PUP "pup"
 set ::LV0TOOL "lv0tool.exe"
 set ::PKGTOOL "pkgtool.exe"
+set ::PATCHTOOL "patchtool.exe"
 set ::SCETOOL "scetool"
 set ::fciv "fciv"
 set ::RCOMAGE "rcomage"
@@ -50,7 +51,8 @@ set ::SUF ""
 set ::CFW 0
 set ::OFW_MAJOR_VER 0
 set ::OFW_MINOR_VER 0
-set ::FLAG_PATCH_FILE_FINDONLY 0
+set ::FLAG_PATCH_USE_PATCHTOOL	1
+set ::FLAG_PATCH_FILE_NOPATCH 0
 set ::FLAG_PATCH_FILE_MULTI 0
 set ::FLAG_NO_LV1LDR_CRYPT 0
 set ::FLAG_COREOS_UNPACKED 0

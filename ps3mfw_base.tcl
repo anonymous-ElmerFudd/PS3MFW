@@ -266,13 +266,13 @@ proc catch_die {command message} {
 # standard 'shell' to pipe output to log file
 proc shell {args} {
     set fd [get_log_fd]
-    debug "Executing shell $args"
+    debug "Executing shell $args\n"
     eval exec $args >&@ $fd
 }
 # enhanced 'shellex' to save output to return var
 proc shellex {args} {
 	set outbuffer ""    
-    debug "Executing shellex $args"
+    debug "Executing shellex $args\n"
     set outbuffer [eval exec $args]	
 	return $outbuffer
 }
@@ -1084,18 +1084,110 @@ proc patch_elf {file search replace_offset replace mask} {
 	# setup the 'mask', if user specifed one!
 	if {($mask != 0) && ($mask != "")} { set mymask $mask }
 	
-	# if global for 'multi' is enabled, then do multiple patches, 
-	# otherwise, just do single patch
-	if { $::FLAG_PATCH_FILE_MULTI != 0 } {
-		set offset [patch_file_multi $file $search $replace_offset $replace $mask]
-		set ::FLAG_PATCH_FILE_MULTI 0
+	# if 'patchtool' is enabled (default), then call the new routine,
+	# otherwise, call the old TCL routines for patching
+	if {$::FLAG_PATCH_USE_PATCHTOOL} {				
+		set offset [patch_file_extern $file $search $replace_offset $replace $mymask]
 	} else {
-		set offset [patch_file $file $search $replace_offset $replace $mymask]
+		# if global for 'multi' is enabled, then do multiple patches, 
+		# otherwise, just do single patch
+		if { $::FLAG_PATCH_FILE_MULTI != 0 } {
+			set offset [patch_file_multi $file $search $replace_offset $replace $mymask]
+			set ::FLAG_PATCH_FILE_MULTI 0
+		} else {
+			set offset [patch_file $file $search $replace_offset $replace $mymask]
+		}
 	}
 	# return the 'offset' from the 'patch_file' function
-	# (or just '0' if doing multi-patch)
+	# (or just '0' if doing multi-patch)	
 	return $offset
 }
+
+# func. for 'patching' file via external 'patchtool.exe'
+proc patch_file_extern {file search replace_offset replace mask} {    
+	set debugmode no	
+	set verbosemode no
+	set patchaction patch
+	set multimode no
+	set buffer ""
+	set num_patches 0
+	set num_matches 0	
+	# if 'debug mode' enabled
+	if { $::options(--tool-debug) } {
+		set debugmode yes
+	}	
+	# if 'verbose mode' enabled
+	if { $::options(--task-verbose) } {
+		set verbosemode yes
+	}
+	
+	# if 'find only' & 'multi-patching' global are enabled, then set the 
+	# 'patchtool.exe' params accordingly, and reset the params
+	# to default of 0
+	if { $::FLAG_PATCH_FILE_NOPATCH != 0 } { set patchaction find }
+	if { $::FLAG_PATCH_FILE_MULTI != 0 } { set multimode yes }
+	
+	# convert the data to 'hex strings'		
+	set mysearch [convert_to_hexstring $search]
+	set myreplace [convert_to_hexstring $replace]
+	set mymask [convert_to_hexstring $mask]		
+   
+   # go call the 'patchtool' to do the patching or searching
+	catch_die {set buffer [shellex ${::PATCHTOOL} -debug $debugmode -action $patchaction -filename [file nativename $file] \
+	-search $mysearch -replace $myreplace -offset $replace_offset -mask $mymask -multi $multimode]} "patchtool.exe failed to execute!"	
+
+	# debug/log 'patchtool.exe' buffer
+	if { $verbosemode == yes } {		
+		log $buffer		
+	} else {
+		set fd [get_log_fd]
+		puts $fd $buffer	
+	}
+	# parse out the buffer, and attempt
+	# to extract the returned 'offset'
+	set data [split $buffer "\n"]
+	foreach line $data {
+		if {$::FLAG_PATCH_FILE_NOPATCH != 0} {
+			if { [regexp {(^----FOUND MATCH AT:)(.*)} $line match] } {		
+				set MyOffsetString [lindex [split $match ":"] 1]
+				log "found match at:0x$MyOffsetString"
+				incr num_matches
+			} 
+		} else {
+			if { [regexp {(^----PATCHED AT:)(.*)} $line match] } {		
+				set MyOffsetString [lindex [split $match ":"] 1]
+				log "patched at:0x$MyOffsetString"
+				incr num_patches
+			}
+		}
+	}
+	
+	# print out the num matches/num patches
+	if {$::FLAG_PATCH_FILE_NOPATCH != 0} {	
+		if {$num_matches == 0} { die "Error: 0 matches found!" } 		
+	} else {
+		if {$num_patches == 0} { die "Error: 0 patches found!" } 		
+	}
+	# verify the returned count versus mode selected, 
+	# error out if checks fail
+	if {$::FLAG_PATCH_FILE_MULTI != 0} {
+		if {$::FLAG_PATCH_FILE_NOPATCH == 1} {			
+			debug "Found $num_matches occurrences of search pattern\n"
+		} else {
+			debug "Patched $num_patches occurrences of search pattern\n"
+		}		
+	} 
+	# convert the returned 'offset' back to decimal
+	#(req'd length for this hex string is '8' chars (ie 4 hex bytes)
+	set MyOffset [convert_hexstring_to_decimal $MyOffsetString 8]
+	
+	# reset the patch flags, and return
+	# the final offset	
+	set ::FLAG_PATCH_FILE_NOPATCH 0
+	set ::FLAG_PATCH_FILE_MULTI 0	
+	return $MyOffset
+}
+
 
 # main function for binary patching a file (single patch occurrence)
 proc patch_file {file search replace_offset replace mask} {
@@ -1206,7 +1298,7 @@ proc patch_file {file search replace_offset replace mask} {
 
 	# use this flag to ONLY find the offset if we
 	# set it, otherwise binary patch the file
-	if {$::FLAG_PATCH_FILE_FINDONLY != 0} {	
+	if {$::FLAG_PATCH_FILE_NOPATCH != 0} {	
 		debug "flag set to find offset only, skipping file patching..."
 		debug "match at offset: 0x[format %x $offset]"	
 	} else {
@@ -1218,7 +1310,7 @@ proc patch_file {file search replace_offset replace mask} {
 		close $fd
 	} 	
 	# make sure we always reset the flag before leaving
-	set ::FLAG_PATCH_FILE_FINDONLY 0	
+	set ::FLAG_PATCH_FILE_NOPATCH 0	
 	
 	# return the patched "offset" in case we want
 	# to use it for further patching/reference
@@ -1682,8 +1774,14 @@ proc decrypt_spp {in out} {
 }
 
 # wrapper func. for patching decryped spp file (.pp)
+# -- use the 'new' patch file routine, unless the 
+#    flag is set to disabled
 proc patch_pp {file search replace_offset replace} {
-    patch_file $file $search $replace_offset $replace
+	if {$::FLAG_PATCH_USE_TOOL} { 
+		patch_file_extern $file $search $replace_offset $replace
+	} else { 
+		patch_file $file $search $replace_offset $replace
+	}
 }
 
 # wrapper func for encrypting .pp file (to .spp)
@@ -1707,5 +1805,39 @@ proc modify_spp_file {file callback args} {
 	# cleanup/remove the old .pp file
     catch_die {file delete -force ${file}.pp} "Could not delete $file for cleanup"
 }
+# proc to convert binary string of 'hex' data
+# to a 'HEX' ASCII string
+proc convert_to_hexstring {instring} {
+	set outstring ""
+	set length [string length $instring]
+	
+	# iterate through the string, 
+	for {set i 0} {$i < $length} {incr i 1} {
+		#set int [string range $search $i $i+3]
+		set int [string index $instring $i]
+		binary scan $int cu1 byte
+		append outstring [format %.2X $byte]
+	}
+	# return the final string
+	return $outstring
+}
+
+# proc to convert an incoming 'hex' ascii string
+# back to decimal
+proc convert_hexstring_to_decimal {instring reqlen} {
+	set outstring ""
+	set HexStr 0
+	set dwIntFinal ""
+	
+	# verify instring is exactly 4-bytes
+	if { [string length $instring] != $reqlen} { die "input string length:[string length $instring], does not match req'd length:$reqlen" }
+
+	# convert back to decimal, and return
+	# the final converted integer
+	set HexStr [binary format H* $instring]
+	binary scan $HexStr Iu1 dwIntFinal				
+	return $dwIntFinal
+}
+#
 # ------------------------------ END OF THIS SCRIPT --------------------------------------------- ##
 # ----------------------------------------------------------------------------------------------- ##
