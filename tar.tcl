@@ -445,7 +445,7 @@ proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
 	## ******
     foreach x [recurseDirs $files $dereference] {
 		if {([file type $x] == "directory") && $nodirs} {
-			if {$verbosemode == "yes"} { log "skipping directory:$x" }
+			if {$verbosemode == "yes"} { log "ignoring directory:$x" }
 			continue
 		} else {				
 			set file_header ""
@@ -459,7 +459,7 @@ proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
 				incr mytotal				
 			} else { 
 				if {([file type $x] == "directory")} {
-					if {$verbosemode == "yes"} {log "NOT including directory:$x"}
+					if {$verbosemode == "yes"} {log "NOT including directory:$x (not in ORIGINAL)"}
 				} else { die "file not found:$x" }
 			}
 		} ;# end if { directory && nodirs... }
