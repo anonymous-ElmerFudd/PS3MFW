@@ -497,29 +497,29 @@ proc create_tar {tar directory files args} {
 	# default setup for this tar creation is to
 	# create the tar with "-nodirs" specified....
 	#
-	# if dirs exist in original tar, then we MUST
-	# build the tar the same (otherwise, we don't want
-	# the dir entries in there!
+	# if dirs exist in original tar, then we need
+	# to build the new tar WITH dirs, but ONLY the
+	# dirs that exist in the original tar..
+	# ***
 	#
 	foreach entry $full_headers_list {
 		set fields [split $entry "~"]
 		lassign $fields name mode uid gid mtime type
 		if {$type == 5} {
 			set founddir 1
-			log "\n!! WARNING !!...there are DIRECTORIES in the tar:[file tail $tar]..."
-			log "TAR will be built INCLUDING directory entries...."			
+			log "\n<>...there are DIRECTORIES in the ORG tar file:$orgtar, building tar WITH dirs included.....<>"			
 			break
 		}
-	}
+	}	
 	# ----------------------------------------------- #
 	# parse the "inflags(args)", and if we have 
-	# 'directories' in our original tar, then we
-	# CANNOT specify the "-nodirs" option, or we 
-	# will be missing tar contents	
-	foreach x $inflags {		
+	# 'directories' in our original tar...then
+	# we need to NOT set the 'nodirs' flag	
+	foreach x $inflags {			
 		if {[regexp "(^-nodirs).*" $x]} {
-			if {$founddir == 1} { continue }
-			append outflags "$x "
+			if {$founddir == 1} { 
+				continue
+			} else { append outflags "$x " }
 		}
 	}		
 	# -------------------------- DONE TAR HEADERS IMPORTING ----------------------------- #	
@@ -1805,15 +1805,15 @@ proc modify_spp_file {file callback args} {
 	# cleanup/remove the old .pp file
     catch_die {file delete -force ${file}.pp} "Could not delete $file for cleanup"
 }
+
 # proc to convert binary string of 'hex' data
 # to a 'HEX' ASCII string
 proc convert_to_hexstring {instring} {
 	set outstring ""
 	set length [string length $instring]
 	
-	# iterate through the string, 
-	for {set i 0} {$i < $length} {incr i 1} {
-		#set int [string range $search $i $i+3]
+	# iterate through the string
+	for {set i 0} {$i < $length} {incr i 1} {		
 		set int [string index $instring $i]
 		binary scan $int cu1 byte
 		append outstring [format %.2X $byte]
@@ -1829,7 +1829,7 @@ proc convert_hexstring_to_decimal {instring reqlen} {
 	set HexStr 0
 	set dwIntFinal ""
 	
-	# verify instring is exactly 4-bytes
+	# verify instring is exactly equal to 'reqlen' (input param)
 	if { [string length $instring] != $reqlen} { die "input string length:[string length $instring], does not match req'd length:$reqlen" }
 
 	# convert back to decimal, and return

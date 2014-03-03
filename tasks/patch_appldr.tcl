@@ -35,8 +35,8 @@ namespace eval ::patch_appldr {
 
     proc main { } {	
 	
-        # call the function to do any APPLDR selected patches				
-		set self "appldr.self"
+        # call the function to do any APPLDR selected patches	
+		if {${::NEWMFW_VER} < "3.60"} { set self "appldr" } else { set self "appldr.self" }		
 		set path $::CUSTOM_COSUNPKG_DIR
 		set file [file join $path $self]		
 		::modify_self_file $file ::patch_appldr::Do_AppLdr_Patches	        
@@ -51,10 +51,13 @@ namespace eval ::patch_appldr {
 		
 		# patch appldr for "misc" ROGERO patches
 		if {$::patch_appldr::options(--patch-misc-rogero-patches)} {			
-			# verified OFW ver. 3.60 - 4.46+
-			# OFW 3.60 == 0x1BE4 (0x146E4)
-			# OFW 3.70 == 0x1BE4 (0x146E4)  
-			# OFW 4.46 == 0x1CDC (0x147DC)
+			# verified OFW ver. 3.60 - 4.55+
+			# OFW 3.55 == 0x (0x)
+			# OFW 3.60 == 0x1BE8 (0x146E8)
+			# OFW 3.70 == 0x1BE8 (0x146E8)  
+			# OFW 4.00 == 0x1C90 (0x14790)  
+			# OFW 4.46 == 0x1CE0 (0x147E0)
+			# OFW 4.55 == 0x1CE0 (0x147E0)
 			log "Patching Appldr with Rogero patch 1/3"						 
 			set search  "\x34\x09\x80\x80\x04\x00\x2A\x03\x18\x04\x80\x81\x34\xFF\xC0\xD0"
 			set replace "\x40\x80\x00\x03"
@@ -64,28 +67,42 @@ namespace eval ::patch_appldr {
             catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      
 			
 			log "Patching Appldr with Rogero patch 2/3"	
-			# verified OFW ver. 3.60 - 4.46+
-			# OFW 3.60 == 0x1EAC (0x149AC)
-			# OFW 3.70 == 0x1EAC (0x149AC)  
-			# OFW 4.46 == 0x1FA4 (0x14AA4)
-			set search  "\x55\xC0\x09\x91\x58\x24\x88\x90\x23\x00\x0A\x10\x1C\x08\x00\x84\x40\x80\x04\x05\x43\xF0\x00\x03"
-			set replace "\x40\x80\x00\x10"
-			set offset 4   
-			set mask 0			
-			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"
+			# verified OFW ver. 3.60 - 4.55+
+			# OFW 3.60 == 0x1EB0 (0x149B0)
+			# OFW 3.70 == 0x1EB0 (0x149B0)  
+			# OFW 4.00 == 0x1F58 (0x14A58)  
+			# OFW 4.46 == 0x1FA8 (0x14AA8)
+			# OFW 4.55 == 0x1FA8 (0x14AA8)
+			# **** NOT IN OFW 3.55 ****
+			if {${::NEWMFW_VER} > "3.56"} { 
+				set search  "\x55\xC0\x09\x91\x58\x24\x88\x90\x23\x00\x0A\x10\x1C\x08\x00\x84\x40\x80\x04\x05\x43\xF0\x00\x03"
+				set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+				set replace "\x40\x80\x00\x10"
+				set offset 4  						
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"
+			} else {	
+				log "SKIPPING Appldr-->Rogero patch 2/3....(not found in OFW < 3.60)"				
+			}
 			
 			log "Patching Appldr with Rogero patch 3/3"	
-			# verified OFW ver. 3.60 - 4.46+
-			# OFW 3.60 == 0x3D10 (0x16810)
-			# OFW 3.70 == 0x3D10 (0x16810)  
-			# OFW 4.46 == 0x3D98 (0x16898)
-			set search  "\x04\x00\x01\xD0\x21\x00\x0F\x03\x04\x00\x28\x83\x33\x7C"
-			set replace "\x40\x80\x00\x03"
-			set offset 12 
-			set mask 0				
-			# PATCH THE ELF BINARY
-            catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"		
+			# verified OFW ver. 3.60 - 4.55+
+			# OFW 3.60 == 0x3D1C (0x1681C)
+			# OFW 3.70 == 0x3D1C (0x1681C)  
+			# OFW 4.00 == 0x3DD4 (0x168D4)  
+			# OFW 4.46 == 0x3DA4 (0x168A4)
+			# OFW 4.55 == 0x3DA4 (0x168A4)
+			# **** NOT IN OFW 3.55 ****
+			if {${::NEWMFW_VER} > "3.56"} {
+				set search  "\x04\x00\x01\xD0\x21\x00\x0F\x03\x04\x00\x28\x83\x33\x7C\x46\x80\x04\x00\x01\xD0"
+				set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\xFF\xFF\xFF\xFF"
+				set replace "\x40\x80\x00\x03"
+				set offset 12 						
+				# PATCH THE ELF BINARY
+				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"		
+			} else {	
+				log "SKIPPING Appldr-->Rogero patch 3/3....(not found in OFW < 3.60)"				
+			}
 		}		
 		# patch appldr for "fself 3.40"
 		if {$::patch_appldr::options(--patch-appldr-fself-340)} {

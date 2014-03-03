@@ -99,269 +99,316 @@ namespace eval ::patch_lv1 {
 		
 		# if "--patch-lv1-mmap" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-mmap)} {
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x60C8C (0x240C8C)
-			# OFW 3.60 ==         (0x2EE138)
-			# OFW 4.46 == 0x61EC8
-            log "Patching LV1 hypervisor to allow mapping of any memory area (1006151)"			
-		   #set search  "\x39\x08\x05\x48\x39\x20\x00\x00\x38\x60\x00\x00\x4b\xff\xfc\x45" -- old value --
-		    set search  "\x41\x9E\xFF\xF0\x4B\xFF\xFD\x00\x38\x60\x00\x00\x4B\xFF\xFC\x58"                      
-            set replace "\x01"
-			set offset 7
-			set mask 0	
-			
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55: 0x60C90 (0x240C90)
+			# OFW 3.60: 0x60CB4 (0x240CB4)
+			# OFW 4.46: 0x61ECC (0x241ECC)
+			# OFW 4.55: 0x61ECC (0x241ECC)	
+            log "Patching LV1 hypervisor to allow mapping of any memory area (1006151)"				  
+		   #set search    "\x41\x9E\xFF\xF0\x4B\xFF\xFD\x00\x38\x60\x00\x00\x4B\xFF\xFC\x58"  --- OLD MATCH PATTERN --- 
+            set search    "\x39\x2B\x00\x6C\x7D\x6B\x03\x78\x7D\x29\x03\x78\x91\x49\x00\x00\x48\x00\x00\x08\x43\x40\x00\x18"
+			append search "\x80\x0B\x00\x00\x54\x00\x06\x30\x2F\x80\x00\x00\x41\x9E\xFF\xF0\x4B\xFF\xFD\x00"
+            set replace   "\x4B\xFF\xFD\x01"											  ;# ^^ patch starts here
+			set offset 40
+			set mask 0				
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }                        
         # if "--patch-lv1-htab-write" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-htab-write)} {
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0xF5E94 (0x2D5E94)
-			# OFW 3.60 == 0xF767C (0x2D767C)  
-			# OFW 4.46 == 0xFD268 ()
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0xF5EB0 (0x2D5EB0)
+			# OFW 3.60 == 0xF7698 (0x2D7698)  
+			# OFW 4.46 == 0xFD284 (0x2DD284)
+			# OFW 4.55 == 0xFD70C (0x2DD70C)
             log "Patching LV1 hypervisor to allow mapping of HTAB with write protection (1007280)"
             set search    "\x2f\x1d\x00\x00\x61\x4a\x97\xd2\x7f\x80\xf0\x00\x79\x4a\x07\xc6"
 	        append search "\x65\x4a\xb5\x8e\x41\xdc\x00\x54\x3d\x40\x99\x79\x41\xda\x00\x54"
             set replace   "\x60\x00\x00\x00"
 			set offset 28
-			set mask 0
-			
+			set mask 0			
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 	    }
 		# if "--patch-lv1-mfc-sr1-mask" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-mfc-sr1-mask)} {
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x112674 (0x2F2674)
-			# OFW 3.60 == 0x113E40 (0x2F3E40)  
-			# OFW 4.46 == 0x119A2C ()
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x112678 (0x2F2678)
+			# OFW 3.60 == 0x113E44 (0x2F3E44)  
+			# OFW 4.46 == 0x119A30 (0x2F9A30)
+			# OFW 4.55 == 0x119EB8 (0x2F9EB8)
             log "Patching LV1 hypervisor to allow setting all bits of SPE register MFC_SR1 with lv1_set_spe_privilege_state_area_1_register (1123960)"         
             set search    "\xe8\x03\x00\x10\x39\x20\x00\x09\xe9\x43\x00\x00\x39\x00\x00\x00"
 	        append search "\x78\x00\xef\xa6\x7c\xab\x48\x38\x78\x00\x1f\xa4\x7d\x6b\x03\x78"
             set replace   "\x39\x20\xff\xff"
 			set offset 4
-			set mask 0
-          
+			set mask 0          
 		    # PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 	    }
 		# if "--patch-lv1-dabr-priv-mask" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-dabr-priv-mask)} {
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x103CF0 (0x2E3CF0)
-			# OFW 3.60 == 0x1054D8 (0x2E54D8)  
-			# OFW 4.46 == 0x10B0C4 ()
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x103CF4 (0x2E3CF4)
+			# OFW 3.60 == 0x1054DC (0x2E54DC)  
+			# OFW 4.46 == 0x10B0C8 (0x2EB0C8)
+			# OFW 4.55 == 0x10B550 (0x2EB550)
             log "Patching LV1 hypervisor to allow setting data access breakpoints in hypervisor state with lv1_set_dabr (1064180)"           
             set search  "\x60\x00\x00\x00\x38\x00\x00\x0b\x7f\xe9\x00\x38\x7f\xa9\xf8\x00"
-            set replace "\x38\x00\x00\x0f"
+            set replace "\x38\x00\x00\x0F"
 			set offset 4
-			set mask 0
-         
+			set mask 0         
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 	    }
 		# if "--patch-lv1-encdec-ioctl-0x85" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-encdec-ioctl-0x85)} {
-			# verified OFW ver. 3.55 - 4.46+
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
 			# OFW 3.55 == 0x93490 (0x273490)
 			# OFW 3.60 == 0x934B4 (0x2734B4)  
 			# OFW 4.46 == 0xCF IOCTLs allowed!!			
+			# OFW 4.55 == 0x1CF IOCTLs allowed! (0x94FEC)
             log "Patching LV1 hypervisor to allow ENCDEC IOCTL command 0x85 (603284)"  
 			if {${::NEWMFW_VER} < "3.70"} {
 				set search  "\x38\x00\x00\x01\x39\x20\x00\x4f\x7c\x00\xf8\x36\x7c\x00\x48\x38"
 				set replace "\x39\x20\x00\x5f"
 				set offset 4
-				set mask 0
-				
+				set mask 0				
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
+				
 			} else {
 				log "SKIPPING \"ENCDEC IOCTL command 0x85 patch\", as it's unneeded in this firmware version!"
 			}         			
 	    }
 		# if "--patch-lv1-gpu-4kb-iopage" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-gpu-4kb-iopage)} {
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x34980 (0x214980)
-			# OFW 3.60 == 0x34980 (0x214980)
-			# OFW 4.46 == 0x34F0C (0x214F0C)
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x34990 (0x214990)
+			# OFW 3.60 == 0x34990 (0x214990)
+			# OFW 4.46 == 0x34F1C (0x214F1C)
+			# OFW 4.55 == 0x34F1C (0x214F1C)
             log "Patching LV1 hypervisor to allow 4kb IO page size for GPU GART memory (215440)"         
            #set search  "\x6d\x00\x55\x55\x2f\xa9\x00\x00\x68\x00\x55\x55\x39\x20\x00\x00" -- old value -- (patch offset=84)
 		    set search  "\xF9\x23\x01\x98\xF9\x23\x01\xA0\xF9\x23\x01\xA8\x41\x9E\x00\x0C\x3C\x00\x00\x01"
             set replace "\x38\x00\x10\x00"
 			set offset 16
-			set mask 0
-         
+			set mask 0         
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 	    }
 		# if "--patch-lv1-dispmgr-access" enabled, patch it		
-        if {$::patch_lv1::options(--patch-lv1-dispmgr-access)} {		
+        if {$::patch_lv1::options(--patch-lv1-dispmgr-access)} {	
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
             # patch SS services part 1/3       
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x38EF1C (0x5BEF1C)
-			# OFW 3.60 == 0x38F68C (0x5BF68C)
-			# OFW 4.46 == 0x3AD9F0 (0x5BD9F0)
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x38EF28 (0x5BEF28)
+			# OFW 3.60 == 0x38F698 (0x5BF698)
+			# OFW 4.46 == 0x3AD9FC (0x5BD9FC)
+			# OFW 4.55 == 0x3ADA74 (0x5BDA74)
             log "Patching Dispatcher Manager to allow access to all SS services 1/3 (3731240)"
             set search  "\xe8\x17\x00\x08\x7f\xc4\xf3\x78\x7f\x83\xe3\x78\xf8\x01\x00\x98"
             set replace "\x60\x00\x00\x00"
 			set offset 12
-			set mask 0
-           
+			set mask 0           
 		    # PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
 			# patch SS services part 2/3 
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x38EF44 (0x5BEF44)
-			# OFW 3.60 == 0x38F6B4 (0x5BF6B4)
-			# OFW 4.46 == 0x3ADA18 (0x5BDA18)
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x38EF4C (0x5BEF4C)
+			# OFW 3.60 == 0x38F6BC (0x5BF6BC)
+			# OFW 4.46 == 0x3ADA20 (0x5BDA20)
+			# OFW 4.55 == 0x3ADA98 (0x5BDA98)
             log "Patching Dispatcher Manager to allow access to all SS services 2/3 (3731276)"
             set search  "\x7f\xa4\xeb\x78\x7f\x85\xe3\x78\x4b\xff\xf0\xe5\x54\x63\x06\x3e"
             set replace "\x38\x60\x00\x01"
 			set offset 8
-			set mask 0
-           
+			set mask 0           
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
 			# patch SS services part 3/3 
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x38EFC0 (0x5BEFC0)
-			# OFW 3.60 == 0x38F730 (0x5BF730)
-			# OFW 4.46 == 0x3ADA94 (0x5BDA94)
-            log "Patching Dispatcher Manager to allow access to all SS services 3/3 (3731396)"
-		   #set search  "\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00\x60\x65"-- 3.60+
-           #set search  "\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00\x5f\xa5"-- old patch (3.55)
-		    set search  "\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00"
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x38EFC4 (0x5BEFC4)
+			# OFW 3.60 == 0x38F734 (0x5BF734)
+			# OFW 4.46 == 0x3ADA98 (0x5BDA98)
+			# OFW 4.55 == 0x3ADB10 (0x5BDB10)
+            log "Patching Dispatcher Manager to allow access to all SS services 3/3 (3731396)"		   
+		    set search  "\x7F\xC3\xF3\x78\x7f\x84\xe3\x78\x38\xa1\x00\x70\x9b\xe1\x00\x70\x48\x00"
             set replace "\x3b\xe0\x00\x01\x9b\xe1\x00\x70\x38\x60\x00\x00"
-			set offset 4
-			set mask 0
-         
+			set offset 8
+			set mask 0         
 		    # PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-iimgr-access" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-iimgr-access)} {
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x340798 (0x570798)
-			# OFW 3.60 == 0x340B88 (0x570B88)
-			# OFW 4.46 == 0x35E844 (0x56E844)
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x3407A0 (0x5707A0)
+			# OFW 3.60 == 0x340B90 (0x570B90)
+			# OFW 4.46 == 0x35E84C (0x56E84C)
+			# OFW 4.55 == 0x35E8C4 (0x56E8C4)
             log "Patching Indi Info Manager to allow access to all its services (3409824)"          
             set search  "\x38\x60\x00\x0d\x38\x00\x00\x0d\x7c\x63\x00\x38\x4e\x80\x00\x20"
             set replace "\x38\x60\x00\x00"
 			set offset 8
-			set mask 0
-         
+			set mask 0         
 		    # PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
         # if "--patch-lv1-um-extract-pkg" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-um-extract-pkg)} {
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x2C502C (0x4F502C)
-			# OFW 3.60 == 0x2C4DCC (0x4F4DCC)
-			# OFW 4.46 == 0x2E2670 (0x4F2670)
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #					
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x2C5040 (0x4F5040)
+			# OFW 3.60 == 0x2C4DE0 (0x4F4DE0)
+			# OFW 4.46 == 0x2E2684 (0x4F2684)
+			# OFW 4.55 == 0x2E26A4 (0x4F26A4)
             log "Patching Update Manager to enable extracting for all package types (2904128)"         
-            set search    "\x38\x1f\xff\xf9\x2f\x1d\x00\x01\x2b\x80\x00\x01\x38\x00\x00\x00"
-	        append search "\xf8\x1b\x00\x00\x41\x9d\x00\xa8\x7b\xfd\x00\x20\x7f\x44\xd3\x78"
-            set replace   "\x60\x00\x00\x00"
-			set offset 20
-			set mask 0
-         
+            set search  "\x38\x1f\xff\xf9\x2f\x1d\x00\x01\x2b\x80\x00\x01\x38\x00\x00\x00\xf8\x1b\x00\x00\x41\x9d\x00\xa8\x7b\xfd\x00\x20\x7f\x44\xd3\x78"
+			set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+            set replace "\x60\x00\x00\x00"																;# ^^ patch starts here
+			set offset 20			 
 		    # PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-um-write-eprom-product-mode" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-um-write-eprom-product-mode)} {
-			# verified OFW ver. 3.55 - 4.46+
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #					
+			#
+			# verified OFW ver. 3.55 - 4.55+
 			# OFW 3.55 == 0x2C7A28 (0x4F7A28)
 			# OFW 3.60 == 0x2C7954 (0x4F7954)
 			# OFW 4.46 == 0x2E540C (0x4F540C)
-            log "Patching Update Manager to enable setting product mode by using Update Manager Write EPROM (2914856)"         
-            set search  "\xe8\x18\x00\x08\x2f\xa0\x00\x00\x40\x9e\x00\x10\x7f\xc3\xf3\x78"
-            set replace "\x38\x00\x00\x00"
-			set offset 0
-			set mask 0
-         
+			# OFW 4.55 == 0x2E5454 (0x4F5454)
+            log "Patching Update Manager to enable setting product mode by using Update Manager Write EPROM (2914856)"                  
+			set search  "\x38\x80\x00\x01\xE8\xA2\x8C\x10\x7F\xC3\xF3\x78\x48\x02\xD4\x0D\xE8\x18\x00\x08\x2F\xA0\x00\x00\x40\x9E\x00\x10\x7F\xC3\xF3\x78"
+			set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF"
+            set replace "\x38\x00\x00\x00"												;# ^^ patch starts here
+			set offset 16			 
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-sm-del-encdec-key" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-sm-del-encdec-key)} {
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0x2DC40C (0x50C40C)
-			# OFW 3.60 == 0x2DCAE4 (0x50CAE4)
-			# OFW 4.46 == 0x2FB31C (0x50B31C)
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0x2DC420 (0x50C420)
+			# OFW 3.60 == 0x2DCAF8 (0x50CAF8)
+			# OFW 4.46 == 0x2FB330 (0x50B330)
+			# OFW 4.55 == 0x2FB5D0 (0x50B5D0)
             log "Patching Storage Manager to allow deleting of all ENCDEC keys (2999328)"         
             set search    "\x7d\x24\x4b\x78\x39\x29\xff\xf4\x7f\xa3\xeb\x78\x2b\xa9\x00\x03"
-            append search "\x38\x00\x00\x09\x41\x9d\x00\x4c"
+            append search "\x38\x00\x00\x09\x41\x9d"
             set replace   "\x60\x00\x00\x00"
 			set offset 20
-			set mask 0
-			
+			set mask 0			
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }
 		# if "--patch-lv1-repo-node-lpar" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-repo-node-lpar)} {
-		    # verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0xFD810 (0x2DD810)
-			# OFW 3.60 == 0xFEFF8 (0x2DEFF8)
-			# OFW 4.46 == 0x104BE4 (0x2E4BE4)    			
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+		    # verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0xFD850 (0x2DD850)
+			# OFW 3.60 == 0xFF038 (0x2DF038)
+			# OFW 4.46 == 0x104C24 (0x2E4C24)    			
+			# OFW 4.55 == 0x1050AC (0x2E50AC)    
             log "Patching LV1 hypervisor to allow creating/modifying/deleting of repository nodes in any LPAR 1/3 (1038416)"
             set search     "\x39\x20\x00\x00\xe9\x69\x00\x00\x4b\xff\xff\x68\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
 	        append search  "\xf8\x21\xff\x11\x39\x29\x98\x18\xfb\xa1\x00\xd8"		   
             set replace    "\xe8\x1e\x00\x20\xe9\x3e\x00\x28\xe9\x5e\x00\x30\xe9\x1e\x00\x38\xe8\xfe\x00\x40"
 	        append replace "\xe8\xde\x00\x48\xeb\xfe\x00\x18"
 			set offset 64
-			set mask 0
-			
+			set mask 0			
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
 			
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0xFDCB4 (0x2DDCB4)
-			# OFW 3.60 == 0xFF49C (0x2DF49C)
-			# OFW 4.46 == 0x105088 (0x2E5088)    		    
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0xFDCF4 (0x2DDCF4)
+			# OFW 3.60 == 0xFF4DC (0x2DF4DC)
+			# OFW 4.46 == 0x1050C8 (0x2E50C8)    		    
+			# OFW 4.55 == 0x105550 (0x2E5550)    	
             log "Patching LV1 hypervisor to allow creating/modifying/deleting of repository nodes in any LPAR 2/3 (1039604)"
             set search     "\x39\x20\x00\x00\xe9\x29\x00\x00\x4b\xff\xff\x9c\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
 	        append search  "\xf8\x21\xff\x11\x39\x29\x98\x18\xfb\xa1\x00\xd8"
             set replace    "\xe8\x1e\x00\x20\xe9\x3e\x00\x28\xe9\x5e\x00\x30\xe9\x1e\x00\x38\xe8\xfe\x00\x40"
 	        append replace "\xe8\xde\x00\x48\xeb\xfe\x00\x18"
 			set offset 64
-			set mask 0
-			
+			set mask 0			
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
          
-			# verified OFW ver. 3.55 - 4.46+
-			# OFW 3.55 == 0xFD590 (0x2DD590)
-			# OFW 3.60 == 0xFED78 (0x2DED78)
-			# OFW 4.46 == 0x104964 (0x2E4964)     
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
+			# OFW 3.55 == 0xFD5CC  (0x2DD5CC)
+			# OFW 3.60 == 0xFEDB4  (0x2DEDB4)
+			# OFW 4.46 == 0x1049A0 (0x2E49A0)     
+			# OFW 4.55 == 0x104E28 (0x2E4E28)    
             log "Patching LV1 hypervisor to allow creating/modifying/deleting of repository nodes in any LPAR 3/3 (1037772)"
             set search    "\x39\x20\x00\x00\xe9\x29\x00\x00\x4b\xff\xfe\x70\x3d\x2d\x00\x00\x7c\x08\x02\xa6"
 	        append search "\xf8\x21\xff\x31\x39\x29\x98\x18\xfb\xa1\x00\xb8"
             set replace   "\xe8\x1e\x00\x20\xe9\x5e\x00\x28\xe9\x1e\x00\x30\xe8\xfe\x00\x38\xeb\xfe\x00\x18"
 			set offset 60
-			set mask 0
-			
+			set mask 0			
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }				
 		# if "--patch-lv1-storage-skip-acl-check" enabled, patch it
         if {$::patch_lv1::options(--patch-lv1-storage-skip-acl-check)} {
-			# verified OFW ver. 3.55 - 4.46+
+			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+			# (patch seems fine, NO mask req'd)
+			#
+			# verified OFW ver. 3.55 - 4.55+
 			# OFW 3.55 == 0x7B340 (0x25B340)
 			# OFW 3.60 == 0x7B364 (0x25B364)
 			# OFW 4.46 == 0x7C504 (0x25C504) 
+			# OFW 4.55 == 0x7C504 (0x25C504) 
             log "Patching LV1 to enable skipping of ACL checks for all storage devices (OtherOS++/downgrader) (504640)"         
             set search    "\x54\x63\x06\x3e\x2f\x83\x00\x00\x41\x9e\x00\x14\xe8\x01\x00\x70\x54\x00\x07\xfe"
 	        append search "\x2f\x80\x00\x00\x40\x9e\x00\x18"
             set replace   "\x38\x60\x00\x01\x2f\x83\x00\x00\x41\x9e\x00\x14\x38\x00\x00\x01"
 			set offset 0
-			set mask 0
-         
+			set mask 0         
 			# PATCH THE ELF BINARY
 			catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 
         }

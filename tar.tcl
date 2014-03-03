@@ -431,26 +431,38 @@ proc ::tar::create_ps3mfw {tar files headerslist totaladded args} {
     parseOpts {dereference 0 nodirs 0} $args		
     
 	set fh [::open $tar w+]
-	fconfigure $fh -encoding binary -translation lf -eofchar {}   
+	fconfigure $fh -encoding binary -translation lf -eofchar {} 
+	## ******
+	## note:
+	## parse the full 'filelist' of the tar we are about to create.
+	## 1) if we have 'nodirs' enabled, then build the new TAR 
+	##    without ANY directories included.
+	## 2) if we do have dirs enabled, then the full filelist
+	##    of the tar we are creating will include ALL directories
+	##    of the tree we are tar'ing up....compare all dir entries
+	##    against the dirs of the original tar, and SKIP any dirs
+	##    that are NOT in the org list...
+	## ******
     foreach x [recurseDirs $files $dereference] {
 		if {([file type $x] == "directory") && $nodirs} {
-			if {$verbosemode == "yes"} {
-				log "skipping directory:$x"
-			}
+			if {$verbosemode == "yes"} { log "skipping directory:$x" }
 			continue
 		} else {				
 			set file_header ""
 			set index [lsearch -regexp $headerslist (^$x/{0,1}~.*)]				
 			if {$index != -1} {					
-				if {$verbosemode == "yes"} {
-					log "found it:$x"
-				}			
+				if {$verbosemode == "yes"} { log "found it([string toupper [file type $x]]):$x" }							
+				# found the file header, so write the file,
+				# and incr. our total 'found' count
 				set file_header [lindex $headerslist $index]
-				# found the file header, so write the file
 				writefile_ps3mfw $x $fh $dereference $x $file_header
 				incr mytotal				
-			} else { die "file not found:$x" }
-		}
+			} else { 
+				if {([file type $x] == "directory")} {
+					if {$verbosemode == "yes"} {log "NOT including directory:$x"}
+				} else { die "file not found:$x" }
+			}
+		} ;# end if { directory && nodirs... }
     }
 	# always finalize file with 'two' 512-byte empty sectors
 	puts -nonewline $fh [string repeat \x00 1024]    

@@ -110,52 +110,56 @@ namespace eval ::patch_vsh {
 		###########			PATCHES FOR "NAS_PLUGIN.SPRX"   #############################
 		##
 		if { [string first "nas_plugin.sprx" $elf 0] != -1 } {		
-		
+			
 			# if "--allow-pseudoretail-pkg" enabled, patch it
 			if {$::patch_vsh::options(--allow-pseudoretail-pkg) } {
-				# verified OFW ver. 3.55 - 4.46+
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+				# (patch seems fine, NO mask req'd)
+				#
+				# verified OFW ver. 3.55 - 4.55+
 				# OFW 3.55 == 0x325C (0x316C)			
 				# OFW 3.70 == 0x3264 (0x3174) 
 				# OFW 4.00 == 0x3264 (0x3174)
 				# OFW 4.46 == 0x3264 (0x3174)
+				# OFW 4.55 == 0x3264 (0x3174)
 				log "Patching [file tail $elf] to allow pseudo-retail pkg installs"         
 				set search  "\x7C\x60\x1B\x78\xF8\x1F\x01\x80\xE8\x7F\x01\x80"
 				set replace "\x38\x00\x00\x00"
 				set offset 0
-				set mask 0	
-			 
+				set mask 0				 
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"   
 			}			
 			# if "--allow-retail-pkg-dex" enabled, patch it
 			if {$::patch_vsh::options(--allow-retail-pkg-dex) } {
-				# verified OFW ver. 3.55 - 4.46+
-				# OFW 3.55 == 0x371E4 (0x370F4)			
-				# OFW 3.70 == 0x3BDB4 (0x3BCC4)  
-				# OFW 4.46 == 0x2E988 (0x2E898)
-				# OFW 4.46 == 0x (0x)
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #	
+				#
+				# verified OFW ver. 3.55 - 4.55+
+				# OFW 3.55 == 0x371EC (0x370FC)					
+				# OFW 4.46 == 0x2E990 (0x2E8A0)
+				# OFW 4.50 == 0x2EAC4 (0x2E9D4)				
 				log "Patching [file tail $elf] to allow retail pkg installs on dex"         
-				set search  "\x55\x60\x06\x3E\x2F\x80\x00\x00\x41\x9E\x01\xB0\x3B\xA1\x00\x80"
-				set replace "\x60\x00\x00\x00"
-				set offset 8
-				set mask 0	
-			 
+				set search  "\x55\x60\x06\x3E\x2F\x80\x00\x00\x41\x9E\x01\xB0\x3B\xA1\x00\x80\x3D\x00\x2E\x7B"
+				set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF" ;# <-- mask off the bits/bytes to ignore	
+				set replace "\x60\x00\x00\x00"				;# ^^ patch starts here
+				set offset 8							 
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			}			
 			# if "--allow-debug-pkg" enabled, patch it
 			if {$::patch_vsh::options(--allow-debug-pkg) } {
-				# verified OFW ver. 3.55 - 4.46+
-				# OFW 3.55 == 0x3734C (0x3725C)			
-				# OFW 3.70 == 0x3BF1C (0x3BE2C)
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #						
+				#
+				# verified OFW ver. 3.55 - 4.55+
+				# OFW 3.55 == 0x37350 (0x37250)							
 				# OFW 4.30 == 0x2E930 (0x2E840)
-				# OFW 4.46 == 0x2EAF0 (0x2EA00)
+				# OFW 4.46 == 0x2EAF4 (0x2EAF4)
+				# OFW 4.50 == 0x2EC28 (0x2EB38)
 				log "Patching [file tail $elf] to allow debug pkg installs"         				
-				set search  "\x2F\x89\x00\x00\x41\x9E\x00\x4C\x38\x00\x00\x00\x81\x22"
+				set search  "\x2F\x89\x00\x00\x41\x9E\x00\x4C\x38\x00\x00\x00\x81\x22\xAA\xAA\x81\x62\xAA\xAA"
+				set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\x00\x00\xFF\xFF\x00\x00" ;# <-- mask off the bits/bytes to ignore	
 				set replace "\x60\x00\x00\x00"
-				set offset 4
-				set mask 0					
-			 
+				set offset 4									 
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			}			
@@ -171,12 +175,15 @@ namespace eval ::patch_vsh {
 			# patch VSH.self for ROGERO patches
 			# there are TWO of these patches, easier to
 			# just use the "MULTI" patch to hit them both in one shot
-			if {$::patch_vsh::options(--patch-rogero-vsh-patches)} {			
-				# verified OFW ver. 3.60 - 4.50+
-				# OFW 3.60 == 0x (0x)
-				# OFW 4.00 == 0x17E2EC,0x17FF18 (0x18E2EC,0x18FF18)  
-				# OFW 4.46 == 0x18406C,0x185CA4 (0x19406C,0x195CA4)
-				# OFW 4.50 == 0x184274,0x185EAC (0x194274,0x195EAC)
+			if {$::patch_vsh::options(--patch-rogero-vsh-patches)} {	
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+				# (patch seems fine, NO mask req'd)
+				#
+				# verified OFW ver. 3.60 - 4.55+
+				# OFW 3.60 == 0x258DA0,0x25AC18 (0x268DA0,0x26AC18)
+				# OFW 4.00 == 0x17E2F0,0x17FF1C (0x18E2F0,0x18FF1C)  
+				# OFW 4.46 == 0x184070,0x185CA8 (0x194070,0x195CA8)				
+				# OFW 4.55 == 0x1842A8,0x185EE0 (0x1942A8,0x195EE0)
 				log "Patching VSH.self with Rogero patch 1&2/4"
 				set ::FLAG_PATCH_FILE_MULTI 1				
 				
@@ -188,26 +195,35 @@ namespace eval ::patch_vsh {
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"      
 				
 				log "Patching VSH.self with (downgrader patch) Rogero patch 3/4"	
-				# verified OFW ver. 3.60 - 4.50+
-				# OFW 3.60 == 0x (0x)
-				# OFW 4.00 == 0x2320A8 (0x2420A8)  
-				# OFW 4.46 == 0x23CFC0 (0x24CFC0)
-				# OFW 4.50 == 0x23E718 (0x24E718)				
-				set search    "\x6C\x60\x80\x01\x2F\x80\x00\x06\x40\x9E\x02\xD0\x48\x00\x02\xB8"
-				append search "\x38\x61\x02\x90\x48\x00"
-				set replace   "\x60\x00\x00\x00"
-				set offset 20
-				set mask 0	
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #						
+				#
+				# verified OFW ver. 3.60 - 4.55+
+				# OFW 3.60 == 0x30E3D0 (0x31E3D0)
+				# OFW 4.00 == 0x2320BC (0x2420BC)  
+				# OFW 4.46 == 0x23CFD4 (0x24CFD4)						
+				# OFW 4.55 == 0x23E7F8 (0x24E7F48
+				if {${::NEWMFW_VER} < "4.00"} {	
+					set search	"\x38\x61\x02\x90\x48\x00\x52\x55\x60\x00\x00\x00\x6F\xA0\x80\x01\x2F\x80\x05\x14\x41\x9E\x03\x78\x38\x00\x00\x00\xF8\x1F\x00\x00"
+					set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+				} else {
+					set search	"\x38\x61\x02\x90\x48\x00\x50\x65\x6F\xA0\x80\x01\x2F\x80\x05\x14\x41\x9E\x03\x54\x38\x00\x00\x00\xF8\x1F\x00\x00"
+					set mask	"\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+				}
+				set replace "\x60\x00\x00\x00";#patch starts here
+				set offset 4				
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"														
 				
 				log "Patching VSH.self with Rogero patch 4/4"	
-				# verified OFW ver. 3.60 - 4.50+
-				# OFW 3.60 == 0x (0x)
-				# OFW 3.70 == 0x (0x)  
-				# OFW 4.00 == 0x697A30 (0x6B7A30)  
-				# OFW 4.46 == 0x6AA330 (0x6BA330)
-				# OFW 4.50 == 0x6A9CB0 (0x6B9D0D)	
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+				# (patch seems fine, NO mask req'd)
+				#
+				# verified OFW ver. 3.60 - 4.55+
+				# OFW 3.55 == 0x305F50 (0x315F50)
+				# OFW 3.60 == 0x6BC38D (0x6CC38D)  
+				# OFW 4.00 == 0x697A8D (0x6B7A8D)  
+				# OFW 4.46 == 0x6AA38D (0x6BA38D)					
+				# OFW 4.55 == 0x6AAF8D (0x6BAF8D)
 				set search     "\x61\x64\x5F\x72\x65\x63\x65\x69\x76\x65\x5F\x65\x76\x65\x6E\x74"
 				append search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 				append search  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -222,12 +238,15 @@ namespace eval ::patch_vsh {
 			}			
 			# if "--allow-unsigned-app" enabled, patch it
 			if {$::patch_vsh::options(--allow-unsigned-app)} {
-				# verified OFW ver. 3.55 - 4.50+
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+				# (patch seems fine, NO mask req'd)
+				#
+				# verified OFW ver. 3.55 - 4.55+
 				# OFW 3.55 == 0x5FFEE8 (0x60FEE8)			
-				# OFW 3.70 == 0x61A3C4 (0x62A3C4)
+				# OFW 3.60 == 0x60B29C (0x61B29C)
 				# OFW 4.00 == 0x5DB8B8 (0x5FB8B8)  				
-				# OFW 4.46 == 0x5EA584 (0x5FA584)
-				# OFW 4.50 == 0x5E98F0 (0x5F98F0)
+				# OFW 4.46 == 0x5EA584 (0x5FA584)				
+				# OFW 4.55 == 0x5EAAC0 (0x5FAAC0)
 				log "Patching [file tail $elf] to allow running of unsigned applications 1/2"         
 				set search  "\xF8\x21\xFF\x81\x7C\x08\x02\xA6\x38\x61\x00\x70\xF8\x01\x00\x90\x4B\xFF\xFF\xE1\x38\x00\x00\x00"
 				set replace "\x38\x60\x00\x01\x4E\x80\x00\x20"
@@ -236,12 +255,15 @@ namespace eval ::patch_vsh {
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			 
-				# verified OFW ver. 3.55 - 4.50+
-				# OFW 3.55 == 0x30A7C0 (0x31A7C0)			
-				# OFW 3.70 == 0x31B55C (0x32B55C) 
-				# OFW 4.00 == 0x2376B8 (0x2476B8) 
-				# OFW 4.46 == 0x241C2C (0x251C2C)
-				# OFW 4.50 == 0x243388 (0x253388)
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #			
+				# (patch seems fine, NO mask req'd)
+				#
+				# verified OFW ver. 3.55 - 4.55+
+				# OFW 3.55 == 0x30A7D4 (0x31A7D4)			
+				# OFW 3.60 == 0x312ED4 (0x322ED4) 
+				# OFW 4.00 == 0x236CC4 (0x246CC4) 
+				# OFW 4.46 == 0x241C40 (0x251C40)				
+				# OFW 4.55 == 0x243464 (0x253464)
 				log "Patching [file tail $elf] to allow running of unsigned applications 2/2"
 				set search  "\xA0\x7F\x00\x04\x39\x60\x00\x01\x38\x03\xFF\x7F\x2B\xA0\x00\x01\x40\x9D\x00\x08\x39\x60\x00\x00"
 				set replace "\x60\x00\x00\x00"
@@ -252,38 +274,63 @@ namespace eval ::patch_vsh {
 			}
 			# if "--patch-vsh-react-psn-v2-4x" enabled, patch it
 			if {$::patch_vsh::options(--patch-vsh-react-psn-v2-4x)} {
-				# verified OFW ver. 3.55 - 4.50+
-				# OFW 3.55 == 0x30B1D4 (0x31B1D4)			
-				# OFW 3.70 == 0x31BF70 (0x250970)				
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #							
+				#
+				# verified OFW ver. 3.55 - 4.55+
+				# OFW 3.55 == 0x30B230 (0x31B230)			
+				# OFW 3.60 == 0x313930 (0x323930)				
+				# OFW 4.00 == 0x2376CC (0x2476CC)	
 				# OFW 4.30 == 0x240974 (0x250974)
-				# OFW 4.46 == 0x2425EC (0x2525EC)
-				# OFW 4.50 == 0x243D48 (0x253D48)
-				log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"          
-			   #set search    "\x4B\xDC\x03\xA9" --- old value ---
-			    set search    "\x4E\x80\x00\x20\x7C\x80\x23\x78\x78\x63\x00\x20\x2F\x80\x00\x00"
-				append search "\x78\x84\x00\x20\x41\x9E\x00\x08\x4B\xFF\xFF"
+				# OFW 4.46 == 0x242648 (0x252648)				
+				# OFW 4.55 == 0x243E6C (0x253E6C)
+				log "Patching [file tail $elf] to allow unsigned act.dat & .rif files"   
+				## much easier to just find the entire block, as it exists the same in ALL OFW versions, rather then
+				## trying to find smaller snippets, as pieces of this code is all throughout 'vsh'...									
+				set search    "\xF8\x21\xFF\x91\x7C\x08\x02\xA6\xF8\x01\x00\x80\x48\x39\xB3\xA9\x60\x00\x00\x00\xE8\x01\x00\x80\x7C\x63\x07\xB4\x7C\x08\x03\xA6"
+				set mask	  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+				
+				append search "\x38\x21\x00\x70\x4E\x80\x00\x20\xF8\x21\xFF\x91\x7C\x08\x02\xA6\xF8\x01\x00\x80\x4B\xDB\xE7\x2D\x60\x00\x00\x00\xE8\x01\x00\x80"
+				append mask   "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+																											  ;# ^^ patch starts here
+				append search "\x7C\x63\x07\xB4\x7C\x08\x03\xA6\x38\x21\x00\x70\x4E\x80\x00\x20"
+				append mask	  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"				
 				set replace   "\x38\x60\x00\x00"
-				set offset 92
-				set mask 0				 
+				set offset 52						 
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"        
 			}
 			# if "--patch-vsh-no-delete-actdat" enabled, patch it
 			if {$::patch_vsh::options(--patch-vsh-no-delete-actdat)} {
-				# verified OFW ver. 3.55 - 4.50+
-				# OFW 3.55 == 0x30AC64 (0x31AC64)			
-				# OFW 3.70 == 0x31BA00 (0x32BA00)  
-				# OFW 4.30 == 0x240400 (0x250400)
-				# OFW 4.46 == 0x24207C (0x25207C)
-				# OFW 4.50 == 0x2437D8 (0x2537D8)
+				# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #							
+				#
+				# verified OFW ver. 3.55 - 4.55+
+				# OFW 3.55 == 0x30AC90 (0x31AC90)			
+				# OFW 3.70 == 0x31BA2C (0x32BA2C)  				
+				# OFW 4.00 == 0x23712C (0x23812C)  	
+				# OFW 4.46 == 0x2420A8 (0x2520A8)				
+				# OFW 4.55 == 0x2438CC (0x2538CC)
 				log "Patching [file tail $elf] to disable deleting of unsigned act.dat & .rif files"
-			   #set search    "\x48\x3D\x55\x6D"   ---- old value ----
-			    set search    "\x7C\x08\x03\xA6\xEB\x61\x00\xA8\xEB\x81\x00\xB0\xEB\xA1\x00\xB8"
-				append search "\xEB\xC1\x00\xC0\xEB\xE1\x00\xC8\x38\x21\x00\xD0\x4E\x80\x00\x20"
-				append search "\xF8\x21\xFF\x91\x7C\x08\x02\xA6\xF8\x01\x00\x80\x48"
+			   if {${::NEWMFW_VER} < "4.00"} {				   
+					set search    "\xEB\x61\x00\xA8\xEB\x81\x00\xB0\xEB\xA1\x00\xB8\xEB\xC1\x00\xC0\xEB\xE1\x00\xC8\x38\x21\x00\xD0\x4E\x80\x00\x20\xF8\x21\xFF\x91"
+					set mask	  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+					
+					append search "\x7C\x08\x02\xA6\xF8\x01\x00\x80\x48\x31\xB4\x65\x60\x00\x00\x00\x38\x03\xFF\xFF\x7C\x60\x03\x78\x7C\x00\xFE\x70\x7C\x63\x00\x38"
+					append mask	  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+					
+					append search "\xE8\x01\x00\x80\x38\x21\x00\x70\x7C\x63\x07\xB4\x7C\x08\x03\xA6\x4E\x80\x00\x20"
+					append mask	  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"					
+			   } else {	
+					set search    "\xEB\x61\x00\xA8\xEB\x81\x00\xB0\xEB\xA1\x00\xB8\xEB\xC1\x00\xC0\xEB\xE1\x00\xC8\x38\x21\x00\xD0\x4E\x80\x00\x20\xF8\x21\xFF\x91"
+					set mask	  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+					
+					append search "\x7C\x08\x02\xA6\xF8\x01\x00\x80\x48\x3D\x68\xD9\x38\x03\xFF\xFF\x7C\x60\x03\x78\x7C\x00\xFE\x70\x7C\x63\x00\x38\xE8\x01\x00\x80"
+					append mask	  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"				
+					
+					append search "\x38\x21\x00\x70\x7C\x63\x07\xB4\x7C\x08\x03\xA6\x4E\x80\x00\x20"
+					append mask	  "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"							
+				}	
 				set replace   "\x38\x60\x00\x00"
-				set offset 44
-				set mask 0				 
+				set offset 40							
 				# PATCH THE ELF BINARY
 				catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]" 				
 			}									
