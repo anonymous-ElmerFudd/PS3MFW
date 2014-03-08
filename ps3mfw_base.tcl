@@ -412,7 +412,7 @@ proc pup_extract {pup dest} {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}
-#   shell ${::PUP} x $pup $dest
+	# now extract out the PUP file
 	shell ${::PKGTOOL} -debug $debugmode -action unpack -type pup -in [file nativename $pup] -out [file nativename $dest]
 }
 
@@ -422,7 +422,7 @@ proc pup_create {dir pup build} {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}
-#   shell ${::PUP} c $dir $pup $build   
+	# now create/pack up the PUP file
 	shell ${::PKGTOOL} -debug $debugmode -action pack -type pup -in [file nativename $dir] -out $pup -buildnum $build
 }
 
@@ -591,7 +591,8 @@ proc unpkg {pkg dest} {
 	set debugmode no
 	if { $::options(--tool-debug) } {
 		set debugmode yes
-	}    
+	}  
+	# now decrypt the 'pkg' file
 	shell ${::PKGTOOL} -debug $debugmode -action decrypt -type pkg -in [file nativename $pkg] -out [file nativename $dest]
 }
 
@@ -607,10 +608,9 @@ proc pkg {pkg dest} {
 	set debugmode no
 	if { $::options(--tool-debug) } {
 		set debugmode yes
-	} 	
-	
+	} 		
 	# now go build the pkg/spkg output	
-	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type pkg -in [file nativename $pkg] -out [file nativename $dest]	
+	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type pkg -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 # 'wrapper' function for calling "pkg_spkg"
@@ -625,10 +625,9 @@ proc pkg_spkg {pkg dest} {
 	set debugmode no
 	if { $::options(--tool-debug) } {
 		set debugmode yes
-	}	
-	
+	}		
 	# now go build the pkg/spkg output		
-	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spkg -in [file nativename $pkg] -out [file nativename $dest]	
+	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spkg -in [file nativename $pkg] -out [file nativename $dest]
 }
 
 # ---------------------------------------------------------------------------------------------------------------------- #
@@ -650,10 +649,9 @@ proc cospkg { dir pkg } {
 	set debugmode no	
 	if { $::options(--tool-debug) } {
 		set debugmode yes
-	} 	
-		
-	# now go build the pkg/spkg output	
-	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -in [file nativename $dir] -out [file nativename $pkg]		
+	} 			
+	# now go build the COS output	
+	shell ${::PKGTOOL} -debug $debugmode -action pack -type cos -in [file nativename $dir] -out [file nativename $pkg]
 }
 # 'wrapper' function for calling "cosunpkg"
 proc cosunpkg_package { pkg dest } {
@@ -667,7 +665,8 @@ proc cosunpkg { pkg dest } {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}    
-	shell ${::PKGTOOL} -debug $debugmode -action unpack -type cos -in [file nativename $pkg] -out [file nativename $dest]	
+	# now go unpack the COS pkg
+	shell ${::PKGTOOL} -debug $debugmode -action unpack -type cos -in [file nativename $pkg] -out [file nativename $dest]
 }
 # -------------------------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------------------------------------------- #
@@ -1753,7 +1752,7 @@ proc unspp {in out} {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}	
-#   shell ${::UNSPP} [file nativename $in] [file nativename $out]
+	# now decrypt the SPP file
 	shell ${::PKGTOOL} -debug $debugmode -action decrypt -type spp -in [file nativename $in] -out [file nativename $out]
 }
 
@@ -1763,8 +1762,8 @@ proc spp {in out} {
 	if { $::options(--tool-debug) } {
 		set debugmode yes
 	}	
-#   shell ${::SPP} 355 [file nativename $in] [file nativename $out]
-	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spp -in [file nativename $in] -out [file nativename $out]   
+	# now encrypt the SPP file
+	shell ${::PKGTOOL} -debug $debugmode -action encrypt -type spp -in [file nativename $in] -out [file nativename $out]
 }
 
 # wrapper func. for decrypting .spp file
