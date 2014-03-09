@@ -602,7 +602,7 @@ namespace eval ::patch_cos {
 			#
 			# verified OFW ver. 3.55 - 4.55+
 			# OFW 3.55: 0x (0x)  ** doesn't exist **
-			# OFW 3.60: 0x (0x)  ** doesn't exist **
+			# OFW 3.60: 0x699EC (0x599EC)
 			# OFW 4.00: 0x6A260 (0x5A260)
 			# OFW 4.21: 0x6A2A8 (0x5A2A8)
 			# OFW 4.46: 0x69348 (0x59348)
