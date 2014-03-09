@@ -601,19 +601,20 @@ namespace eval ::patch_cos {
 			# <><> --- OPTIMIZED FOR 'PATCHTOOL' --- <><> #					
 			#
 			# verified OFW ver. 3.55 - 4.55+
-			# OFW 3.55: 0x8AEE8???? (0x)  ** unsure of this patch **
-			# OFW 3.60: 0x69CBC (0x59CBC)
-			# OFW 4.30: 0x6A6B8 (0x5A6B8)
-			# OFW 4.46: 0x69618 (0x59618)
-			# OFW 4.55: 0x69DC8 (0x59DC8)
+			# OFW 3.55: 0x (0x)  ** doesn't exist **
+			# OFW 3.60: 0x (0x)  ** doesn't exist **
+			# OFW 4.00: 0x6A260 (0x5A260)
+			# OFW 4.21: 0x6A2A8 (0x5A2A8)
+			# OFW 4.46: 0x69348 (0x59348)
+			# OFW 4.55: 0x69AF8 (0x59AF8)
 			
 			## since patch is unsure for OFW <= 3.55, only patch if > 3.55
 			if {${::NEWMFW_VER} >= "3.60"} {
-				log "Patching NPDRM ECDSA check disabled"				
-				# saving old patch for reference				
-			   #set search     "\x3C\x60\x80\x01\x60\x63\x00\x17\x41\x9E\xFD\x68\x4B\xFF\xFD\x68" -- OLD PATCH (for reference)
-				set search     "\xE9\x22\x99\x68\x7C\x08\x02\xA6\xF8\x21\xFF\x91\xF8\x01\x00\x80\x3C\x60\x80\x01\xE8\x09\x00\x00\x60\x63\x00\x02\x54\x00\x07\xFE"
-				set mask	   "\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"	
+				log "Patching NPDRM ECDSA check disabled"						
+				set search	   "\xE9\x22\x99\x90\x7C\x08\x02\xA6\xF8\x21\xFF\x21\xF8\x01\x00\xF0\xFB\xE1\x00\xD8\xFB\xA1\x00\xC8\xE8\x09\x00\x00\x7C\x9F\x23\x78"
+				set mask	   "\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+				append search  "\xFB\xC1\x00\xD0\x54\x00\x07\xFE\x2F\x80\x00\x00"
+				append mask    "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
 				set replace    "\x38\x60\x00\x00\x4E\x80\x00\x20"
 				set offset 0				
 				# PATCH THE ELF BINARY
@@ -948,19 +949,18 @@ namespace eval ::patch_cos {
 			#
 			# verified OFW ver. 3.55 - 4.55+
 			# OFW 3.55: *** does not exist in this version ***
-			# OFW 3.60: 0x29C (0xA1C)
-			# OFW 4.30: 0x29C (0xA1C)
-			# OFW 4.46: 0x29C (0xA1C)
+			# OFW 3.60: 0x2B0 (0xA30)
+			# OFW 4.30: 0x2B0 (0xA30)
+			# OFW 4.46: 0x2B0 (0xA30)
             log "Patching SPU_TOKEN_PROCESSOR to disable ECDSA check" 			
 			set self "spu_token_processor.self"
 			set file [file join $path $self]			
           
 			if {${::NEWMFW_VER} > "3.56"} {
-				set ::patch_cos::search    "\x40\x80\03\x02\x1C\x08\x00\x81\x80\x60\xC1\x04\x35\x00\x00\x00"
-				append ::patch_cos::search "\x12\x03\x42\x0B"
+				set ::patch_cos::search	   "\x12\x03\x42\x0B\x24\xFF\xC0\xD0\x04\x00\x01\xD0\x24\xFF\x80\xD1\x24\xFF\x40\xD2\x24\x00\x40\x80\x04\x00\x02\x52\x24\xFB\x80\x81"
+				set ::patch_cos::mask	   "\xFF\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
 				set ::patch_cos::replace   "\x40\x80\x00\x03\x35\x00\x00\x00"
-				set ::patch_cos::offset 16
-				set ::patch_cos::mask 0
+				set ::patch_cos::offset 0				
 				# base function to decrypt the "self" to "elf" for patching
 				::modify_self_file $file ::patch_cos::patch_elf					
 				

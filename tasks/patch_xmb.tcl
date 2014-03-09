@@ -272,7 +272,7 @@ namespace eval patch_xmb {
 		if {$::patch_xmb::options(--patch-package-files)} {
 		
 			# verified against "Rogero 4.46 - 09/20/2013"
-			# patches are valid for OFW 4.00 - 4.46+
+			# patches are valid for OFW 4.00 - 4.55+
 			if { [string first "nas_plugin.sprx" $elf 0] != -1 } {				
 				if {${::NEWMFW_VER} >= "4.00"} {
 					# verified OFW ver. 3.55 - 4.46+
@@ -280,16 +280,16 @@ namespace eval patch_xmb {
 					# OFW 3.70: *** DOES NOT EXIST IN 3.xx OFW! ***
 					# OFW 4.00: 0x22CC0 (0x22BD0)
 					# OFW 4.30: 0x242D8 (0x241E8)
-					# OFW 4.46: 0x23B28 (0x23A38)
+					# OFW 4.46: 0x23B28 (0x23A38)					
 					log "Patching [file tail $elf] to add Install Package Files back to the XMB Pt 1/2"     				
-					set search  "\x40\x9E\x00\x3C\x3D\x20\x00\x06\x38\x00\x00\x29\x3B\xA0\x00\x00"
+					set search  "\x40\x9E\x00\x3C\x3D\x20\x00\x06\x38\x00\x00\x29\x3B\xA0\x00\x00"					
 					set replace "\x48\x00"
 					set offset  0
-					set mask 0	
+					set mask 0
 					# PATCH THE ELF BINARY
 					catch_die {::patch_elf $elf $search $offset $replace $mask} "Unable to patch self [file tail $elf]"   		
 				
-					# verified OFW ver. 3.55 - 4.46+
+					# verified OFW ver. 3.55 - 4.55+
 					# OFW 3.55: 0x3734C (0x3725C)
 					# OFW 3.70: 0x3BF1C (0x3BE2C)
 					# OFW 4.00: 0x2DFD0 (0x3BE2C)
